@@ -1,4 +1,3 @@
-```php
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -6,19 +5,16 @@ use App\Http\Controllers\FeedingScheduleController;
 use App\Http\Controllers\LearnBookController;
 use App\Http\Controllers\FeederController;
 
-// Main Feeder Page Route
-Route::get('/feeder', [FeederController::class, 'index'])->name('feeder.index');
+Route::get('/feeder', [FeederController::class, 'index'])
+    ->name('feeder.index');
 
-// Learn Book Route - Educational content about quail farming
 Route::get('/feeder/learnbook', [LearnBookController::class, 'index'])
     ->name('feeder.learnbook');
 
-// DHT22 Sensor Test Route
 Route::get('/feeder/dht22-test', function () {
     return view('feeder.dht22-test');
 })->name('feeder.dht22-test');
 
-// Debug Route
 Route::get('/feeder/sensor-debug', function () {
     return view('feeder.sensor-debug');
 })->name('feeder.sensor-debug');
@@ -28,14 +24,25 @@ Route::get('/feeder/schedules', [FeedingScheduleController::class, 'index']);
 Route::post('/feeder/schedules', [FeedingScheduleController::class, 'store'])
     ->name('feeder.schedules.store');
 
-Route::delete('/feeder/schedules/{feedingSchedule}', [FeedingScheduleController::class, 'destroy'])
-    ->name('feeder.schedules.destroy');
+Route::delete('/feeder/schedules/{feedingSchedule}', [
+    FeedingScheduleController::class,
+    'destroy'
+])->name('feeder.schedules.destroy');
 
-Route::post('/feeder/schedules/{feedingSchedule}/trigger', [FeedingScheduleController::class, 'triggerNow']);
+Route::post('/feeder/schedules/{feedingSchedule}/trigger', [
+    FeedingScheduleController::class,
+    'triggerNow'
+]);
 
-Route::get('/feeder/schedules/status', [FeedingScheduleController::class, 'getStatus']);
+Route::get('/feeder/schedules/status', [
+    FeedingScheduleController::class,
+    'getStatus'
+]);
 
-Route::get('/feeder/schedules/auto-check', [FeedingScheduleController::class, 'checkSchedule']);
+Route::get('/feeder/schedules/auto-check', [
+    FeedingScheduleController::class,
+    'checkSchedule'
+]);
 
 Route::get('/feeder/test-animation', function () {
     return view('feeder.test-animation');
@@ -49,20 +56,20 @@ Route::get('/feeder/manual/feed', function () {
     return redirect('/feeder');
 });
 
-Route::post('/feeder/manual/feed', [FeedingScheduleController::class, 'manualFeed'])
-    ->name('feeder.manual.feed');
+Route::post('/feeder/manual/feed', [
+    FeedingScheduleController::class,
+    'manualFeed'
+])->name('feeder.manual.feed');
 
-Route::post('/feeder/toggle', [FeedingScheduleController::class, 'toggleFeeder'])
-    ->name('feeder.toggle');
+Route::post('/feeder/toggle', [
+    FeedingScheduleController::class,
+    'toggleFeeder'
+])->name('feeder.toggle');
 
-Route::delete('/feeder/history/{feedHistory}', [FeedingScheduleController::class, 'deleteHistory'])
-    ->name('feeder.history.delete');
-
-
-// ============================================================
-// Helper function to find Python executable
-// Protected with function_exists() to prevent redeclaration
-// ============================================================
+Route::delete('/feeder/history/{feedHistory}', [
+    FeedingScheduleController::class,
+    'deleteHistory'
+])->name('feeder.history.delete');
 
 if (!function_exists('findPythonExecutable')) {
     function findPythonExecutable()
@@ -83,10 +90,7 @@ if (!function_exists('findPythonExecutable')) {
             @exec($cmd . ' --version 2>&1', $output, $return);
 
             if ($return === 0) {
-                \Illuminate\Support\Facades\Log::info(
-                    "Found Python: $cmd"
-                );
-
+                \Illuminate\Support\Facades\Log::info("Found Python: $cmd");
                 return $cmd;
             }
         }
@@ -95,11 +99,6 @@ if (!function_exists('findPythonExecutable')) {
     }
 }
 
-
-// ============================================================
-// Test route - trigger servo with combined servo + DHT22 control
-// ============================================================
-
 Route::get('/feeder/trigger-servo', function () {
 
     $python = findPythonExecutable() ?? 'python';
@@ -107,12 +106,12 @@ Route::get('/feeder/trigger-servo', function () {
 
     if (!file_exists($script)) {
         return response()->json([
+            'success' => false,
             'error' => 'Script not found',
             'checked' => $script
         ]);
     }
 
-    // Try different ports on Windows
     $ports = [
         'COM4',
         'COM3',
@@ -131,7 +130,6 @@ Route::get('/feeder/trigger-servo', function () {
 
         $command = "$python \"$script\" both 5 $port";
 
-        // Use proc_open for better subprocess handling
         $descriptors = [
             0 => ['pipe', 'r'],
             1 => ['pipe', 'w'],
@@ -171,7 +169,6 @@ Route::get('/feeder/trigger-servo', function () {
 
                 $result = json_decode($output, true);
 
-                // If successful, save sensor data to database
                 if ($result && isset($result['sensor']['data'])) {
 
                     $sensorData = $result['sensor']['data'];
@@ -184,11 +181,6 @@ Route::get('/feeder/trigger-servo', function () {
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
-
-                    \Illuminate\Support\Facades\Log::info(
-                        'Sensor data saved from trigger-servo',
-                        $sensorData
-                    );
                 }
 
                 return response()->json([
@@ -219,14 +211,9 @@ Route::get('/feeder/trigger-servo', function () {
         'success' => false,
         'tried_ports' => $triedPorts,
         'last_error' => $lastError,
-        'message' => 'Could not reach WEMOS. Check: 1) USB connection, 2) Python installed (pip install pyserial), 3) COM port correct'
+        'message' => 'Could not reach WEMOS. Check USB connection, Python, pyserial, and COM port.'
     ]);
 })->name('feeder.trigger-servo');
-
-
-// ============================================================
-// Read sensors only (without triggering servo)
-// ============================================================
 
 Route::get('/feeder/read-sensors', function () {
 
@@ -235,6 +222,7 @@ Route::get('/feeder/read-sensors', function () {
 
     if (!file_exists($script)) {
         return response()->json([
+            'success' => false,
             'error' => 'Script not found'
         ]);
     }
@@ -254,7 +242,6 @@ Route::get('/feeder/read-sensors', function () {
 
         $command = "$python \"$script\" sensor $port";
 
-        // Use proc_open for better subprocess handling
         $descriptors = [
             0 => ['pipe', 'r'],
             1 => ['pipe', 'w'],
@@ -281,19 +268,10 @@ Route::get('/feeder/read-sensors', function () {
 
             $returnCode = proc_close($process);
 
-            \Illuminate\Support\Facades\Log::info(
-                "Read sensor on $port",
-                [
-                    'return_code' => $returnCode,
-                    'output' => $output,
-                ]
-            );
-
             if ($returnCode === 0 && !empty($output)) {
 
                 $result = json_decode($output, true);
 
-                // Save sensor data directly to database
                 if ($result && isset($result['data'])) {
 
                     $sensorData = $result['data'];
@@ -306,11 +284,6 @@ Route::get('/feeder/read-sensors', function () {
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
-
-                    \Illuminate\Support\Facades\Log::info(
-                        'Sensor data saved from read-sensors',
-                        $sensorData
-                    );
                 }
 
                 return response()->json($result);
@@ -335,14 +308,9 @@ Route::get('/feeder/read-sensors', function () {
     return response()->json([
         'success' => false,
         'last_error' => $lastError,
-        'message' => 'Could not reach WEMOS. Check: 1) USB connection, 2) Python installed (pip install pyserial), 3) COM port correct'
+        'message' => 'Could not reach WEMOS. Check USB connection, Python, pyserial, and COM port.'
     ]);
 })->name('feeder.read-sensors');
-
-
-// ============================================================
-// Test route - manually test servo via SERIAL (USB)
-// ============================================================
 
 Route::get('/feeder/test-servo', function () {
 
@@ -350,12 +318,12 @@ Route::get('/feeder/test-servo', function () {
 
     if (!file_exists($script)) {
         return response()->json([
+            'success' => false,
             'error' => 'Script not found',
             'checked' => $script
         ]);
     }
 
-    // Try different ports on Windows
     $ports = [
         'COM4',
         'COM3',
@@ -385,9 +353,11 @@ Route::get('/feeder/test-servo', function () {
             $returnCode
         );
 
-        $output = array_merge($output, $currentOutput);
+        $output = array_merge(
+            $output,
+            $currentOutput
+        );
 
-        // If return code is 0, it worked
         if ($returnCode === 0) {
 
             return response()->json([
@@ -407,4 +377,3 @@ Route::get('/feeder/test-servo', function () {
         'message' => 'No servo found on any port. Make sure ESP32 is connected via USB.'
     ]);
 });
-```
