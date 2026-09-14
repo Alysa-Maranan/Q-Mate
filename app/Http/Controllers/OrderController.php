@@ -15,19 +15,12 @@ class OrderController extends Controller
             'preferred_date' => 'nullable|date',
             'order_type' => 'required|in:pickup,delivery',
             'address' => 'required_if:order_type,delivery',
-            'gcash_proof' => 'nullable|image|max:10240',
         ]);
 
         $customer = auth('customer')->user();
 
-        // Handle GCash proof upload
+        // GCash proof upload removed — proof sent via chatbox instead
         $gcashProofPath = null;
-        if ($request->hasFile('gcash_proof')) {
-            $file = $request->file('gcash_proof');
-            $filename = 'gcash_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('uploads/gcash'), $filename);
-            $gcashProofPath = 'uploads/gcash/' . $filename;
-        }
 
         // Create order
         $order = Order::create([

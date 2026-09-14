@@ -712,13 +712,10 @@ function showOrderModal(slug, name, price) {
                 </div>
                 
                 <div style="margin-bottom: 2rem;">
-                    <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">Payment Proof (Optional)</label>
+                    <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">GCash Number</label>
                     <div style="background: #f8f5f1; padding: 1rem; border-radius: 10px; margin-bottom: 0.75rem; border-left: 4px solid #6d4c41;">
-                        <p style="font-size: 0.9rem; color: #4e342e; margin-bottom: 0.25rem; font-weight: 600;">GCash Number: <span style="color: #6d4c41;">09171234567</span></p>
-                        <p style="font-size: 0.85rem; color: #8d6e63; margin: 0;">Send payment and upload screenshot below</p>
-                    </div>
-                    <div style="position: relative;">
-                        <input type="file" name="gcash_proof" accept="image/*" style="width: 100%; padding: 0.85rem; border: 2px dashed rgba(161,136,127,0.3); border-radius: 10px; font-family: 'Inter', sans-serif; color: #4e342e; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#6d4c41'; this.style.background='#faf8f6'" onmouseout="this.style.borderColor='rgba(161,136,127,0.3)'; this.style.background='white'">
+                        <p style="font-size: 1.1rem; color: #4e342e; margin: 0; font-weight: 700;">09171234567</p>
+                        <p style="font-size: 0.85rem; color: #8d6e63; margin: 0.5rem 0 0 0;">Send the screenshot of your receipt or proof in chatbox</p>
                     </div>
                 </div>
                 

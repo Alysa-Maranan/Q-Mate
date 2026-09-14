@@ -29,3 +29,6 @@ __pycache__/
 
 # Sensitive payment uploads
 /public/uploads/gcash/
+
+# Laravel generated view cache
+/storage/framework/views/
