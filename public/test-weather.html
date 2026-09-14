@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Philippine Weather Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .card { background: white; padding: 20px; border-radius: 10px; margin: 10px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .temp { font-size: 3rem; font-weight: bold; color: #ff6b6b; }
+        .hum { font-size: 3rem; font-weight: bold; color: #4ecdc4; }
+        button { padding: 10px 20px; background: #6d4c41; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #5a3d33; }
+        #log { background: #f9f9f9; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🌡️ Philippine Weather Test</h1>
+    
+    <div class="card">
+        <h2>Current Weather</h2>
+        <div>
+            <span class="temp" id="temp">--°C</span>
+            <span class="hum" id="hum">--%</span>
+        </div>
+        <p id="location">Loading...</p>
+        <p id="description"></p>
+        <button onclick="fetchWeather()">Refresh Weather</button>
+    </div>
+
+    <div class="card">
+        <h2>Console Log</h2>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        function log(msg) {
+            const logEl = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${time}] ${msg}<br>`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(msg);
+        }
+
+        async function fetchWeather() {
+            log('Fetching weather from /api/weather/philippines...');
+            
+            try {
+                const response = await fetch('/api/weather/philippines');
+                log(`Response status: ${response.status}`);
+                
+                const data = await response.json();
+                log(`Response data: ${JSON.stringify(data)}`);
+                
+                if (data.success) {
+                    document.getElementById('temp').textContent = data.temperature.toFixed(1) + '°C';
+                    document.getElementById('hum').textContent = data.humidity.toFixed(1) + '%';
+                    document.getElementById('location').textContent = data.location;
+                    document.getElementById('description').textContent = data.description;
+                    log('✅ Weather updated successfully!');
+                } else {
+                    log('❌ Weather fetch failed: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        }
+
+        // Auto-fetch on load
+        log('Page loaded, fetching weather...');
+        fetchWeather();
+
+        // Auto-refresh every 10 seconds
+        setInterval(fetchWeather, 10000);
+    </script>
+</body>
+</html>

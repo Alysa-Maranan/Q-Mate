@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Servo</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .btn { padding: 15px 30px; font-size: 18px; margin: 10px; cursor: pointer; }
+        .btn-wifi { background: #4CAF50; color: white; border: none; }
+        .btn-serial { background: #2196F3; color: white; border: none; }
+        #result { margin-top: 20px; padding: 15px; background: #f0f0f0; display: none; }
+        .success { background: #dff0d8 !important; }
+        .error { background: #f2dede !important; }
+    </style>
+</head>
+<body>
+    <h1>🦗 Servo Test Page</h1>
+    <p>Test your quail feeder servo motor:</p>
+    
+    <button class="btn btn-wifi" onclick="testWiFi()">📶 Test via WiFi (ESP32)</button>
+    <button class="btn btn-serial" onclick="testSerial()">🔌 Test via USB/Serial</button>
+    
+    <div id="result"></div>
+    
+    <script>
+        async function testWiFi() {
+            const result = document.getElementById('result');
+            result.style.display = 'block';
+            result.className = '';
+            result.innerHTML = 'Testing via WiFi (ESP32)...';
+            
+            try {
+                const response = await fetch('/feeder/manual/feed?duration=3&force_serial=0', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                result.innerHTML = '<strong>WiFi Mode Response:</strong><br>' + JSON.stringify(data, null, 2);
+                result.className = data.status === 'queued' ? 'success' : 'error';
+            } catch (e) {
+                result.innerHTML = 'Error: ' + e.message;
+                result.className = 'error';
+            }
+        }
+        
+        async function testSerial() {
+            const result = document.getElementById('result');
+            result.style.display = 'block';
+            result.className = '';
+            result.innerHTML = 'Testing via USB/Serial...';
+            
+            try {
+                // Use force_serial=1 to bypass WiFi mode
+                const response = await fetch('/feeder/manual/feed?duration=3&force_serial=1', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                result.innerHTML = '<strong>Serial Mode Response:</strong><br>' + JSON.stringify(data, null, 2);
+                result.className = data.status === 'ok' ? 'success' : 'error';
+            } catch (e) {
+                result.innerHTML = 'Error: ' + e.message;
+                result.className = 'error';
+            }
+        }
+    </script>
+</body>
+</html>

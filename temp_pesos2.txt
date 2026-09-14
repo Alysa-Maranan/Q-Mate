@@ -1,0 +1,88 @@
+375: <div style="font-size: 2rem; margin-bottom: 0.5rem;">₱</div>
+382: <div style="font-size: 2rem; margin-bottom: 0.5rem;">₱</div>
+391: <span style="font-size: 1.25rem;">₱</span>
+399: <span style="font-size: 1.25rem;">₱</span>
+404: <strong>Temperature:</strong>₱<br>
+409: <strong>Humidity:</strong>₱<br>
+427: <div class="confirm-modal-icon" id="confirmModalIcon">₱</div>
+440: <div class="confirm-modal-icon" id="updateModalIcon">₱</div>
+465: <span class="category-icon">₱</span>Collect & Inspect Eggs
+468: <span class="category-icon">₱</span>Quail Management
+471: <span class="category-icon">₱</span>Orders & Products
+474: <span class="category-icon">₱</span>Record Sales
+477: <span class="category-icon">₱</span>Analytics & Reports
+635: <option value="eggs" data-price="80">Quail Eggs (₱80/tray)</option>
+636: <option value="live_quail" data-price="180">Live Quail (₱180/pc)</option>
+637: <option value="dressed_quail" data-price="250">Dressed Quail (₱250/pc)</option>
+646: <input type="number" class="form-input" id="salesPrice" placeholder="₱80.00" value="80">
+655: <span id="salesTotalAmount" style="font-size: 1.25rem; font-weight: 800; color: #4e342e;">₱0.00</span>
+735: <td style="padding: 1rem; text-align: right;">₱<span style="display: inline-block; padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: #e8f5e9; color: #2e7d32;">Active</span>₱</td>
+741: <td style="padding: 1rem; text-align: right;">₱<span style="display: inline-block; padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: #ffebee; color: #c62828;">Recorded</span>₱</td>
+790: <span style="font-size: 1.5rem;">₱</span> Product Management
+854: <td style="padding: 1rem; font-size: 0.88rem; color: #000;">{{ $order->created_at->format('M d, Y') }}<br>₱<small style="color:#000;">{{ $order->created_at->format('h:i A') }}</small>₱</td>
+970: <div style="position: absolute; top: 1rem; right: 1rem; font-size: 2rem; opacity: 0.3;">₱</div>
+975: <div style="position: absolute; top: 1rem; right: 1rem; font-size: 2rem; opacity: 0.3;">₱</div>
+980: <div style="position: absolute; top: 1rem; right: 1rem; font-size: 2rem; opacity: 0.3;">₱</div>
+1011: <canvas id="dailyOrdersChart">₱</canvas>
+1042: <canvas id="dailyCollectionChart">₱</canvas>
+1069: <canvas id="productSalesChart">₱</canvas>
+1329: <td style="padding: 1rem; font-size: 0.9rem; color: #000;">₱${item.price.toFixed(2)}</td>
+1330: <td style="padding: 1rem; font-size: 0.9rem; color: #000; font-weight: 700;">₱${item.total.toLocaleString()}.00</td>
+1553: printWindow.document.write('<html>₱<head>₱<title>Print Analytics Report</title>');
+1562: printWindow.document.write('</head>₱<body>');
+1564: printWindow.document.write('</body>₱</html>');
+1618: { label: 'Total Revenue', value: document.getElementById('analyticsTotalRevenue')?.textContent || '₱0.00' },
+1838: updateElement('analyticsTotalRevenue', `₱${data.total_revenue.toLocaleString()}.00`);
+2009: noDataDiv.innerHTML = 'No orders data yet<br>₱<small>Orders will appear here when customers place orders</small>';
+2090: noDataDiv.innerHTML = 'No sales recorded yet<br>₱<small>Record sales in "Record Sales" tab to see data here</small>';
+2193: noDataDiv.innerHTML = 'No egg collections yet<br>₱<small>Collect eggs in "Collect & Inspect Eggs" tab to see data here</small>';
+2238: tableBody.innerHTML = '<tr>₱<td colspan="4" style="padding: 2rem; text-align: center; color: #a1887f;">No sales recorded yet. Record sales in the "Record Sales" tab to see data here.</td>₱</tr>';
+2248: <td style="padding: 1rem; font-size: 0.9rem; color: #000; font-weight: 700;">₱${product.revenue.toLocaleString()}.00</td>
+2303: totalRevenueEl.textContent = '₱' + sampleTotalRevenue.toLocaleString() + '.00';
+2342: if (totalSalesEl) totalSalesEl.textContent = '₱' + sampleTotalRevenue.toLocaleString() + '.00';
+2436: totalRevenueEl.textContent = '₱' + totalRevenue.toFixed(2);
+2471: if (totalSalesEl) totalSalesEl.textContent = '₱' + totalRevenue.toFixed(2);
+2567: ₱${parseFloat(product.price).toFixed(2)}
+2636: addNotification('', `Price updated to ₱${parseFloat(newPrice).toFixed(2)}`);
+2812: document.getElementById('salesTotalAmount').textContent = '₱' + total.toFixed(2);
+2912: printWindow.document.write('<html>₱<head>₱<title>Print Transactions</title>');
+2921: printWindow.document.write('</head>₱<body>');
+2925: printWindow.document.write('</body>₱</html>');
+2996: if (summaryEggsIncome) summaryEggsIncome.textContent = '₱' + dailyData.eggsIncome.toFixed(2);
+2997: if (summaryQuailIncome) summaryQuailIncome.textContent = '₱' + dailyData.quailIncome.toFixed(2);
+2998: if (summaryTotalIncome) summaryTotalIncome.textContent = '₱' + (dailyData.eggsIncome + dailyData.quailIncome).toFixed(2);
+3524: if (incomeCard) incomeCard.textContent = '₱' + totalIncome.toFixed(2);
+3564: tbody.innerHTML = '<tr>₱<td colspan="8" style="padding: 2rem; text-align: center; color: #000;">No production records yet. Start recording production to see records here.</td>₱</tr>';
+3599: tbody.innerHTML = '<tr>₱<td colspan="7" style="padding: 2rem; text-align: center; color: #000;">No inspection records yet. Start inspecting eggs to see records here.</td>₱</tr>';
+3634: tbody.innerHTML = '<tr>₱<td colspan="7" style="padding: 2rem; text-align: center; color: #a1887f;">No classification records yet. Start classifying eggs to see records here.</td>₱</tr>';
+3668: tbody.innerHTML = '<tr>₱<td colspan="8" style="padding: 2rem; text-align: center; color: #000;">No sales records yet. Start recording sales to see records here.</td>₱</tr>';
+3684: <td style="padding: 1rem; font-size: 0.88rem; color: #000;">₱${record.price.toFixed(2)}</td>
+3685: <td style="padding: 1rem; font-size: 0.88rem; color: #000; font-weight: 700;">₱${record.total.toFixed(2)}</td>
+3916: tbody.innerHTML = '<tr>₱<td colspan="9" style="padding: 2rem; text-align: center; color: #a1887f;">No collections recorded yet. Start collecting eggs to see records here.</td>₱</tr>';
+3942: <button class="action-btn btn-update" onclick="editCollectionFromDB(${collection.id})" title="Edit Record">₱</button>
+3943: <button class="action-btn btn-delete" onclick="deleteCollectionFromDB(${collection.id})" title="Delete Record">₱</button>
+4299: message: `Delete sales record: ${record.quantity} ${productName} for ₱${record.total.toFixed(2)}?`,
+4321: tbody.innerHTML = '<tr>₱<td colspan="10" style="padding: 2rem; text-align: center; color: #a1887f;">No collections recorded yet. Start collecting eggs to see records here.</td>₱</tr>';
+4758: message: `Record sale of ${quantity} ${productNames[productType]} for ₱${total.toFixed(2)}?`,
+4828: addActivity('', 'Sale Recorded', `${productNames[productType]} x${quantity} = ₱${total.toFixed(2)}`);
+4829: addNotification('', `Sale: ${quantity} ${productNames[productType]} = ₱${total.toFixed(2)}`);
+4843: message: `${productNames[productType]} x${quantity} = ₱${total.toFixed(2)} saved to database`,
+4925: let summaryHTML = '<html>₱<head>₱<title>Daily Summary Report</title>';
+4939: summaryHTML += '</style>₱</head>₱<body>';
+4950: summaryHTML += '<span class="activity-title">' + act.title + '</span>₱<br>';
+4971: summaryHTML += '</body>₱</html>';
+5032: <p style="margin: 0 0 0.5rem 0; color: #8d6e63; font-size: 0.85rem;">₱<strong>Date</strong>₱</p>
+5036: <p style="margin: 0 0 0.5rem 0; color: #8d6e63; font-size: 0.85rem;">₱<strong>Live Quails</strong>₱</p>
+5040: <p style="margin: 0 0 0.5rem 0; color: #8d6e63; font-size: 0.85rem;">₱<strong>Dead Quails</strong>₱</p>
+5044: <p style="margin: 0 0 0.5rem 0; color: #8d6e63; font-size: 0.85rem;">₱<strong>Mortality Rate</strong>₱</p>
+5060: <script src="https://cdn.jsdelivr.net/npm/chart.js">₱</script>
+5664: if (totalRevenueEl) totalRevenueEl.textContent = '₱' + totalRevenue.toFixed(2);
+5695: if (totalSalesEl) totalSalesEl.textContent = '₱' + totalRevenue.toFixed(2);
+5982: amount: `₱${record.total.toFixed(2)}`,
+6020: printWindow.document.write('<html>₱<head>₱<title>Analytics Report - SQUIFM</title>');
+6031: printWindow.document.write('</head>₱<body>');
+6036: printWindow.document.write('</body>₱</html>');
+6112: printWindow.document.write('<html>₱<head>₱<title>Print Analytics Report</title>');
+6121: printWindow.document.write('</head>₱<body>');
+6123: printWindow.document.write('</body>₱</html>');
+6165: tableHTML += '</tbody>₱</table>₱</div>';

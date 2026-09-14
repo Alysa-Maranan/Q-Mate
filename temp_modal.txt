@@ -1,0 +1,15 @@
+﻿<div class="logout-modal-overlay" id="logoutModal">
+    <div class="logout-modal">
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon">ðŸšª</div>
+            <div class="logout-modal-title">Confirm Logout</div>
+            <div class="logout-modal-message">Are you sure you want to logout from SQUIFM? Any unsaved data will be lost.</div>
+            <div class="logout-modal-buttons">
+                <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">Cancel</button>
+                <button class="logout-modal-btn confirm" onclick="confirmLogout()">Yes, Logout</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>

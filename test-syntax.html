@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Syntax Test</title>
+</head>
+<body>
+    <div id="notification-bell"></div>
+    <div id="notification-badge"></div>
+    <div id="notification-list"></div>
+    
+    <script src="notification-system.js"></script>
+    <script>
+        console.log('Notification system loaded successfully');
+        
+        // Test basic functionality
+        if (typeof NotificationSystem !== 'undefined') {
+            console.log('NotificationSystem class is available');
+        } else {
+            console.error('NotificationSystem class not found');
+        }
+    </script>
+</body>
+</html>

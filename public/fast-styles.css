@@ -1,0 +1,87 @@
+/* Optimized SQUIFM Styles - Minimal and Fast Loading */
+:root {
+    --primary: #a1887f;
+    --primary-dark: #6d4c41;
+    --white: #ffffff;
+    --text-dark: #4e342e;
+    --bg-body: #fffdfa;
+    --border-radius: 0.75rem;
+}
+
+body { 
+    font-family: system-ui, -apple-system, sans-serif; 
+    background: var(--bg-body); 
+    color: var(--text-dark);
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* Essential Layout Only */
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.w-full { width: 100%; }
+.min-h-screen { min-height: 100vh; }
+
+/* Navigation Optimization */
+.nav-bar {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(134, 239, 172, 0.15);
+}
+
+.nav-item {
+    color: #1f2937;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+    background: white;
+    border: 1px solid #86efac;
+    margin: 0 0.25rem;
+}
+
+.nav-item:hover {
+    background: #f0fdf4;
+}
+
+/* Cards - Simplified */
+.card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(134, 239, 172, 0.1);
+    border: 1px solid rgba(134, 239, 172, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* Remove heavy animations for faster loading */
+* {
+    animation-duration: 0.2s !important;
+    transition-duration: 0.2s !important;
+}
+
+/* Responsive - Mobile First */
+@media (max-width: 768px) {
+    .nav-bar {
+        padding: 0.75rem 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .nav-item {
+        font-size: 0.875rem;
+        padding: 0.4rem 0.8rem;
+        margin: 0.1rem;
+    }
+}

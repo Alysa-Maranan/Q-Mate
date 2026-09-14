@@ -1,0 +1,2 @@
+// Run this in tinker:
+// App\Models\FeederCommand::orderBy('id','desc')->take(5)->get(['id','type','status','schedule_id','manual_feed_id','duration','created_at','picked_up_at','completed_at']);

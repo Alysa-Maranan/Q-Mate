@@ -1,0 +1,12 @@
+/* Ultra-Fast SQUIFM - Minimal CSS for Instant Loading */
+body{font-family:system-ui;margin:0;background:#f9fafb;color:#111}
+.nav{background:#86efac;padding:1rem;display:flex;gap:1rem;align-items:center}
+.nav a{color:#fff;text-decoration:none;padding:0.5rem 1rem;border-radius:6px;background:rgba(255,255,255,0.2)}
+.nav a:hover{background:rgba(255,255,255,0.3)}
+.container{max-width:1200px;margin:0 auto;padding:2rem}
+.card{background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-bottom:1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}
+.btn{background:#86efac;color:#fff;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;text-decoration:none;display:inline-block}
+.btn:hover{background:#6ee7b7}
+h1,h2,h3{color:#047857;margin:0 0 1rem 0}
+*{box-sizing:border-box}

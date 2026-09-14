@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        // Check if status column exists, if not add it
+        if (!Schema::hasColumn('contact_messages', 'status')) {
+            Schema::table('contact_messages', function (Blueprint $table) {
+                $table->string('status')->default('pending')->after('is_read');
+            });
+        }
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        if (Schema::hasColumn('contact_messages', 'status')) {
+            Schema::table('contact_messages', function (Blueprint $table) {
+                $table->dropColumn('status');
+            });
+        }
+    }
+};

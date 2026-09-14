@@ -1,0 +1,269 @@
+╔═══════════════════════════════════════════════════════════════╗
+║     SERVO HINDI GUMAGANA SA SYSTEM - TROUBLESHOOTING         ║
+╚═══════════════════════════════════════════════════════════════╝
+
+PROBLEMA: Servo gumagana sa Arduino IDE pero hindi sa system
+
+═══════════════════════════════════════════════════════════════
+
+QUICK FIX (Try this first!)
+----------------------------
+
+1. Run: SERVO_DIAGNOSTIC.bat
+2. Follow the steps
+3. Fix any errors shown
+4. Test again
+
+═══════════════════════════════════════════════════════════════
+
+COMMON CAUSES & SOLUTIONS
+--------------------------
+
+❌ CAUSE 1: Servo bridge hindi running
+   SOLUTION:
+   → Run: start_feeder_system.bat
+   → Check: check_servo_bridge.bat
+   → Should see: pythonw.exe in Task Manager
+
+❌ CAUSE 2: Wrong COM port
+   SOLUTION:
+   → Open Device Manager (devmgmt.msc)
+   → Look for "Ports (COM & LPT)"
+   → Find your Arduino/WEMOS
+   → Note the COM port (e.g., COM4)
+   → Update .env file: SERVO_SERIAL_PORT=COM4
+   → Restart servo bridge
+
+❌ CAUSE 3: Arduino not connected
+   SOLUTION:
+   → Check USB cable
+   → Check if Arduino is powered on
+   → Check if Arduino shows up in Device Manager
+   → Try different USB port
+
+❌ CAUSE 4: Arduino not programmed
+   SOLUTION:
+   → Upload the Arduino sketch again
+   → File: scripts/servo_dht22_combined.ino
+   → Or: scripts/servo_esp8266.ino
+   → Make sure upload is successful
+
+❌ CAUSE 5: Python pyserial not installed
+   SOLUTION:
+   → Run: pip install pyserial
+   → Or: python -m pip install pyserial
+   → Restart servo bridge
+
+❌ CAUSE 6: servo_command.json not being processed
+   SOLUTION:
+   → Check if servo bridge is running
+   → Check servo bridge output for errors
+   → Check if file is being created: storage\logs\servo_command.json
+   → Check if file is being deleted after processing
+
+═══════════════════════════════════════════════════════════════
+
+STEP-BY-STEP TROUBLESHOOTING
+-----------------------------
+
+STEP 1: Check if servo bridge is running
+-----------------------------------------
+Run: check_servo_bridge.bat
+
+Expected: [OK] Servo Bridge is RUNNING
+
+If not:
+→ Run: start_feeder_system.bat
+
+
+STEP 2: Check COM port
+-----------------------
+1. Open Device Manager (Win+X → Device Manager)
+2. Expand "Ports (COM & LPT)"
+3. Find your Arduino/WEMOS device
+4. Note the COM port number
+
+Example:
+USB-SERIAL CH340 (COM4)
+Arduino Uno (COM3)
+WEMOS D1 (COM5)
+
+
+STEP 3: Test direct communication
+----------------------------------
+Run: python scripts\servo_control.py trigger 5 COM4
+(Replace COM4 with your actual COM port)
+
+Expected: Servo should move for 5 seconds
+
+If it works:
+→ Arduino is OK
+→ COM port is correct
+→ Problem is with servo bridge
+
+If it doesn't work:
+→ Wrong COM port
+→ Arduino not connected
+→ Arduino not programmed
+
+
+STEP 4: Check servo_command.json
+---------------------------------
+1. Trigger manual feed from browser
+2. Immediately check: storage\logs\servo_command.json
+3. File should exist for ~1 second then disappear
+
+If file doesn't appear:
+→ Laravel is not creating the file
+→ Check Laravel logs: storage\logs\laravel.log
+
+If file appears but doesn't disappear:
+→ Servo bridge is not processing it
+→ Check servo bridge is running
+→ Check servo bridge output for errors
+
+
+STEP 5: Check servo bridge output
+----------------------------------
+If servo bridge is running in background (pythonw.exe),
+you won't see output.
+
+To see output:
+1. Stop servo bridge: taskkill /F /IM pythonw.exe
+2. Run in foreground: cd scripts && python servo_bridge.py COM4
+3. Watch for errors
+4. Try manual feed
+5. Should see:
+   [HH:MM:SS] Command received: trigger 10s on COM4 for cage 1 (manual)
+   [HH:MM:SS] Animation file created - manual feeding for 10s on cage 1
+   [HH:MM:SS] Waiting 10 seconds for servo to complete...
+   [HH:MM:SS] Animation file deleted - servo closed
+   [HH:MM:SS] Servo closed successfully
+   [HH:MM:SS] SUCCESS: Feeding completed
+
+═══════════════════════════════════════════════════════════════
+
+DIAGNOSTIC SCRIPT
+-----------------
+
+Run: SERVO_DIAGNOSTIC.bat
+
+This will:
+1. Check if servo bridge is running
+2. Check COM port
+3. Create test command file
+4. Wait for processing
+5. Check results
+6. Test direct Arduino communication
+7. Show summary and recommendations
+
+═══════════════════════════════════════════════════════════════
+
+MANUAL TESTING
+--------------
+
+Test 1: Direct Arduino Test
+----------------------------
+python scripts\servo_control.py trigger 5 COM4
+
+Expected: Servo moves for 5 seconds
+Result: _______________
+
+
+Test 2: Servo Bridge Test
+--------------------------
+1. Make sure servo bridge is running
+2. Create command file:
+   echo {"action":"trigger","duration":5,"port":"COM4","cage":1,"type":"manual"} > storage\logs\servo_command.json
+3. Wait 10 seconds
+4. Check if file was deleted
+5. Check if servo moved
+
+Expected: File deleted, servo moved
+Result: _______________
+
+
+Test 3: System Test
+--------------------
+1. Open browser → Feeder Management
+2. Click Manual Feed
+3. Click "Feed Now"
+4. Check browser console (F12)
+5. Check if servo moves
+
+Expected: Animation appears, servo moves, animation disappears
+Result: _______________
+
+═══════════════════════════════════════════════════════════════
+
+CHECKLIST
+---------
+
+Before testing, make sure:
+□ Arduino is connected via USB
+□ Arduino is programmed with correct sketch
+□ COM port is correct in .env file
+□ Python is installed
+□ pyserial is installed (pip install pyserial)
+□ Servo bridge is running (check_servo_bridge.bat)
+□ Laravel is running (XAMPP Apache)
+
+═══════════════════════════════════════════════════════════════
+
+COMMON ERRORS & FIXES
+---------------------
+
+Error: "No module named 'serial'"
+Fix: pip install pyserial
+
+Error: "Access is denied" (COM port)
+Fix: Close Arduino IDE, it's using the COM port
+
+Error: "Could not open port COM4"
+Fix: Wrong COM port, check Device Manager
+
+Error: "pythonw.exe not found"
+Fix: Python not installed or not in PATH
+
+Error: "servo_command.json not found"
+Fix: Laravel not creating file, check permissions
+
+═══════════════════════════════════════════════════════════════
+
+FINAL CHECKLIST
+---------------
+
+If servo works in Arduino IDE but not in system:
+
+1. □ Servo bridge is running
+2. □ COM port is correct
+3. □ Arduino is connected
+4. □ Direct test works (python scripts\servo_control.py...)
+5. □ servo_command.json is being created
+6. □ servo_command.json is being deleted
+7. □ No errors in servo bridge output
+
+If all checked:
+→ System should work!
+
+If not all checked:
+→ Fix the unchecked items first
+
+═══════════════════════════════════════════════════════════════
+
+NEED HELP?
+----------
+
+1. Run: SERVO_DIAGNOSTIC.bat
+2. Save the output
+3. Check browser console (F12)
+4. Check Laravel logs: storage\logs\laravel.log
+5. Check servo bridge output
+
+Provide these when asking for help:
+- Diagnostic output
+- Browser console errors
+- Laravel log errors
+- Servo bridge output
+
+═══════════════════════════════════════════════════════════════

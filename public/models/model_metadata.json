@@ -1,0 +1,26 @@
+{
+  "classes": {
+    "japanese_quail": 0,
+    "japanese_coturnix_crossbreed_taiwan": 1,
+    "pharaoh_quail": 2,
+    "english_white_quail": 3
+  },
+  "class_names": {
+    "0": "japanese_quail",
+    "1": "japanese_coturnix_crossbreed_taiwan",
+    "2": "pharaoh_quail",
+    "3": "english_white_quail"
+  },
+  "breeds": [
+    "japanese_quail",
+    "japanese_coturnix_crossbreed_taiwan",
+    "pharaoh_quail",
+    "english_white_quail"
+  ],
+  "image_size": [
+    224,
+    224
+  ],
+  "trained_at": "2026-04-18T23:26:14.420571",
+  "model_type": "MobileNetV2 Transfer Learning"
+}

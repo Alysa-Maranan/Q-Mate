@@ -1,0 +1,32 @@
+635: <option value="eggs" data-price="80">Quail Eggs (₱80/tray)</option>
+636: <option value="live_quail" data-price="180">Live Quail (₱180/pc)</option>
+637: <option value="dressed_quail" data-price="250">Dressed Quail (₱250/pc)</option>
+646: <input type="number" class="form-input" id="salesPrice" placeholder="₱80.00" value="80">
+655: <span id="salesTotalAmount" style="font-size: 1.25rem; font-weight: 800; color: #4e342e;">₱0.00</spa
+1329: <td style="padding: 1rem; font-size: 0.9rem; color: #000;">₱${item.price.toFixed(2)}</td>
+1330: <td style="padding: 1rem; font-size: 0.9rem; color: #000; font-weight: 700;">₱${item.total.toLocaleS
+1618: { label: 'Total Revenue', value: document.getElementById('analyticsTotalRevenue')?.textContent || '₱
+1838: updateElement('analyticsTotalRevenue', `₱${data.total_revenue.toLocaleString()}.00`);
+2248: <td style="padding: 1rem; font-size: 0.9rem; color: #000; font-weight: 700;">₱${product.revenue.toLo
+2303: totalRevenueEl.textContent = '₱' + sampleTotalRevenue.toLocaleString() + '.00';
+2342: if (totalSalesEl) totalSalesEl.textContent = '₱' + sampleTotalRevenue.toLocaleString() + '.00';
+2436: totalRevenueEl.textContent = '₱' + totalRevenue.toFixed(2);
+2471: if (totalSalesEl) totalSalesEl.textContent = '₱' + totalRevenue.toFixed(2);
+2567: ₱${parseFloat(product.price).toFixed(2)}
+2636: addNotification('', `Price updated to ₱${parseFloat(newPrice).toFixed(2)}`);
+2812: document.getElementById('salesTotalAmount').textContent = '₱' + total.toFixed(2);
+2996: if (summaryEggsIncome) summaryEggsIncome.textContent = '₱' + dailyData.eggsIncome.toFixed(2);
+2997: if (summaryQuailIncome) summaryQuailIncome.textContent = '₱' + dailyData.quailIncome.toFixed(2);
+2998: if (summaryTotalIncome) summaryTotalIncome.textContent = '₱' + (dailyData.eggsIncome + dailyData.qua
+3524: if (incomeCard) incomeCard.textContent = '₱' + totalIncome.toFixed(2);
+3684: <td style="padding: 1rem; font-size: 0.88rem; color: #000;">₱${record.price.toFixed(2)}</td>
+3685: <td style="padding: 1rem; font-size: 0.88rem; color: #000; font-weight: 700;">₱${record.total.toFixe
+4299: message: `Delete sales record: ${record.quantity} ${productName} for ₱${record.total.toFixed(2)}?`,
+4758: message: `Record sale of ${quantity} ${productNames[productType]} for ₱${total.toFixed(2)}?`,
+4828: addActivity('', 'Sale Recorded', `${productNames[productType]} x${quantity} = ₱${total.toFixed(2)}`)
+4829: addNotification('', `Sale: ${quantity} ${productNames[productType]} = ₱${total.toFixed(2)}`);
+4843: message: `${productNames[productType]} x${quantity} = ₱${total.toFixed(2)} saved to database`,
+4939: summaryHTML += '</style>₱</head><body>';
+5664: if (totalRevenueEl) totalRevenueEl.textContent = '₱' + totalRevenue.toFixed(2);
+5695: if (totalSalesEl) totalSalesEl.textContent = '₱' + totalRevenue.toFixed(2);
+5982: amount: `₱${record.total.toFixed(2)}`,

@@ -1,0 +1,211 @@
+╔═══════════════════════════════════════════════════════════════╗
+║         ANIMATION TROUBLESHOOTING GUIDE                       ║
+╚═══════════════════════════════════════════════════════════════╝
+
+PROBLEMA: Animation hindi nawawala kahit tapos na ang feeding
+
+═══════════════════════════════════════════════════════════════
+
+STEP 1: I-CHECK ANG SERVO BRIDGE
+---------------------------------
+
+Run: check_servo_bridge.bat
+
+Dapat makita mo:
+[OK] Servo Bridge is RUNNING
+
+Kung hindi:
+→ Run: start_feeder_system.bat
+
+═══════════════════════════════════════════════════════════════
+
+STEP 2: I-CHECK ANG BROWSER CONSOLE
+------------------------------------
+
+1. Buksan ang browser (Chrome/Edge)
+2. Press F12 (Developer Tools)
+3. Click "Console" tab
+4. Trigger manual feed
+5. Dapat makita mo:
+
+[Manual Feed] Starting animation: 10 seconds, cage 1
+[Animation] Started - polling for completion...
+[Animation] Poll #1: {active: true, duration: 10, cage: 1}
+[Animation] Poll #2: {active: true, duration: 10, cage: 1}
+...
+[Animation] Poll #X: {active: false}
+[Animation] File deleted - closing animation
+[Animation] Hiding in 1 second...
+[Animation] Closed - reloading page...
+
+═══════════════════════════════════════════════════════════════
+
+STEP 3: I-CHECK ANG ANIMATION FILE
+-----------------------------------
+
+Habang nag-feed:
+→ Check kung may file: storage\logs\animation_trigger.json
+→ Dapat may laman: {"active":true,"duration":10,...}
+
+Pagkatapos ng feed:
+→ File dapat WALA NA (deleted by servo_bridge)
+→ Kung nandoon pa, may problema sa servo_bridge
+
+═══════════════════════════════════════════════════════════════
+
+COMMON PROBLEMS & SOLUTIONS
+----------------------------
+
+❌ PROBLEM: Animation hindi lumalabas
+   SOLUTION:
+   1. Check servo bridge: check_servo_bridge.bat
+   2. Check browser console for errors
+   3. Restart: stop_feeder_system.bat then start_feeder_system.bat
+
+❌ PROBLEM: Animation hindi nawawala
+   SOLUTION:
+   1. Check browser console - may error ba?
+   2. Check kung na-delete na ang animation_trigger.json
+   3. Kung nandoon pa ang file:
+      → Servo bridge hindi nag-delete
+      → Check servo bridge output
+      → May error ba sa servo connection?
+   4. Manual fix: del storage\logs\animation_trigger.json
+
+❌ PROBLEM: "Poll #X: {active: true}" paulit-ulit
+   SOLUTION:
+   → Animation file hindi na-delete ng servo bridge
+   → Check servo bridge logs
+   → Check COM port connection
+   → Restart servo bridge
+
+❌ PROBLEM: "Poll error" sa console
+   SOLUTION:
+   → Network error or API not responding
+   → Check if Laravel is running
+   → Check routes/api.php
+
+═══════════════════════════════════════════════════════════════
+
+DIAGNOSTIC TEST
+---------------
+
+Run: test_animation.bat
+
+Ito ay mag-test ng:
+1. Servo bridge status
+2. Animation file creation
+3. File persistence
+4. Cleanup
+
+═══════════════════════════════════════════════════════════════
+
+MANUAL TESTING STEPS
+---------------------
+
+1. START SERVO BRIDGE
+   → start_feeder_system.bat
+
+2. OPEN BROWSER
+   → Go to Feeder Management
+   → Open Console (F12)
+
+3. TRIGGER MANUAL FEED
+   → Click "Manual Feed" tab
+   → Select cage and duration
+   → Click "Feed Now"
+
+4. WATCH CONSOLE
+   → Should see animation start
+   → Should see polling messages
+   → Should see "File deleted - closing animation"
+   → Should see page reload
+
+5. CHECK RESULT
+   → Animation should disappear
+   → Page should reload
+   → Feed history should update
+
+═══════════════════════════════════════════════════════════════
+
+EXPECTED BEHAVIOR
+-----------------
+
+MANUAL FEED:
+1. User clicks "Feed Now"
+2. Animation appears immediately
+3. Browser polls every 500ms
+4. Servo bridge deletes file after duration
+5. Browser detects deletion
+6. Animation hides after 1 second
+7. Page reloads
+
+SCHEDULED FEED:
+1. Browser checks every 2 seconds
+2. When feeding time arrives, notification appears
+3. User clicks "OK, Got it"
+4. Animation appears
+5. Same as manual feed from step 3
+
+═══════════════════════════════════════════════════════════════
+
+DEBUGGING TIPS
+--------------
+
+1. ALWAYS check browser console first
+   → Most errors show here
+   → Look for red error messages
+
+2. Check servo bridge output
+   → Should show "Animation file created"
+   → Should show "Animation file deleted"
+   → Should show "Servo closed successfully"
+
+3. Check animation file manually
+   → storage\logs\animation_trigger.json
+   → Should exist during feeding
+   → Should NOT exist after feeding
+
+4. Check timing
+   → Animation should close ~1 second after servo completes
+   → If longer, check polling interval
+   → If immediate, file was deleted too early
+
+═══════════════════════════════════════════════════════════════
+
+FORCE FIX (Emergency)
+---------------------
+
+Kung stuck ang animation:
+
+1. Delete animation file manually:
+   del storage\logs\animation_trigger.json
+
+2. Refresh browser:
+   Press F5
+
+3. Restart servo bridge:
+   stop_feeder_system.bat
+   start_feeder_system.bat
+
+═══════════════════════════════════════════════════════════════
+
+CONTACT INFO
+------------
+
+Kung hindi pa rin gumagana after troubleshooting:
+
+1. Check all logs:
+   - storage\logs\laravel.log
+   - Browser console (F12)
+   - Servo bridge output
+
+2. Run diagnostic:
+   test_animation.bat
+
+3. Provide error messages from:
+   - Browser console
+   - Servo bridge output
+   - Laravel logs
+
+═══════════════════════════════════════════════════════════════

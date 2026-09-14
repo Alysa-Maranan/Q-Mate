@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Servo Diagnostic Tool</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            padding: 20px; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: #f5f5f5;
+        }
+        h1 { color: #2e7d32; }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn { 
+            padding: 12px 24px; 
+            font-size: 16px; 
+            margin: 5px; 
+            cursor: pointer; 
+            border: none;
+            border-radius: 4px;
+        }
+        .btn-primary { background: #2196F3; color: white; }
+        .btn-success { background: #4CAF50; color: white; }
+        .btn-warning { background: #ff9800; color: white; }
+        #result { 
+            margin-top: 20px; 
+            padding: 15px; 
+            background: #f0f0f0; 
+            display: none;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success { background: #dff0d8 !important; }
+        .error { background: #f2dede !important; }
+        .info { background: #d9edf7 !important; }
+        .log-entry {
+            padding: 5px 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .log-entry.error { color: #d32f2f; }
+        .log-entry.success { color: #388e3c; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Servo Motor Diagnostic Tool</h1>
+    
+    <div class="card">
+        <h3>Step 1: Check System Requirements</h3>
+        <button class="btn btn-primary" onclick="checkPython()">Check Python & pyserial</button>
+        <div id="python-result" class="result"></div>
+    </div>
+
+    <div class="card">
+        <h3>Step 2: Find ESP32 Port</h3>
+        <button class="btn btn-primary" onclick="findPorts()">Find COM Ports</button>
+        <div id="ports-result" class="result"></div>
+    </div>
+
+    <div class="card">
+        <h3>Step 3: Test Servo via Serial (USB)</h3>
+        <p>Select Port: 
+            <select id="port-select">
+                <option value="COM4">COM4 (Default)</option>
+                <option value="COM3">COM3</option>
+                <option value="COM5">COM5</option>
+                <option value="COM6">COM6</option>
+                <option value="COM1">COM1</option>
+                <option value="COM2">COM2</option>
+            </select>
+        </p>
+        <button class="btn btn-success" onclick="testServo()">Test Servo (5 seconds)</button>
+        <div id="servo-result" class="result"></div>
+    </div>
+
+    <div class="card">
+        <h3>Step 4: Test via Laravel App</h3>
+        <p>Test through the web application:</p>
+        <button class="btn btn-warning" onclick="testViaLaravel()">Test Manual Feed (via Serial)</button>
+        <div id="laravel-result" class="result"></div>
+    </div>
+
+    <script>
+        function showResult(id, html, className) {
+            const el = document.getElementById(id);
+            el.style.display = 'block';
+            el.className = className || '';
+            el.innerHTML = html;
+        }
+
+        async function checkPython() {
+            showResult('python-result', 'Checking Python...', 'info');
+            
+            try {
+                const response = await fetch('/feeder/test-servo');
+                const data = await response.json();
+                
+                let html = '<strong>Python Status:</strong><br>';
+                html += 'Output: ' + (data.output || 'N/A').replace(/\n/g, '<br>');
+                
+                if (data.success) {
+                    html += '<br><span style="color:green">✓ Servo test passed on port: ' + data.port + '</span>';
+                    showResult('python-result', html, 'success');
+                } else {
+                    html += '<br><span style="color:red">✗ Servo test failed</span>';
+                    html += '<br>Tried ports: ' + (data.tried_ports || []).join(', ');
+                    html += '<br><strong>Error:</strong> ' + data.message;
+                    showResult('python-result', html, 'error');
+                }
+            } catch (e) {
+                showResult('python-result', 'Error: ' + e.message, 'error');
+            }
+        }
+
+        async function findPorts() {
+            showResult('ports-result', 'Scanning ports...', 'info');
+            
+            // This will try all ports
+            const ports = ['COM4', 'COM3', 'COM5', 'COM6', 'COM1', 'COM2'];
+            let results = [];
+            
+            for (const port of ports) {
+                try {
+                    const response = await fetch('/feeder/test-servo?port=' + port);
+                    const data = await response.json();
+                    if (data.success) {
+                        results.push(port + ' - ✓ WORKS');
+                    }
+                } catch(e) {
+                    results.push(port + ' - error');
+                }
+            }
+            
+            showResult('ports-result', '<strong>Port Scan Results:</strong><br>' + results.join('<br>'), 'info');
+        }
+
+        async function testServo() {
+            const port = document.getElementById('port-select').value;
+            showResult('servo-result', 'Testing servo on ' + port + '...', 'info');
+            
+            try {
+                const response = await fetch('/feeder/test-servo?port=' + port);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('servo-result', 
+                        '<strong>✓ SUCCESS!</strong><br>' +
+                        'Port: ' + data.port + '<br>' +
+                        'Output: ' + data.output.replace(/\n/g, '<br>'), 
+                        'success');
+                } else {
+                    showResult('servo-result', 
+                        '<strong>✗ FAILED</strong><br>' +
+                        'Tried: ' + data.tried_ports.join(', ') + '<br>' +
+                        'Message: ' + data.message + '<br>' +
+                        '<br><strong>Troubleshooting:</strong><br>' +
+                        '1. Make sure ESP32 is connected via USB<br>' +
+                        '2. Check that Arduino sketch is uploaded<br>' +
+                        '3. Verify COM port in Device Manager', 
+                        'error');
+                }
+            } catch (e) {
+                showResult('servo-result', 'Error: ' + e.message, 'error');
+            }
+        }
+
+        async function testViaLaravel() {
+            showResult('laravel-result', 'Testing via Laravel app...', 'info');
+            
+            try {
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                
+                const response = await fetch('/feeder/manual/feed?duration=3&force_serial=1', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                showResult('laravel-result', 
+                    '<strong>Laravel Response:</strong><br>' +
+                    JSON.stringify(data, null, 2), 
+                    data.status === 'ok' ? 'success' : 'error');
+            } catch (e) {
+                showResult('laravel-result', 'Error: ' + e.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
