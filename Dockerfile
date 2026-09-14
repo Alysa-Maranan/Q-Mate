@@ -125,6 +125,14 @@ EXPOSE 80
 
 
 # ============================================
-# Start Nginx + PHP-FPM
+# Startup Script
 # ============================================
-CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+COPY docker/start.sh /start.sh
+
+RUN chmod +x /start.sh
+
+
+# ============================================
+# Start Q-MATE
+# ============================================
+CMD ["/start.sh"]
