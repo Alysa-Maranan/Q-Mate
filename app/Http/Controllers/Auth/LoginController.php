@@ -1,52 +1,78 @@
-public function login(Request $request)
+<?php
+
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class LoginController extends Controller
 {
-    try {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+    public function showLoginForm()
+    {
+        return view('login');
+    }
 
-        \Log::info('LOGIN STEP 1: Validation passed');
+    public function login(Request $request)
+    {
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+            ]);
 
-        $result = Auth::attempt(
-            [
-                'email' => $request->email,
-                'password' => $request->password
-            ],
-            (bool) $request->remember
-        );
+            \Log::info('LOGIN STEP 1: Validation passed');
 
-        \Log::info('LOGIN STEP 2: Auth attempt finished', [
-            'result' => $result
-        ]);
+            $result = Auth::attempt(
+                [
+                    'email' => $request->email,
+                    'password' => $request->password
+                ],
+                (bool) $request->remember
+            );
 
-        if ($result) {
-            \Log::info('LOGIN STEP 3: Authentication successful');
+            \Log::info('LOGIN STEP 2: Auth attempt finished', [
+                'result' => $result
+            ]);
 
-            $request->session()->regenerate();
+            if ($result) {
+                \Log::info('LOGIN STEP 3: Authentication successful');
 
-            \Log::info('LOGIN STEP 4: Session regenerated');
+                $request->session()->regenerate();
 
-            return redirect()->intended('/dashboard');
+                \Log::info('LOGIN STEP 4: Session regenerated');
+
+                return redirect()->intended('/dashboard');
+            }
+
+            \Log::info('LOGIN STEP 5: Invalid credentials');
+
+            return back()->withErrors([
+                'email' => 'The provided credentials do not match our records.',
+            ]);
+
+        } catch (\Throwable $e) {
+
+            \Log::error('LOGIN ERROR', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'error' => 'Login failed',
+                'message' => $e->getMessage(),
+            ], 500);
         }
+    }
 
-        \Log::info('LOGIN STEP 5: Invalid credentials');
+    public function logout(Request $request)
+    {
+        Auth::logout();
 
-        return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
-        ]);
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-    } catch (\Throwable $e) {
-
-        \Log::error('LOGIN ERROR', [
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-        ]);
-
-        return response()->json([
-            'error' => 'Login failed',
-            'message' => $e->getMessage(),
-        ], 500);
+        return redirect('/');
     }
 }
