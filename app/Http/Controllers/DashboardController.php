@@ -28,7 +28,7 @@ class DashboardController extends Controller
         $today = now()->toDateString();
 
         $todayRow = \App\Models\EggCollection::query()
-            ->whereDate('collection_time', $today)
+            ->whereDate('created_at', $today)
             ->selectRaw('COALESCE(SUM(total_eggs),0) as total_eggs, COALESCE(SUM(good_eggs),0) as good_eggs, COALESCE(SUM(cracked_eggs),0) as cracked_eggs')
             ->first();
 
