@@ -156,13 +156,13 @@ class EggCollectionController extends Controller
             $query = EggCollection::query();
 
             if ($request->filled('date')) {
-                $query->whereDate('collection_time', $request->input('date'));
+                $query->whereDate('created_at', $request->input('date'));
             } elseif ($request->filled('days')) {
                 $days = max(1, min(365, (int) $request->input('days')));
-                $query->where('collection_time', '>=', now()->subDays($days - 1)->startOfDay());
+                $query->where('created_at', '>=', now()->subDays($days - 1)->startOfDay());
             }
 
-            $collections = $query->orderBy('collection_time', 'desc')->limit(500)->get();
+            $collections = $query->orderBy('created_at', 'desc')->limit(500)->get();
 
             return response()->json([
                 'success' => true,
@@ -193,8 +193,8 @@ class EggCollectionController extends Controller
             }
 
             $rows = EggCollection::query()
-                ->where('collection_time', '>=', now()->subDays($days - 1)->startOfDay())
-                ->selectRaw("DATE(collection_time) as day, COALESCE(SUM(total_eggs),0) as total_eggs, COALESCE(SUM(good_eggs),0) as good_eggs, COALESCE(SUM(cracked_eggs),0) as cracked_eggs")
+                ->where('created_at', '>=', now()->subDays($days - 1)->startOfDay())
+                ->selectRaw("DATE(created_at) as day, COALESCE(SUM(total_eggs),0) as total_eggs, COALESCE(SUM(good_eggs),0) as good_eggs, COALESCE(SUM(cracked_eggs),0) as cracked_eggs")
                 ->groupBy('day')
                 ->orderBy('day')
                 ->get()
