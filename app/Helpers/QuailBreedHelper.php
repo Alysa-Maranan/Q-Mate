@@ -30,9 +30,18 @@ class QuailBreedHelper
             true
         );
 
+        // Make sure the setting contains a valid array
+        if (!is_array($breedIds)) {
+            $breedIds = [1, 1];
+        }
+
         $breeds = [];
 
         foreach ($breedIds as $breedId) {
+            if (!$breedId) {
+                continue;
+            }
+
             $breed = QuailBreed::find($breedId);
 
             if ($breed) {
@@ -40,11 +49,17 @@ class QuailBreedHelper
             }
         }
 
-        // If no breeds found, return default
+        // Remove duplicate breeds while preserving the selected order
+        $breeds = collect($breeds)
+            ->unique('id')
+            ->values()
+            ->all();
+
+        // If no valid breeds are found, use the first available breed
         if (empty($breeds)) {
             $default = QuailBreed::first();
 
-            return [$default, $default];
+            return $default ? [$default] : [];
         }
 
         return $breeds;
