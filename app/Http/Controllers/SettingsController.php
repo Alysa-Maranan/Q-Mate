@@ -13,7 +13,7 @@ class SettingsController extends Controller
     {
         $currentBreed = QuailBreed::getCurrent();
         $currentBreeds = QuailBreedHelper::getCurrentBreeds();
-        $breeds = QuailBreed::where('is_active', true)->orderBy('name')->get();
+        $breeds = QuailBreed::whereRaw('is_active = true')->orderBy('name')->get();
         $farm = [
             'name'             => FarmSetting::get('farm_name', "Escalona's Farm") ?: "Escalona's Farm",
             'address'          => FarmSetting::get('farm_address', 'Pagkakaisa, Naujan, Or. Mindoro') ?: 'Pagkakaisa, Naujan, Or. Mindoro',

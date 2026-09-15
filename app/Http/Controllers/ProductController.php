@@ -9,7 +9,7 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::where('is_active', true)->get();
+        $products = Product::whereRaw('is_active = true')->get();
         return view('products.index', compact('products'));
     }
 
@@ -93,7 +93,7 @@ class ProductController extends Controller
             }
             
             // Try to get products from database
-            $products = Product::where('is_active', true)->get();
+            $products = Product::whereRaw('is_active = true')->get();
             
             if ($products->isNotEmpty()) {
                 $dbProducts = $products->map(function($product) {

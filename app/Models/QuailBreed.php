@@ -37,7 +37,7 @@ class QuailBreed extends Model
 
     public static function getActive()
     {
-        return static::where('is_active', true)->orderBy('name')->get();
+        return static::whereRaw('is_active = true')->orderBy('name')->get();
     }
 
     public static function getCurrent()

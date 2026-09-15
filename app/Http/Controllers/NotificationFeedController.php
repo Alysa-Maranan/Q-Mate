@@ -260,7 +260,7 @@ class NotificationFeedController extends Controller
                 ]);
             }
 
-            Product::where('is_active', true)
+            Product::whereRaw('is_active = true')
                 ->where('stock', '<=', 5)
                 ->orderBy('stock')
                 ->limit(5)
@@ -374,3 +374,4 @@ class NotificationFeedController extends Controller
         ]);
     }
 }
+

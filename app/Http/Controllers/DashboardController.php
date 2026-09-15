@@ -158,7 +158,7 @@ class DashboardController extends Controller
 
     private function getInventoryStatus(): array
     {
-        $products = Product::where('is_active', true)->orderBy('name')->get(['name', 'stock', 'unit']);
+        $products = Product::whereRaw('is_active = true')->orderBy('name')->get(['name', 'stock', 'unit']);
 
         $outOfStock = $products->filter(fn ($p) => (int) $p->stock <= 0);
         $lowStock = $products->filter(fn ($p) => (int) $p->stock > 0 && (int) $p->stock <= 10);
