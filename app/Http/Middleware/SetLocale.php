@@ -10,6 +10,8 @@ class SetLocale
 {
     public function handle(Request $request, Closure $next): Response
     {
+        error_log('Q-MATE REQUEST START');
+
         error_log(
             'Q-MATE REQUEST: ' .
             $request->method() .
@@ -17,11 +19,32 @@ class SetLocale
             $request->path()
         );
 
-        // Set locale from session if available
-        if (session()->has('locale')) {
-            app()->setLocale(session('locale'));
-        }
+        try {
+            if ($request->hasSession() && session()->has('locale')) {
+                app()->setLocale(session('locale'));
+            }
 
-        return $next($request);
+            error_log('Q-MATE REQUEST BEFORE NEXT');
+
+            $response = $next($request);
+
+            error_log('Q-MATE REQUEST AFTER NEXT');
+
+            return $response;
+
+        } catch (\Throwable $e) {
+            error_log(
+                'Q-MATE MIDDLEWARE ERROR: ' .
+                get_class($e) .
+                ' | ' .
+                $e->getMessage() .
+                ' | FILE: ' .
+                $e->getFile() .
+                ' | LINE: ' .
+                $e->getLine()
+            );
+
+            throw $e;
+        }
     }
 }
