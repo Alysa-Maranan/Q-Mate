@@ -82,7 +82,10 @@ WORKDIR /var/www/html
 COPY --from=vendor /app /var/www/html
 
 # Remove local Laravel cache containing Windows paths
-RUN rm -f /var/www/html/bootstrap/cache/*.php
+RUN rm -f /var/www/html/bootstrap/cache/*.php \
+    && mkdir -p /var/www/html/storage/framework/views \
+    && mkdir -p /var/www/html/storage/framework/cache \
+    && mkdir -p /var/www/html/storage/framework/sessions
 
 # Copy Vite production assets
 COPY --from=assets /app/public/build /var/www/html/public/build
