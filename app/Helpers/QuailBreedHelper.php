@@ -8,11 +8,17 @@ use App\Models\FarmSetting;
 class QuailBreedHelper
 {
     public static function getCurrentBreed()
-    {
-        $breedId = FarmSetting::get('current_breed_id', '1');
+{
+    $breedId = FarmSetting::get('current_breed_id', '1');
 
-        return QuailBreed::find($breedId) ?? QuailBreed::first();
+    $breed = QuailBreed::find($breedId);
+
+    if ($breed) {
+        return $breed;
     }
+
+    return QuailBreed::first();
+}
 
     public static function setCurrentBreed($breedId)
     {
