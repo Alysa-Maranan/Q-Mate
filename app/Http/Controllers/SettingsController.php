@@ -11,7 +11,7 @@ class SettingsController extends Controller
 {
     public function index()
     {
-        $currentBreed = QuailBreed::getCurrent();
+        $currentBreed = QuailBreedHelper::getCurrentBreed();
         $currentBreeds = QuailBreedHelper::getCurrentBreeds();
         $breeds = QuailBreed::whereRaw('is_active = true')->orderBy('name')->get();
         $farm = [

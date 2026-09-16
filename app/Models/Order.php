@@ -20,6 +20,7 @@ class Order extends Model
         'quantity',
         'notes',
         'status',
+        'order_type',
         'cancellation_reason',
         'cancelled_at',
     ];
@@ -45,22 +46,23 @@ class Order extends Model
     {
         // Normalize product name to match keys (case-insensitive)
         $productKey = strtolower(str_replace(' ', '_', $this->product));
-        
+
         // Also try direct match first
         $price = $this->productPrices[$this->product] ?? 0;
-        
+
         // If price is 0, try normalized key
         if ($price === 0) {
             $price = $this->productPrices[$productKey] ?? 0;
         }
-        
+
         // Handle quantity - extract number if stored as string like "5 trays"
         $quantity = $this->quantity;
+
         if (is_string($quantity)) {
             preg_match('/(\d+)/', $quantity, $matches);
             $quantity = isset($matches[1]) ? (int)$matches[1] : 1;
         }
-        
+
         return $price * ($quantity ?? 0);
     }
 
@@ -82,7 +84,7 @@ class Order extends Model
         do {
             $number = 'ORD-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
         } while (self::where('order_number', $number)->exists());
-        
+
         return $number;
     }
 
@@ -99,6 +101,7 @@ class Order extends Model
         ];
 
         $product = trim($this->product);
+
         return $names[$product] ?? $product;
     }
 
@@ -123,16 +126,27 @@ class Order extends Model
     {
         $images = [
             'quail_eggs' => 'https://www.instacart.com/company/wp-content/uploads/2023/01/quail-eggs.jpg',
-            'quail chicks' => 'https://media.istockphoto.com/id/1289671737/photo/young-quail-isolated-on-white-background.jpg',
+
+            'quail_chicks' => 'https://media.istockphoto.com/id/1289671737/photo/young-quail-isolated-on-white-background.jpg',
+
             'live_quail' => 'https://media.istockphoto.com/id/1289671737/photo/young-quail-isolated-on-white-background.jpg',
+
             'live quail' => 'https://media.istockphoto.com/id/1289671737/photo/young-quail-isolated-on-white-background.jpg',
+
             'dressed_quail' => 'http://wbldc.in/wp-content/uploads/2021/03/quail.jpg',
+
             'dressed quail' => 'http://wbldc.in/wp-content/uploads/2021/03/quail.jpg',
+
             'quail_meat' => 'http://wbldc.in/wp-content/uploads/2021/03/quail.jpg',
+
             'quail meat' => 'http://wbldc.in/wp-content/uploads/2021/03/quail.jpg',
+
             'Fresh Quail Eggs' => 'https://www.instacart.com/company/wp-content/uploads/2023/01/quail-eggs.jpg',
+
             'Live Quail' => 'https://media.istockphoto.com/id/1289671737/photo/young-quail-isolated-on-white-background.jpg',
+
             'Dressed Quail' => 'http://wbldc.in/wp-content/uploads/2021/03/quail.jpg',
+
             'Quail Chicks' => 'https://media.istockphoto.com/id/1289671737/photo/young-quail-isolated-on-white-background.jpg',
         ];
 
@@ -146,12 +160,14 @@ class Order extends Model
 
         // Try lowercase match
         $productLower = strtolower($product);
+
         if (isset($images[$productLower])) {
             return $images[$productLower];
         }
 
         // Try normalized key (replace spaces with underscores)
         $productNormalized = str_replace(' ', '_', $productLower);
+
         if (isset($images[$productNormalized])) {
             return $images[$productNormalized];
         }
@@ -204,10 +220,13 @@ class Order extends Model
 
         // Extract numeric quantity from quantity string (e.g., "5 trays" -> 5)
         preg_match('/(\d+)/', $this->quantity, $matches);
+
         $numericQuantity = isset($matches[1]) ? (int)$matches[1] : 1;
 
         // Calculate price per unit
-        $pricePerUnit = $this->total_amount ? ($this->total_amount / $numericQuantity) : 0;
+        $pricePerUnit = $this->total_amount
+            ? ($this->total_amount / $numericQuantity)
+            : 0;
 
         // Create sale record
         Sale::create([

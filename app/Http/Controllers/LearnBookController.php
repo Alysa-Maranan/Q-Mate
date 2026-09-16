@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FarmSetting;
 use App\Models\QuailBreed;
 use App\Helpers\QuailBreedHelper;
 use Illuminate\Http\Request;
@@ -14,10 +13,10 @@ class LearnBookController extends Controller
      */
     public function index()
     {
-        // Get the currently selected breed
-        $currentBreed = QuailBreed::getCurrent();
+        // Get the currently selected breed with a safe fallback
+        $currentBreed = QuailBreedHelper::getCurrentBreed();
         $currentBreeds = QuailBreedHelper::getCurrentBreeds();
-        
+
         return view('feeder.learnbook', compact('currentBreed', 'currentBreeds'));
     }
 }

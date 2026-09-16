@@ -203,8 +203,7 @@
                         Total: <span style="font-weight: 600; font-size: 1.2rem; color: #6d4c41;">{{ $order->formatted_total }}</span>
                     </div>
                     <div style="display: flex; gap: 0.5rem;">
-                        <button onclick="showOrderDetailsModal(this)" data-order="{{ json_encode([ 'id' => str_pad($order->id, 6, '0', STR_PAD_LEFT), 'name' => $order->name, 'phone' => $order->phone, 'address' => $order->address ?? 'Not provided', 'product' => ucwords(str_replace('_', ' ', $order->product)), 'quantity' => $order->quantity, 'total' => $order->formatted_total, 'status' => ($order->status == 'to_ship' ? 'To Ship' : ucfirst($order->status)), 'date' => $order->created_at->format('M d, Y h:i A') ]) }}" style="padding: 0.4rem 1.2rem; border: 1px solid #ccc; color: #555; text-decoration: none; border-radius: 4px; font-weight: 500; font-size: 0.85rem; background: white; transition: all 0.2s; cursor: pointer;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='white'">View Order</button>
-                    </div>
+<button onclick="showOrderDetailsModal(this)" data-order="{{ json_encode([ 'id' => str_pad($order->id, 6, '0', STR_PAD_LEFT), 'name' => $order->name, 'phone' => $order->phone, 'address' => $order->address ?? 'Not provided', 'product' => ucwords(str_replace('_', ' ', $order->product)), 'quantity' => $order->quantity, 'total' => $order->formatted_total, 'status' => ($order->status == 'to_ship' ? 'To Ship' : ucfirst($order->status)), 'date' => $order->created_at->format('M d, Y h:i A'), 'order_type' => $order->order_type ]) }}" style="padding: 0.4rem 1.2rem; border: 1px solid #ccc; color: #555; text-decoration: none; border-radius: 4px; font-weight: 500; font-size: 0.85rem; background: white; transition: all 0.2s; cursor: pointer;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='white'">View Order</button>                    </div>
                 </div>
             </div>
             @endforeach
@@ -256,8 +255,7 @@
                         Total: <span style="font-weight: 600; font-size: 1.2rem; color: #6d4c41;">{{ $order->formatted_total }}</span>
                     </div>
                     <div style="display: flex; gap: 0.5rem;">
-                        <button onclick="showOrderDetailsModal(this)" data-order="{{ json_encode([ 'id' => str_pad($order->id, 6, '0', STR_PAD_LEFT), 'name' => $order->name, 'phone' => $order->phone, 'address' => $order->address ?? 'Not provided', 'product' => ucwords(str_replace('_', ' ', $order->product)), 'quantity' => $order->quantity, 'total' => $order->formatted_total, 'status' => ucfirst($order->status), 'date' => $order->created_at->format('M d, Y h:i A'), 'cancellation_reason' => $order->cancellation_reason ?? '' ]) }}" style="padding: 0.4rem 1.2rem; border: 1px solid #ccc; color: #555; text-decoration: none; border-radius: 4px; font-weight: 500; font-size: 0.85rem; background: white; transition: all 0.2s; cursor: pointer;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='white'">Review Order</button>
-                    </div>
+                        <button onclick="showOrderDetailsModal(this)" data-order="{{ json_encode([ 'id' => str_pad($order->id, 6, '0', STR_PAD_LEFT), 'name' => $order->name, 'phone' => $order->phone, 'address' => $order->address ?? 'Not provided', 'product' => ucwords(str_replace('_', ' ', $order->product)), 'quantity' => $order->quantity, 'total' => $order->formatted_total, 'status' => ucfirst($order->status), 'date' => $order->created_at->format('M d, Y h:i A'), 'cancellation_reason' => $order->cancellation_reason ?? '', 'order_type' => $order->order_type ]) }}" style="padding: 0.4rem 1.2rem; border: 1px solid #ccc; color: #555; text-decoration: none; border-radius: 4px; font-weight: 500; font-size: 0.85rem; background: white; transition: all 0.2s; cursor: pointer;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='white'">Review Order</button>                    </div>
                 </div>
             </div>
             @endforeach
@@ -372,8 +370,10 @@
 
                         <span style="color: #888;">Product:</span> <span id="modalOrderProduct" style="color: #333;"></span>
                         <span style="color: #888;">Quantity:</span> <span id="modalOrderQuantity" style="color: #333;"></span>
+                        <span style="color: #888;">Order Type:</span> <span id="modalOrderType" style="color: #333;"></span>
+                        <span id="modalOrderLocationLabel" style="color: #888; display: none;">Location:</span>
+                        <span id="modalOrderLocation" style="color: #333; display: none;">Pagkakaisa, Naujan</span>
                         <span style="color: #888; margin-top: 0.5rem;">Total:</span> <strong id="modalOrderTotal" style="color: #6d4c41; font-size: 1.2rem; margin-top: 0.5rem;"></strong>
-                    </div>
                 </div>
 
                 <div id="cancellationReasonSection" style="background: #fff8f8; padding: 1rem; border-radius: 8px; border: 1px solid #ffcdd2; margin-top: 1rem; display: none;">
@@ -400,6 +400,8 @@
 </div>
 </div>
 
+
+
 <script>
 // Order Details Modal Functions
 let currentOrderIdForModal = null;
@@ -416,6 +418,16 @@ function showOrderDetailsModal(btn) {
     document.getElementById('modalOrderDate').textContent = order.date;
     document.getElementById('modalOrderProduct').textContent = order.product;
     document.getElementById('modalOrderQuantity').textContent = order.quantity;
+    const orderType = (order.order_type || 'N/A').toUpperCase();
+    document.getElementById('modalOrderType').textContent = orderType;
+
+    const locationLabel = document.getElementById('modalOrderLocationLabel');
+    const location = document.getElementById('modalOrderLocation');
+
+    const isPickup = orderType === 'PICKUP';
+
+    locationLabel.style.display = isPickup ? '' : 'none';
+    location.style.display = isPickup ? '' : 'none';
     document.getElementById('modalOrderTotal').textContent = order.total;
     
     const statusSelect = document.getElementById('modalStatusSelect');

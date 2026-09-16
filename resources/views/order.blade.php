@@ -697,14 +697,24 @@ function showOrderModal(slug, name, price) {
                     </div>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
-                    <div>
-                        <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">Order Type</label>
-                        <select name="order_type" required style="width: 100%; padding: 0.85rem; border: 2px solid rgba(161,136,127,0.2); border-radius: 10px; font-family: 'Inter', sans-serif; color: #4e342e; font-weight: 500; font-size: 0.95rem; background: white; cursor: pointer; transition: border-color 0.2s;" onfocus="this.style.borderColor='#6d4c41'" onblur="this.style.borderColor='rgba(161,136,127,0.2)'">
-                            <option value="pickup">Pickup</option>
-                            <option value="delivery">Delivery</option>
-                        </select>
+                <div>
+                    <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">Order Type</label>
+
+                    <select name="order_type" id="orderTypeSelect" required
+                        style="width: 100%; padding: 0.85rem; border: 2px solid rgba(161,136,127,0.2); border-radius: 10px; font-family: 'Inter', sans-serif; color: #4e342e; font-weight: 500; font-size: 0.95rem; background: white; cursor: pointer; transition: border-color 0.2s;"
+                        onfocus="this.style.borderColor='#6d4c41'"
+                        onblur="this.style.borderColor='rgba(161,136,127,0.2)'"
+                        onchange="this.nextElementSibling.style.display = this.value === 'pickup' ? 'block' : 'none';">
+
+                        <option value="pickup">Pick Up</option>
+                        <option value="delivery">Delivery</option>
+                    </select>
+
+                    <div style="margin-top: 0.5rem; color: #6d4c41; font-size: 0.85rem;">
+                        Location: Pagkakaisa, Naujan
                     </div>
+                </div>
+                    
                     <div>
                         <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">Preferred Date</label>
                         <input type="date" name="preferred_date" required style="width: 100%; padding: 0.85rem; border: 2px solid rgba(161,136,127,0.2); border-radius: 10px; font-family: 'Inter', sans-serif; color: #4e342e; font-size: 0.95rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='#6d4c41'" onblur="this.style.borderColor='rgba(161,136,127,0.2)'">

@@ -28,11 +28,14 @@ class OrderController extends Controller
             'name' => $customer->name,
             'email' => $customer->email,
             'phone' => $customer->phone,
-            'address' => $request->order_type === 'delivery' ? $request->address : ($customer->barangay . ', ' . $customer->municipality . ', ' . $customer->province),
+            'address' => $request->order_type === 'delivery'
+                ? $request->address
+                : ($customer->barangay . ', ' . $customer->municipality . ', ' . $customer->province),
             'product' => $request->product,
             'quantity' => (int)$request->quantity,
             'notes' => $request->notes,
             'status' => 'pending',
+            'order_type' => $request->order_type,
         ]);
 
         return back()->with([
@@ -45,6 +48,7 @@ class OrderController extends Controller
     public function receipt($id)
     {
         $order = Order::where('customer_id', auth('customer')->id())->findOrFail($id);
+
         return view('order-receipt', compact('order'));
     }
 
@@ -58,7 +62,10 @@ class OrderController extends Controller
 
         // Only allow cancellation of pending orders
         if ($order->status !== 'pending') {
-            return response()->json(['success' => false, 'message' => 'Only pending orders can be cancelled.'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Only pending orders can be cancelled.'
+            ], 400);
         }
 
         $order->update([
@@ -81,7 +88,9 @@ class OrderController extends Controller
         ]);
 
         $order = Order::findOrFail($id);
-        $order->update(['status' => $request->status]);
+        $order->update([
+            'status' => $request->status
+        ]);
 
         return response()->json([
             'success' => true,
