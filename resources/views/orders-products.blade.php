@@ -590,12 +590,18 @@ function useDefaultProducts() {
 
 function displayProductsManagement(products) {
     const grid = document.getElementById('productsManagementGrid');
+
     if (!products || products.length === 0) {
         grid.innerHTML = '<div style="text-align: center; padding: 2rem; color: #8d6e63;">No products found</div>';
         return;
     }
+
+    // Keep products in fixed ID order
+    const orderedProducts = [...products].sort((a, b) => {
+        return Number(a.id) - Number(b.id);
+    });
     
-    grid.innerHTML = products.map(product => `
+    grid.innerHTML = orderedProducts.map(product => `
         <div style="background: #f5f0eb; border-radius: 12px; padding: 1.5rem; border: 2px solid #d7ccc8;">
             <h3 style="color: #6d4c41; margin: 0 0 0.5rem 0; font-size: 1.1rem;">${product.name}</h3>
             <p style="color: #8d6e63; font-size: 0.85rem; margin-bottom: 1rem;">Per ${product.unit}</p>
@@ -613,7 +619,6 @@ function displayProductsManagement(products) {
         </div>
     `).join('');
 }
-
 
 // --- Product Management Modal Logic ---
 let productIdToUpdate = null;
@@ -640,33 +645,70 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function updateProduct(productId) {
-    const price = document.getElementById('price-' + productId).value;
-    const stock = document.getElementById('stock-' + productId).value;
-    Promise.all([
-        fetch('/products/' + productId + '/price', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({ price: price })
-        }),
-        fetch('/products/' + productId + '/stock', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({ stock: stock })
-        })
-    ]).then(() => {
+async function updateProduct(productId) {
+    const priceInput = document.getElementById('price-' + productId);
+    const stockInput = document.getElementById('stock-' + productId);
+
+    if (!priceInput || !stockInput) {
+        alert('Product fields not found.');
+        return;
+    }
+
+    const price = priceInput.value;
+    const stock = stockInput.value;
+
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+        const [priceResponse, stockResponse] = await Promise.all([
+            fetch('/products/' + productId + '/price', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    price: price
+                })
+            }),
+
+            fetch('/products/' + productId + '/stock', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    stock: stock
+                })
+            })
+        ]);
+
+        const priceData = await priceResponse.json().catch(() => ({}));
+        const stockData = await stockResponse.json().catch(() => ({}));
+
+        if (!priceResponse.ok || !priceData.success) {
+            throw new Error(
+                priceData.message || 'Price update failed.'
+            );
+        }
+
+        if (!stockResponse.ok || !stockData.success) {
+            throw new Error(
+                stockData.message || 'Stock update failed.'
+            );
+        }
+
+        await loadProductsManagement();
+
         showProductSuccessModal();
-        loadProductsManagement();
-    }).catch(error => {
+
+    } catch (error) {
         console.error('Error updating product:', error);
-        alert('Error updating product');
-    });
+        alert('Error updating product: ' + error.message);
+    }
 }
 
 function showProductSuccessModal() {

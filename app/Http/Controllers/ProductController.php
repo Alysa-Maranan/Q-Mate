@@ -9,7 +9,10 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::whereRaw('is_active = true')->get();
+        $products = Product::whereRaw('is_active = true')
+            ->orderBy('id', 'asc')
+            ->get();
+
         return view('products.index', compact('products'));
     }
 
@@ -51,7 +54,7 @@ class ProductController extends Controller
     {
         try {
             $search = $request->get('search', '');
-            
+
             $defaultProducts = [
                 [
                     'id' => 1,
@@ -81,22 +84,34 @@ class ProductController extends Controller
                     'image_url' => 'http://wbldc.in/wp-content/uploads/2021/03/quail.jpg'
                 ]
             ];
-            
-            // Filter by search query if provided
+
+            // Filter default products by search query if provided
             if (!empty($search)) {
                 $searchLower = strtolower($search);
-                $defaultProducts = array_filter($defaultProducts, function($product) use ($searchLower) {
-                    return str_contains(strtolower($product['name']), $searchLower) ||
-                           str_contains(strtolower($product['slug']), $searchLower);
-                });
+
+                $defaultProducts = array_filter(
+                    $defaultProducts,
+                    function ($product) use ($searchLower) {
+                        return str_contains(
+                            strtolower($product['name']),
+                            $searchLower
+                        ) || str_contains(
+                            strtolower($product['slug']),
+                            $searchLower
+                        );
+                    }
+                );
+
                 $defaultProducts = array_values($defaultProducts);
             }
-            
-            // Try to get products from database
-            $products = Product::whereRaw('is_active = true')->get();
-            
+
+            // Get products from database in fixed ID order
+            $products = Product::whereRaw('is_active = true')
+                ->orderBy('id', 'asc')
+                ->get();
+
             if ($products->isNotEmpty()) {
-                $dbProducts = $products->map(function($product) {
+                $dbProducts = $products->map(function ($product) {
                     return [
                         'id' => $product->id,
                         'name' => $product->name,
@@ -107,20 +122,32 @@ class ProductController extends Controller
                         'image_url' => $product->image_url
                     ];
                 })->toArray();
-                
+
+                // Filter database products by search query if provided
                 if (!empty($search)) {
                     $searchLower = strtolower($search);
-                    $dbProducts = array_filter($dbProducts, function($product) use ($searchLower) {
-                        return str_contains(strtolower($product['name']), $searchLower) ||
-                               str_contains(strtolower($product['slug']), $searchLower);
-                    });
+
+                    $dbProducts = array_filter(
+                        $dbProducts,
+                        function ($product) use ($searchLower) {
+                            return str_contains(
+                                strtolower($product['name']),
+                                $searchLower
+                            ) || str_contains(
+                                strtolower($product['slug']),
+                                $searchLower
+                            );
+                        }
+                    );
+
                     $dbProducts = array_values($dbProducts);
                 }
-                
+
                 return response()->json($dbProducts);
             }
-            
+
             return response()->json($defaultProducts);
+
         } catch (\Exception $e) {
             return response()->json([]);
         }
