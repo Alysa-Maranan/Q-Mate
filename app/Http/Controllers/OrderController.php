@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
-        public function store(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
             'product' => 'required|string',
@@ -44,6 +44,31 @@ class OrderController extends Controller
             'order_success' => true,
             'order_id' => $order->id,
             'order_number' => 'ORD-' . str_pad($order->id, 6, '0', STR_PAD_LEFT),
+        ]);
+    }
+
+    public function receipt($id)
+    {
+        $order = Order::findOrFail($id);
+
+        return view('order-receipt', compact('order'));
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,confirmed,to_ship,completed,cancelled',
+        ]);
+
+        $order = Order::findOrFail($id);
+
+        $order->status = $request->status;
+        $order->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order status updated successfully.',
+            'status' => $order->status,
         ]);
     }
 }

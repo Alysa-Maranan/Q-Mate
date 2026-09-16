@@ -273,30 +273,96 @@ async function sendMessage() {
 
     if (!message && !imageFile) return;
 
+    const originalMessage = message;
+
     messageInput.value = '';
     sendBtn.disabled = true;
 
     try {
         const formData = new FormData();
-        if (message) formData.append('message', message);
-        if (imageFile) formData.append('image', imageFile);
+
+        if (message) {
+            formData.append('message', message);
+        }
+
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
 
         const response = await fetch('{{ route('customer.chat.send') }}', {
             method: 'POST',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
             body: formData
         });
 
         const data = await response.json();
+
         if (data.success) {
-            // Keep existing behavior: optimistically render text message only.
-            // Images will be shown after next refresh via addMessage() from API.
-            if (message) addMessage(message, 'customer', '{{ now()->format('h:i A') }}');
-            scrollToBottom();
+            // Clear selected file after successful sending
+            fileInput.value = '';
+            document.getElementById('filePreviewContainer').innerHTML = '';
+
+            // Refresh the message list so the sent message
+            // is loaded exactly once from the server.
+            const refreshResponse = await fetch('{{ route('customer.chat.messages') }}');
+            const refreshData = await refreshResponse.json();
+
+            if (refreshData.success) {
+                chatMessages.innerHTML = '';
+
+                if (refreshData.chats.length > 0) {
+                    let previousDate = null;
+
+                    refreshData.chats.forEach(chat => {
+                        const messageDate = new Date(chat.created_at).toISOString().split('T')[0];
+
+                        if (messageDate !== previousDate) {
+                            const dateSeparator = document.createElement('div');
+                            dateSeparator.className = 'date-separator';
+                            dateSeparator.innerHTML = `
+                                <span>${new Date(chat.created_at).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: '2-digit',
+                                    year: 'numeric'
+                                })}</span>
+                            `;
+                            chatMessages.appendChild(dateSeparator);
+                            previousDate = messageDate;
+                        }
+
+                        addMessage(
+                            chat.message,
+                            chat.sender,
+                            formatTime(chat.created_at),
+                            chat.image_path,
+                            true
+                        );
+                    });
+                } else {
+                    chatMessages.innerHTML = `
+                        <div class="empty-chat">
+                            <i class="ph-fill ph-chat-circle-text"></i>
+                            <h3>Start a Conversation</h3>
+                            <p>Send us a message and we'll get back to you as soon as possible!</p>
+                        </div>
+                    `;
+                }
+
+                lastMessageCount = refreshData.chats.length;
+                scrollToBottom();
+            }
+
         } else {
             console.error('Send failed:', data);
+            messageInput.value = originalMessage;
         }
-    } catch (error) { console.error('Error:', error); }
+
+    } catch (error) {
+        console.error('Error:', error);
+        messageInput.value = originalMessage;
+    }
 
     sendBtn.disabled = false;
 }
