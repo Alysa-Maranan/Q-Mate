@@ -21,6 +21,7 @@ class Order extends Model
         'notes',
         'status',
         'order_type',
+        'preferred_date',
         'cancellation_reason',
         'cancelled_at',
     ];

@@ -654,91 +654,197 @@ function showOrderModal(slug, name, price) {
         phone: '{{ auth("customer")->user()->phone }}',
         address: '{{ auth("customer")->user()->address }}, {{ auth("customer")->user()->barangay }}, {{ auth("customer")->user()->municipality }}'
     };
-    
+
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay show';
+
     overlay.innerHTML = `
-        <div class="modal" style="max-width: 650px;">
-            <button class="modal-close" onclick="this.closest('.modal-overlay').remove(); document.body.style='auto';">
+        <div class="modal" style="
+            max-width:650px;
+            max-height:90vh;
+            display:flex;
+            flex-direction:column;
+            overflow:hidden;
+            padding:2.5rem;
+        ">
+
+            <button class="modal-close"
+                onclick="this.closest('.modal-overlay').remove(); document.body.style.overflow='auto';">
                 <i class="ph-bold ph-x"></i>
             </button>
+
             <div class="modal-icon">
                 <i class="ph-bold ph-shopping-cart"></i>
             </div>
-            <h3 class="modal-title">Place Your Order</h3>
-            <form method="POST" action="{{ route('order.store') }}" enctype="multipart/form-data" style="text-align: left;">
-                @csrf
-                <input type="hidden" name="product" value="${slug}">
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
-                    <div>
-                        <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">Customer Name</label>
-                        <input type="text" value="${customer.name}" readonly style="width: 100%; padding: 0.85rem; border: 2px solid rgba(161,136,127,0.15); border-radius: 10px; background: #faf8f6; font-family: 'Inter', sans-serif; color: #4e342e; font-weight: 500; font-size: 0.95rem;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">Contact Number</label>
-                        <input type="text" value="${customer.phone}" readonly style="width: 100%; padding: 0.85rem; border: 2px solid rgba(161,136,127,0.15); border-radius: 10px; background: #faf8f6; font-family: 'Inter', sans-serif; color: #4e342e; font-weight: 500; font-size: 0.95rem;">
-                    </div>
-                </div>
-                
-                <div style="margin-bottom: 1.25rem;">
-                    <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">Delivery Location</label>
-                    <input type="text" name="address" value="${customer.address}" required style="width: 100%; padding: 0.85rem; border: 2px solid rgba(161,136,127,0.2); border-radius: 10px; font-family: 'Inter', sans-serif; color: #4e342e; font-size: 0.95rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='#6d4c41'" onblur="this.style.borderColor='rgba(161,136,127,0.2)'">
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
-                    <div>
-                        <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">Product</label>
-                        <input type="text" value="${name}" readonly style="width: 100%; padding: 0.85rem; border: 2px solid rgba(161,136,127,0.15); border-radius: 10px; background: #faf8f6; font-family: 'Inter', sans-serif; color: #4e342e; font-weight: 500; font-size: 0.95rem;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">Quantity</label>
-                        <input type="number" name="quantity" min="1" value="1" required style="width: 100%; padding: 0.85rem; border: 2px solid rgba(161,136,127,0.2); border-radius: 10px; font-family: 'Inter', sans-serif; color: #4e342e; font-weight: 500; font-size: 0.95rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='#6d4c41'" onblur="this.style.borderColor='rgba(161,136,127,0.2)'">
-                    </div>
-                </div>
-                
-                <div>
-                    <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">Order Type</label>
 
-                    <select name="order_type" id="orderTypeSelect" required
-                        style="width: 100%; padding: 0.85rem; border: 2px solid rgba(161,136,127,0.2); border-radius: 10px; font-family: 'Inter', sans-serif; color: #4e342e; font-weight: 500; font-size: 0.95rem; background: white; cursor: pointer; transition: border-color 0.2s;"
-                        onfocus="this.style.borderColor='#6d4c41'"
-                        onblur="this.style.borderColor='rgba(161,136,127,0.2)'"
-                        onchange="this.nextElementSibling.style.display = this.value === 'pickup' ? 'block' : 'none';">
+            <h3 class="modal-title">Place Your Order</h3>
+
+            <form method="POST"
+                  action="{{ route('order.store') }}"
+                  enctype="multipart/form-data"
+                  style="
+                      text-align:left;
+                      overflow-y:auto;
+                      flex:1;
+                      min-height:0;
+                      padding-right:0.25rem;
+                  ">
+
+                @csrf
+
+                <input type="hidden" name="product" value="${slug}">
+
+                <!-- CUSTOMER NAME -->
+                <div style="margin-bottom:1.25rem;">
+                    <label style="display:block; font-weight:600; color:#4e342e; margin-bottom:0.6rem; font-size:0.9rem;">
+                        Customer Name
+                    </label>
+
+                    <input type="text"
+                           value="${customer.name}"
+                           readonly
+                           style="width:100%; padding:0.85rem; border:2px solid rgba(161,136,127,0.15); border-radius:10px; background:#faf8f6; font-family:'Inter',sans-serif; color:#4e342e; font-weight:500; font-size:0.95rem;">
+                </div>
+
+                <!-- CONTACT NUMBER -->
+                <div style="margin-bottom:1.25rem;">
+                    <label style="display:block; font-weight:600; color:#4e342e; margin-bottom:0.6rem; font-size:0.9rem;">
+                        Contact Number
+                    </label>
+
+                    <input type="text"
+                           value="${customer.phone}"
+                           readonly
+                           style="width:100%; padding:0.85rem; border:2px solid rgba(161,136,127,0.15); border-radius:10px; background:#faf8f6; font-family:'Inter',sans-serif; color:#4e342e; font-weight:500; font-size:0.95rem;">
+                </div>
+
+                <!-- DELIVERY LOCATION -->
+                <div style="margin-bottom:1.25rem;">
+                    <label style="display:block; font-weight:600; color:#4e342e; margin-bottom:0.6rem; font-size:0.9rem;">
+                        Delivery Location
+                    </label>
+
+                    <input type="text"
+                           name="address"
+                           id="orderAddress"
+                           value="${customer.address}"
+                           style="width:100%; padding:0.85rem; border:2px solid rgba(161,136,127,0.2); border-radius:10px; font-family:'Inter',sans-serif; color:#4e342e; font-size:0.95rem;">
+                </div>
+
+                <!-- PRODUCT -->
+                <div style="margin-bottom:1.25rem;">
+                    <label style="display:block; font-weight:600; color:#4e342e; margin-bottom:0.6rem; font-size:0.9rem;">
+                        Product
+                    </label>
+
+                    <input type="text"
+                           value="${name}"
+                           readonly
+                           style="width:100%; padding:0.85rem; border:2px solid rgba(161,136,127,0.15); border-radius:10px; background:#faf8f6; font-family:'Inter',sans-serif; color:#4e342e; font-weight:500; font-size:0.95rem;">
+                </div>
+
+                <!-- QUANTITY -->
+                <div style="margin-bottom:1.25rem;">
+                    <label style="display:block; font-weight:600; color:#4e342e; margin-bottom:0.6rem; font-size:0.9rem;">
+                        Quantity
+                    </label>
+
+                    <input type="number"
+                           name="quantity"
+                           min="1"
+                           value="1"
+                           required
+                           style="width:100%; padding:0.85rem; border:2px solid rgba(161,136,127,0.2); border-radius:10px; font-family:'Inter',sans-serif; color:#4e342e; font-weight:500; font-size:0.95rem;">
+                </div>
+
+                <!-- ORDER TYPE -->
+                <div style="margin-bottom:1.25rem;">
+                    <label style="display:block; font-weight:600; color:#4e342e; margin-bottom:0.6rem; font-size:0.9rem;">
+                        Order Type
+                    </label>
+
+                    <select name="order_type"
+                            id="orderTypeSelect"
+                            required
+                            style="width:100%; padding:0.85rem; border:2px solid rgba(161,136,127,0.2); border-radius:10px; font-family:'Inter',sans-serif; color:#4e342e; font-weight:500; font-size:0.95rem; background:white; cursor:pointer;"
+                            onchange="
+                                const location = this.parentElement.querySelector('.pickup-location');
+                                const address = document.getElementById('orderAddress');
+
+                                if (this.value === 'pickup') {
+                                    location.style.display = 'block';
+                                    address.removeAttribute('required');
+                                } else {
+                                    location.style.display = 'none';
+                                    address.setAttribute('required', 'required');
+                                }
+                            ">
 
                         <option value="pickup">Pick Up</option>
                         <option value="delivery">Delivery</option>
+
                     </select>
 
-                    <div style="margin-top: 0.5rem; color: #6d4c41; font-size: 0.85rem;">
+                    <div class="pickup-location"
+                         style="margin-top:0.5rem; color:#6d4c41; font-size:0.85rem;">
                         Location: Pagkakaisa, Naujan
                     </div>
                 </div>
-                    
-                    <div>
-                        <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">Preferred Date</label>
-                        <input type="date" name="preferred_date" required style="width: 100%; padding: 0.85rem; border: 2px solid rgba(161,136,127,0.2); border-radius: 10px; font-family: 'Inter', sans-serif; color: #4e342e; font-size: 0.95rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='#6d4c41'" onblur="this.style.borderColor='rgba(161,136,127,0.2)'">
+
+                <!-- PREFERRED DATE -->
+                <div style="margin-bottom:1.25rem;">
+                    <label style="display:block; font-weight:600; color:#4e342e; margin-bottom:0.6rem; font-size:0.9rem;">
+                        Preferred Date
+                    </label>
+
+                    <input type="date"
+                           name="preferred_date"
+                           style="width:100%; padding:0.85rem; border:2px solid rgba(161,136,127,0.2); border-radius:10px; font-family:'Inter',sans-serif; color:#4e342e; font-size:0.95rem;">
+                </div>
+
+                <!-- GCASH -->
+                <div style="margin-bottom:2rem;">
+                    <label style="display:block; font-weight:600; color:#4e342e; margin-bottom:0.6rem; font-size:0.9rem;">
+                        GCash Number
+                    </label>
+
+                    <div style="background:#f8f5f1; padding:1rem; border-radius:10px; border-left:4px solid #6d4c41;">
+                        <p style="font-size:1.1rem; color:#4e342e; margin:0; font-weight:700;">
+                            09171234567
+                        </p>
+
+                        <p style="font-size:0.85rem; color:#8d6e63; margin:0.5rem 0 0 0;">
+                            Send the screenshot of your receipt or proof in chatbox
+                        </p>
                     </div>
                 </div>
-                
-                <div style="margin-bottom: 2rem;">
-                    <label style="display: block; font-weight: 600; color: #4e342e; margin-bottom: 0.6rem; font-size: 0.9rem;">GCash Number</label>
-                    <div style="background: #f8f5f1; padding: 1rem; border-radius: 10px; margin-bottom: 0.75rem; border-left: 4px solid #6d4c41;">
-                        <p style="font-size: 1.1rem; color: #4e342e; margin: 0; font-weight: 700;">09171234567</p>
-                        <p style="font-size: 0.85rem; color: #8d6e63; margin: 0.5rem 0 0 0;">Send the screenshot of your receipt or proof in chatbox</p>
-                    </div>
+
+                <!-- BUTTONS -->
+                <div class="modal-buttons"
+                     style="display:flex; gap:1rem; padding-bottom:0.5rem;">
+
+                    <button type="button"
+                            onclick="this.closest('.modal-overlay').remove(); document.body.style.overflow='auto';"
+                            class="modal-btn secondary"
+                            style="flex:1;">
+                        Cancel
+                    </button>
+
+                    <button type="submit"
+                            class="modal-btn primary"
+                            style="flex:1;">
+                        Place Order
+                    </button>
+
                 </div>
-                
-                <div class="modal-buttons" style="gap: 1rem;">
-                    <button type="button" onclick="this.closest('.modal-overlay').remove(); document.body.style.overflow='auto';" class="modal-btn secondary" style="flex: 1;">Cancel</button>
-                    <button type="submit" class="modal-btn primary" style="flex: 1;">Place Order</button>
-                </div>
+
             </form>
         </div>
     `;
+
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
-    
+
     overlay.addEventListener('click', function(e) {
         if (e.target === overlay) {
             overlay.remove();
