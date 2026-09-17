@@ -1,6 +1,7 @@
 # ============================================
 # Q-MATE Laravel Dockerfile
 # Laravel 12 + PHP 8.2 + Supabase PostgreSQL
+# Python + TensorFlow Quail Breed Classifier
 # ============================================
 
 
@@ -29,8 +30,6 @@ WORKDIR /app
 
 COPY composer.json composer.lock ./
 
-# Copy the complete Laravel project first
-# so artisan is available during Composer scripts
 COPY . .
 
 RUN composer install \
@@ -42,28 +41,36 @@ RUN composer install \
 
 
 # ============================================
-# Stage 3: Production PHP + Nginx
+# Stage 3: Production PHP + Nginx + Python
 # ============================================
-FROM php:8.2-fpm-alpine
+FROM php:8.2-fpm
 
-# Install system dependencies
-RUN apk add --no-cache \
-    nginx \
-    supervisor \
-    curl \
-    git \
-    unzip \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
-    oniguruma-dev \
-    libzip-dev \
-    icu-dev \
-    postgresql-dev \
+# ============================================
+# System Dependencies
+# ============================================
+RUN apt-get update \
+    && apt-get install -y \
+        nginx \
+        supervisor \
+        curl \
+        git \
+        unzip \
+        python3 \
+        python3-venv \
+        python3-pip \
+        python3-dev \
+        build-essential \
+        libpng-dev \
+        libjpeg62-turbo-dev \
+        libfreetype6-dev \
+        libonig-dev \
+        libzip-dev \
+        libicu-dev \
+        libpq-dev \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
+    && docker-php-ext-install -j"$(nproc)" \
         pdo_pgsql \
         mbstring \
         exif \
@@ -71,7 +78,27 @@ RUN apk add --no-cache \
         bcmath \
         gd \
         zip \
-        intl
+        intl \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# ============================================
+# Python Virtual Environment
+# ============================================
+RUN python3 -m venv /opt/qmate-venv
+
+ENV PATH="/opt/qmate-venv/bin:$PATH"
+
+
+# ============================================
+# Upgrade Python Packaging Tools
+# ============================================
+RUN pip install \
+        --no-cache-dir \
+        --upgrade \
+        pip \
+        setuptools \
+        wheel
 
 
 # ============================================
@@ -81,14 +108,38 @@ WORKDIR /var/www/html
 
 COPY --from=vendor /app /var/www/html
 
-# Remove local Laravel cache containing Windows paths
+
+# ============================================
+# Python Classifier Dependencies
+# ============================================
+COPY requirements.txt /tmp/requirements.txt
+
+RUN pip install \
+        --no-cache-dir \
+        -r /tmp/requirements.txt
+
+
+# ============================================
+# Verify Python + TensorFlow Installation
+# ============================================
+RUN python --version \
+    && python -c "import tensorflow as tf; print('TensorFlow:', tf.__version__)"
+
+
+# ============================================
+# Remove Local Laravel Cache
+# ============================================
 RUN rm -f /var/www/html/bootstrap/cache/*.php \
     && mkdir -p /var/www/html/storage/framework/views \
     && mkdir -p /var/www/html/storage/framework/cache \
     && mkdir -p /var/www/html/storage/framework/sessions
 
-# Copy Vite production assets
-COPY --from=assets /app/public/build /var/www/html/public/build
+
+# ============================================
+# Copy Vite Production Assets
+# ============================================
+COPY --from=assets /app/public/build \
+    /var/www/html/public/build
 
 
 # ============================================
@@ -106,7 +157,7 @@ RUN chown -R www-data:www-data \
 # Nginx Configuration
 # ============================================
 COPY docker/nginx/default.conf \
-    /etc/nginx/http.d/default.conf
+    /etc/nginx/conf.d/default.conf
 
 
 # ============================================
