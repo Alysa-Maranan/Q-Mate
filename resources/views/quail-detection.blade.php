@@ -2531,20 +2531,11 @@
                         2: 'Pharaoh Quail'
                     };
 
-                    const breedName =
-                        breedNames[
-                            predictedClass
-                        ] ||
-                        classificationResult.class_name ||
-                        'Unknown Quail';
-
-                    lastClassification = {
-                        breedName:
-                            breedName,
-
-                        confidence:
-                            confidence
-                    };
+                    const breedName = breedNames[predictedClass];
+                        lastClassification = {
+                            breedName: breedName,
+                            confidence: confidence
+                        };
 
                     showDetectionResult(
                         'quail',
@@ -3085,52 +3076,33 @@
     }
 
     /*
-     * FIXED CLOSE FUNCTION
-     */
-    function closeDetectionModalAndRefresh(
-        refresh = false
-    ) {
-        const modal =
-            document.getElementById(
-                'detectionModal'
-            );
+ * FIXED CLOSE FUNCTION
+ */
+function closeDetectionModalAndRefresh(refresh = false) {
+    const modal = document.getElementById('detectionModal');
 
-        if (!modal) {
-            return;
-        }
-
-        modal.classList.remove(
-            'show'
-        );
-
-        modal.setAttribute(
-            'aria-hidden',
-            'true'
-        );
-
-        modal.style.display =
-            'none';
-
-        modal.style.pointerEvents =
-            'none';
-
-        /*
-         * Clear cooldown so the next detection
-         * can happen normally after closing.
-         */
-        if (refresh) {
-            modalCooldownUntil =
-                Date.now() + 1000;
-
-            console.log(
-                'Modal closed with explicit refresh requested'
-            );
-        }
-
-        if (autoDetectionActive) {
-            startAutoDetection();
-        }
+    if (!modal) {
+        return;
     }
+
+    // Stop auto detection first so the modal cannot reopen immediately
+    if (autoDetectionActive) {
+        autoDetectionActive = false;
+    }
+
+    // Hide modal
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.style.display = 'none';
+    modal.style.pointerEvents = 'none';
+
+    // Prevent immediate re-trigger
+    modalCooldownUntil = Date.now() + 1500;
+
+    if (refresh) {
+        console.log('Modal closed with refresh requested');
+    }
+}
 
     function closeDetectionModal() {
         closeDetectionModalAndRefresh(

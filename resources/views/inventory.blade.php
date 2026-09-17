@@ -655,9 +655,9 @@
                     <div class="form-group">
                         <label class="form-label">Product Type</label>
                         <select class="form-input" id="salesProductType" onchange="updateSalesPrice()">
-                            <option value="eggs" data-price="160">Quail Eggs (â‚±160/tray)</option>
-                            <option value="live_quail" data-price="180">Live Quail (â‚±180/pc)</option>
-                            <option value="dressed_quail" data-price="250">Dressed Quail (â‚±250/pc)</option>
+                            <option value="eggs" data-price="160">Quail Eggs (₱160/tray)</option>
+                            <option value="live_quail" data-price="180">Live Quail (₱180/pc)</option>
+                            <option value="dressed_quail" data-price="250">Dressed Quail (₱250/pc)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -666,7 +666,7 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Price per Unit</label>
-                        <input type="number" class="form-input" id="salesPrice" placeholder="â‚±0.00" value="">
+                        <input type="number" class="form-input" id="salesPrice" placeholder="₱0.00" value="">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Customer Name (Optional)</label>
@@ -675,7 +675,7 @@
                 </div>
                 <div style="margin-top: 1rem; padding: 1rem; background: #f5f0eb; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
                     <span style="color: #6d4c41; font-weight: 600;">Total Amount:</span>
-                    <span id="salesTotalAmount" style="font-size: 1.25rem; font-weight: 800; color: #4e342e;">â‚±0.00</span>
+                    <span id="salesTotalAmount" style="font-size: 1.25rem; font-weight: 800; color: #4e342e;">₱0.00</span>
                 </div>
                 <button type="button" class="btn btn-primary" style="margin-top: 1rem;" onclick="confirmRecordSale()">Record Sale</button>
             </form>
@@ -699,7 +699,7 @@
                         </thead>
                         <tbody id="salesRecordsBody">
                             <tr>
-                                <td colspan="7" style="padding: 2rem; text-align: center; color: #a1887f;">
+                              <td colspan="8" style="padding: 2rem; text-align: center; color: #a1887f;">
                                     No sales records yet. Start recording sales to see records here.
                                 </td>
                             </tr>
@@ -1234,15 +1234,15 @@ function updateBestSellingTable(eggsSold, liveQuailSold, dressedQuailSold) {
     salesData.sort((a, b) => b.total - a.total);
     
     // Update table
-    tableBody.innerHTML = salesData.map((item, index) => `
-        <tr ${index % 2 === 1 ? 'style="background: #f9f9f9;"' : ''}>
-            <td style="padding: 1rem; font-size: 0.9rem; color: #000;">${item.product}</td>
-            <td style="padding: 1rem; font-size: 0.9rem; color: #000;">${item.quantity} ${item.unit}</td>
-            <td style="padding: 1rem; font-size: 0.9rem; color: #000;">â‚±${item.price.toFixed(2)}</td>
-            <td style="padding: 1rem; font-size: 0.9rem; color: #000; font-weight: 700;">â‚±${item.total.toLocaleString()}.00</td>
-            <td style="padding: 1rem; font-size: 0.9rem; color: #000;">${item.percentage}%</td>
-        </tr>
-    `).join('');
+tableBody.innerHTML = salesData.map((item, index) => `
+    <tr ${index % 2 === 1 ? 'style="background: #f9f9f9;"' : ''}>
+        <td style="padding: 1rem; font-size: 0.9rem; color: #000;">${item.product}</td>
+        <td style="padding: 1rem; font-size: 0.9rem; color: #000;">${item.quantity} ${item.unit}</td>
+        <td style="padding: 1rem; font-size: 0.9rem; color: #000;">₱${item.price.toFixed(2)}</td>
+        <td style="padding: 1rem; font-size: 0.9rem; color: #000; font-weight: 700;">₱${item.total.toLocaleString()}.00</td>
+        <td style="padding: 1rem; font-size: 0.9rem; color: #000;">${item.percentage}%</td>
+    </tr>
+`).join('');
     
     console.log('Best selling table updated with data:', salesData);
 }
@@ -1968,14 +1968,6 @@ function updateRealAnalyticsData() {
                         ✓
                     </div>
 
-                    <h3 style="
-                        margin: 0 0 0.75rem;
-                        color: #4e342e;
-                        font-size: 1.35rem;
-                    ">
-                        Analytics Updated Successfully!
-                    </h3>
-
                     <p style="
                         margin: 0 0 1.5rem;
                         color: #666;
@@ -2400,28 +2392,46 @@ function updateProductSalesTable(productSales, productRevenue, totalRevenue) {
         if (summaryEl) {
             summaryEl.textContent = 'Based on Record Sales entries. No sales recorded yet.';
         }
-        tableBody.innerHTML = '<tr><td colspan="4" style="padding: 2rem; text-align: center; color: #a1887f;">No sales recorded yet. Record sales in the "Record Sales" tab to see data here.</td></tr>';
+        
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="4" style="padding: 2rem; text-align: center; color: #a1887f;">
+                    No sales recorded yet. Record sales in the "Record Sales" tab to see data here.
+                </td>
+            </tr>
+        `;
         return;
     }
 
     const topProduct = products[0];
+    
     if (summaryEl) {
-        summaryEl.textContent = `Top seller: ${topProduct.name} | Total revenue: â‚±${totalRevenue.toLocaleString()}.00`;
+        summaryEl.textContent = `Top seller: ${topProduct.name} | Total revenue: ₱${Number(totalRevenue).toLocaleString()}.00`;
     }
     
     tableBody.innerHTML = products.map((product, index) => {
-        const percentage = totalRevenue > 0 ? Math.round((product.revenue / totalRevenue) * 100) : 0;
+        const percentage = totalRevenue > 0
+            ? Math.round((product.revenue / totalRevenue) * 100)
+            : 0;
+        
         return `
             <tr ${index % 2 === 1 ? 'style="background: #f9f9f9;"' : ''}>
-                <td style="padding: 1rem; font-size: 0.9rem; color: #000;">${product.name}</td>
-                <td style="padding: 1rem; font-size: 0.9rem; color: #000;">${product.quantity} ${product.unit}</td>
-                <td style="padding: 1rem; font-size: 0.9rem; color: #000; font-weight: 700;">â‚±${product.revenue.toLocaleString()}.00</td>
-                <td style="padding: 1rem; font-size: 0.9rem; color: #000;">${percentage}%</td>
+                <td style="padding: 1rem; font-size: 0.9rem; color: #000;">
+                    ${product.name}
+                </td>
+                <td style="padding: 1rem; font-size: 0.9rem; color: #000;">
+                    ${product.quantity} ${product.unit}
+                </td>
+                <td style="padding: 1rem; font-size: 0.9rem; color: #000; font-weight: 700;">
+                    ₱${Number(product.revenue).toLocaleString()}.00
+                </td>
+                <td style="padding: 1rem; font-size: 0.9rem; color: #000;">
+                    ${percentage}%
+                </td>
             </tr>
         `;
     }).join('');
 }
-
 // Global function to update analytics (accessible from onclick)
 function updateAnalyticsData() {
     updateRealAnalyticsData();
@@ -2508,7 +2518,7 @@ function updateAnalyticsDirectly() {
         console.log('Updated eggs collected:', totalEggsCollected);
     }
     if (totalRevenueEl) {
-        totalRevenueEl.textContent = 'â‚±' + totalRevenue.toFixed(2);
+       totalRevenueEl.textContent = '₱' + totalRevenue.toFixed(2);
         console.log('Updated total revenue:', totalRevenue);
     }
     if (activeDaysEl) {
@@ -2546,7 +2556,7 @@ function updateAnalyticsDirectly() {
     const liveQuailSoldEl = document.getElementById('analyticsLiveQuailSold');
     const dressedQuailSoldEl = document.getElementById('analyticsDressedQuailSold');
     
-    if (totalSalesEl) totalSalesEl.textContent = 'â‚±' + totalRevenue.toFixed(2);
+   if (totalSalesEl) totalSalesEl.textContent = '₱' + totalRevenue.toFixed(2);
     if (eggsSoldEl) eggsSoldEl.textContent = eggsSold + ' trays';
     if (liveQuailSoldEl) liveQuailSoldEl.textContent = liveQuailSold + ' pcs';
     if (dressedQuailSoldEl) dressedQuailSoldEl.textContent = dressedQuailSold + ' pcs';
@@ -2702,9 +2712,9 @@ function renderProductsManagement(products) {
                     </div>
                 </div>
                 
-                <div class="product-controls">
+               <div class="product-controls">
                     <div class="price-display" onclick="editProductPrice(${product.id}, ${product.price})" title="Click to edit price">
-                        â‚±${parseFloat(product.price).toFixed(2)}
+                        ₱${parseFloat(product.price).toFixed(2)}
                         <div style="font-size: 0.7rem; opacity: 0.8; margin-top: 0.25rem;">Click to edit</div>
                     </div>
                     <div class="stock-display" onclick="editProductStock(${product.id}, ${product.stock})" title="Click to edit stock">
@@ -2792,11 +2802,11 @@ async function savePriceEdit() {
         }
         
         console.log('Response result:', result);
-        
-        if (response.ok && result.success) {
+                
+            if (response.ok && result.success) {
             closeEditModal('priceEditModal');
             loadProductsManagement(); // Reload products
-            addNotification('', `Price updated to â‚±${parseFloat(newPrice).toFixed(2)}`);
+            addNotification('', `Price updated to ₱${parseFloat(newPrice).toFixed(2)}`);
         } else if (response.status === 404) {
             alert('Product not found. Make sure the product exists in the database.');
         } else if (response.status === 401) {
@@ -2804,10 +2814,10 @@ async function savePriceEdit() {
         } else {
             alert('Error updating price: ' + (result?.message || `Server error (${response.status})`));
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error updating price: ' + error.message);
-    }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error updating price: ' + error.message);
+            }
 }
 
 // Save stock edit
@@ -3010,7 +3020,7 @@ function calculateSalesTotal() {
     const quantity = parseFloat(document.getElementById('salesQuantity').value) || 0;
     const price = parseFloat(document.getElementById('salesPrice').value) || 0;
     const total = quantity * price;
-    document.getElementById('salesTotalAmount').textContent = 'â‚±' + total.toFixed(2);
+    document.getElementById('salesTotalAmount').textContent = '₱' + total.toFixed(2);
 }
 
 function getQuailStock(productType) {
@@ -3266,10 +3276,9 @@ function updateSummaryDisplay() {
     if (summaryDressedQuail) summaryDressedQuail.textContent = dailyData.dressedQuailSold + ' pcs';
     
     const remainingStock = dailyData.goodEggs - (dailyData.eggsSold * 24); // 24 eggs per tray
-    if (summaryRemainingStock) summaryRemainingStock.textContent = Math.max(0, remainingStock) + ' eggs';
-    if (summaryEggsIncome) summaryEggsIncome.textContent = 'â‚±' + dailyData.eggsIncome.toFixed(2);
-    if (summaryQuailIncome) summaryQuailIncome.textContent = 'â‚±' + dailyData.quailIncome.toFixed(2);
-    if (summaryTotalIncome) summaryTotalIncome.textContent = 'â‚±' + (dailyData.eggsIncome + dailyData.quailIncome).toFixed(2);
+    if (summaryEggsIncome) summaryEggsIncome.textContent = '₱' + dailyData.eggsIncome.toFixed(2);
+    if (summaryQuailIncome) summaryQuailIncome.textContent = '₱' + dailyData.quailIncome.toFixed(2);
+    if (summaryTotalIncome) summaryTotalIncome.textContent = '₱' + (dailyData.eggsIncome + dailyData.quailIncome).toFixed(2);
 }
 
 // Render Activities Log
@@ -3821,7 +3830,7 @@ function updateSalesCounters() {
         if (eggsCard) eggsCard.textContent = eggsSold + ' trays';
         if (liveCard) liveCard.textContent = liveQuailSold + ' pcs';
         if (dressedCard) dressedCard.textContent = dressedQuailSold + ' pcs';
-        if (incomeCard) incomeCard.textContent = 'â‚±' + totalIncome.toFixed(2);
+        if (incomeCard) incomeCard.textContent = '₱' + totalIncome.toFixed(2);
     }
 }
 function updateProductionCounters() {
@@ -3931,7 +3940,7 @@ function renderClassificationTable() {
     }
     
     if (classificationRecords.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="padding: 2rem; text-align: center; color: #a1887f;">No classification records yet. Start classifying eggs to see records here.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="padding: 2rem; text-align: center; color: #a1887f;">No classification records yet. Start classifying eggs to see records here.</td></tr>';
         return;
     }
     
@@ -3975,27 +3984,27 @@ function renderSalesTable() {
         'dressed_quail': 'Dressed Quail'
     };
     
-    tbody.innerHTML = salesRecords.map((record, index) => `
-        <tr style="border-bottom: 1px solid #efebe9;">
-            <td style="padding: 1rem; font-size: 0.88rem; color: #000;">${record.date}</td>
-            <td style="padding: 1rem; font-size: 0.88rem; color: #000;">${record.time}</td>
-            <td style="padding: 1rem; font-size: 0.88rem; color: #000;">${productNames[record.productType] || record.productType}</td>
-            <td style="padding: 1rem; font-size: 0.88rem; color: #000;">${record.quantity} ${record.productType === 'eggs' ? 'trays' : 'pcs'}</td>
-            <td style="padding: 1rem; font-size: 0.88rem; color: #000;">â‚±${record.price.toFixed(2)}</td>
-            <td style="padding: 1rem; font-size: 0.88rem; color: #000; font-weight: 700;">â‚±${record.total.toFixed(2)}</td>
-            <td style="padding: 1rem;">
-                <span style="display: inline-block; padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: #e8f5e9; color: #2e7d32;">
-                    Sold
-                </span>
-            </td>
-            <td style="padding: 1rem;">
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="action-btn btn-update" onclick="editSalesRecord(${index})">Update</button>
-                    <button class="action-btn btn-delete" onclick="deleteSalesRecord(${index})">Delete</button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
+   tbody.innerHTML = salesRecords.map((record, index) => `
+    <tr style="border-bottom: 1px solid #efebe9;">
+        <td style="padding: 1rem; font-size: 0.88rem; color: #000;">${record.date}</td>
+        <td style="padding: 1rem; font-size: 0.88rem; color: #000;">${record.time}</td>
+        <td style="padding: 1rem; font-size: 0.88rem; color: #000;">${productNames[record.productType] || record.productType}</td>
+        <td style="padding: 1rem; font-size: 0.88rem; color: #000;">${record.quantity} ${record.productType === 'eggs' ? 'trays' : 'pcs'}</td>
+        <td style="padding: 1rem; font-size: 0.88rem; color: #000;">₱${record.price.toFixed(2)}</td>
+        <td style="padding: 1rem; font-size: 0.88rem; color: #000; font-weight: 700;">₱${record.total.toFixed(2)}</td>
+        <td style="padding: 1rem;">
+            <span style="display: inline-block; padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: #e8f5e9; color: #2e7d32;">
+                Sold
+            </span>
+        </td>
+        <td style="padding: 1rem;">
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="action-btn btn-update" onclick="editSalesRecord(${index})">Update</button>
+                <button class="action-btn btn-delete" onclick="deleteSalesRecord(${index})">Delete</button>
+            </div>
+        </td>
+    </tr>
+`).join('');
 }
 
 // Update Modal Functions
@@ -4614,7 +4623,7 @@ function deleteSalesRecord(index) {
     
     showConfirmModal({
         title: 'Delete Sales Record',
-        message: `Delete sales record: ${record.quantity} ${productName} for â‚±${Number(record.total).toFixed(2)}? This will also remove it from Analytics & Reports.`,
+        message: `Delete sales record: ${record.quantity} ${productName} for ₱${Number(record.total).toFixed(2)}? This will also remove it from Analytics & Reports.`,
         buttonText: 'Yes, Delete',
         onConfirm: function() {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -5119,7 +5128,7 @@ function confirmRecordSale() {
     showConfirmModal({
         icon: '',
         title: 'Record Sale',
-        message: `Record sale of ${quantity} ${productNames[productType]} for â‚±${total.toFixed(2)}?`,
+        message: `Record sale of ${quantity} ${productNames[productType]} for ₱${total.toFixed(2)}?`,
         buttonText: 'Yes, Record',
         onConfirm: function() {
             console.log('User confirmed, recording sale to database...');
@@ -5213,8 +5222,8 @@ function confirmRecordSale() {
                     }
                     saveDailyData();
                     updateSummaryDisplay();
-                    addActivity('', 'Sale Recorded', `${productNames[productType]} x${quantity} = â‚±${total.toFixed(2)}`);
-                    addNotification('', `Sale: ${quantity} ${productNames[productType]} = â‚±${total.toFixed(2)}`);
+                    addActivity('', 'Sale Recorded', `${productNames[productType]} x${quantity} = ₱${total.toFixed(2)}`);
+                    addNotification('', `Sale: ${quantity} ${productNames[productType]} = ₱${total.toFixed(2)}`);
                     
                     // Update analytics immediately
                     setTimeout(() => {
@@ -5228,7 +5237,7 @@ function confirmRecordSale() {
                         showConfirmModal({
                             icon: '',
                             title: 'Sale Recorded!',
-                            message: `${productNames[productType]} x${quantity} = â‚±${total.toFixed(2)} saved to database`,
+                            message: `${productNames[productType]} x${quantity} = ₱${total.toFixed(2)} saved to database`,
                             buttonText: 'OK',
                             onConfirm: function() {}
                         });
@@ -6239,7 +6248,7 @@ function updateActivitiesSummary(fromDate, toDate) {
             type: 'Sales',
             details: productNames[record.productType] || record.productType,
             quantity: `${record.quantity} ${record.productType === 'eggs' ? 'trays' : 'pcs'}`,
-            amount: `â‚±${record.total.toFixed(2)}`,
+            amount: `₱${record.total.toFixed(2)}`,
             timestamp: record.timestamp
         });
     });
