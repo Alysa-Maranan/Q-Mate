@@ -20,9 +20,10 @@ class QuailDetectionController extends Controller
         if (!auth()->check()) return redirect('/login');
         
         $currentQuailBreed = QuailBreedHelper::getCurrentBreed();
-        $quailBreeds = \App\Models\QuailBreed::all();
+
+        // Only the 3 supported quail breeds
+        $quailBreeds = QuailBreed::whereIn('id', [1, 2, 3])->get();
         
-        // Get recent detections
         try {
             $recentDetections = DetectionHistory::where('user_id', auth()->id())
                 ->orderBy('created_at', 'desc')
@@ -32,7 +33,11 @@ class QuailDetectionController extends Controller
             $recentDetections = collect([]);
         }
         
-        return view('quail-detection', compact('currentQuailBreed', 'quailBreeds', 'recentDetections'));
+        return view('quail-detection', compact(
+            'currentQuailBreed',
+            'quailBreeds',
+            'recentDetections'
+        ));
     }
 
     /**
@@ -56,9 +61,9 @@ class QuailDetectionController extends Controller
         try {
             $imagePath = null;
             
-            // Save image if provided
             if ($request->has('image_data')) {
                 $imageData = $request->input('image_data');
+
                 if (strpos($imageData, 'base64') !== false) {
                     $image = str_replace('data:image/jpeg;base64,', '', $imageData);
                     $filename = 'detection_' . auth()->id() . '_' . time() . '_' . uniqid() . '.jpg';
@@ -73,7 +78,6 @@ class QuailDetectionController extends Controller
                 }
             }
 
-            // Create detection record
             $detection = DetectionHistory::create([
                 'user_id' => auth()->id(),
                 'quail_breed_id' => $validated['quail_breed_id'] ?? null,
@@ -91,6 +95,7 @@ class QuailDetectionController extends Controller
             ]);
         } catch (\Exception $e) {
             \Log::error('Quail detection error: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error saving detection: ' . $e->getMessage()
@@ -107,13 +112,17 @@ class QuailDetectionController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $breed = QuailBreed::find($breedId);
+        // Only allow the 3 supported breeds
+        if (!in_array((int) $breedId, [1, 2, 3], true)) {
+            return response()->json(['error' => 'Breed not found'], 404);
+        }
+
+        $breed = QuailBreed::whereIn('id', [1, 2, 3])->find($breedId);
         
         if (!$breed) {
             return response()->json(['error' => 'Breed not found'], 404);
         }
 
-        // Get compatible feeds
         $compatibleFeeds = FeedItem::all()
             ->filter(function ($feed) use ($breedId) {
                 return $feed->isSuitableForBreed($breedId) !== false;
@@ -168,6 +177,7 @@ class QuailDetectionController extends Controller
         }
 
         $limit = $request->input('limit', 50);
+
         $detections = $query->orderBy('created_at', 'desc')
             ->paginate($limit);
 
@@ -194,23 +204,28 @@ class QuailDetectionController extends Controller
             'total_detections' => DetectionHistory::where('user_id', $userId)
                 ->whereBetween('created_at', [$dateFrom, $dateTo])
                 ->count(),
+
             'successful_detections' => DetectionHistory::where('user_id', $userId)
                 ->where('detection_type', 'quail')
                 ->whereBetween('created_at', [$dateFrom, $dateTo])
                 ->count(),
+
             'human_detections' => DetectionHistory::where('user_id', $userId)
                 ->where('detection_type', 'human')
                 ->whereBetween('created_at', [$dateFrom, $dateTo])
                 ->count(),
+
             'average_confidence' => DetectionHistory::where('user_id', $userId)
                 ->where('detection_type', 'quail')
                 ->whereBetween('created_at', [$dateFrom, $dateTo])
                 ->avg('confidence'),
+
             'breeds_detected' => DetectionHistory::where('user_id', $userId)
                 ->where('detection_type', 'quail')
                 ->whereBetween('created_at', [$dateFrom, $dateTo])
                 ->distinct('quail_breed_id')
                 ->count(),
+
             'by_breed' => DetectionHistory::where('user_id', $userId)
                 ->where('detection_type', 'quail')
                 ->whereBetween('created_at', [$dateFrom, $dateTo])
@@ -236,17 +251,18 @@ class QuailDetectionController extends Controller
         }
 
         $validated = $request->validate([
-            'image' => 'required|image|max:5120', // 5MB max
+            'image' => 'required|image|max:5120',
         ]);
 
         try {
-            // Save uploaded image temporarily
             $imagePath = $request->file('image')->store('temp/classifications', 'local');
             $fullPath = storage_path('app/' . $imagePath);
 
-            \Log::info('Classification request: Image saved to ' . $fullPath . ', file exists: ' . (file_exists($fullPath) ? 'yes' : 'no'));
+            \Log::info(
+                'Classification request: Image saved to ' . $fullPath .
+                ', file exists: ' . (file_exists($fullPath) ? 'yes' : 'no')
+            );
 
-            // Call Python script to classify
             $pythonScript = base_path('classify_quail_breed.py');
             $modelPath = base_path('public/models/quail_breed_model.keras');
             $metadataPath = base_path('public/models/model_metadata.json');
@@ -262,31 +278,50 @@ class QuailDetectionController extends Controller
                 return $this->getRandomBreedResponse('Python classifier not available');
             }
 
-            // Try persistent classifier service first (faster). Fallback to shell_exec if unavailable.
-            $classifierUrl = env('QUAIL_CLASSIFIER_URL', 'http://127.0.0.1:8000/classify');
+            $classifierUrl = env(
+                'QUAIL_CLASSIFIER_URL',
+                'http://127.0.0.1:8000/classify'
+            );
+
             $result = null;
 
             try {
                 \Log::info('Calling classifier service at: ' . $classifierUrl);
 
                 $response = Http::timeout(60)
-                    ->attach('image', fopen($fullPath, 'r'), basename($fullPath))
+                    ->attach(
+                        'image',
+                        fopen($fullPath, 'r'),
+                        basename($fullPath)
+                    )
                     ->post($classifierUrl);
 
-                \Log::info('Classifier service response status: ' . $response->status());
+                \Log::info(
+                    'Classifier service response status: ' .
+                    $response->status()
+                );
 
                 if ($response->ok()) {
                     $result = $response->json();
-                    \Log::info('Classifier service result: ' . substr(json_encode($result), 0, 500));
+
+                    \Log::info(
+                        'Classifier service result: ' .
+                        substr(json_encode($result), 0, 500)
+                    );
                 } else {
-                    \Log::error('Classifier service returned non-OK: ' . $response->body());
+                    \Log::error(
+                        'Classifier service returned non-OK: ' .
+                        $response->body()
+                    );
                 }
             } catch (\Exception $e) {
-                \Log::error('Classifier HTTP error: ' . $e->getMessage());
+                \Log::error(
+                    'Classifier HTTP error: ' .
+                    $e->getMessage()
+                );
             }
 
             if (!$result) {
-                // Fallback to running the Python script directly (slower)
                 $command = sprintf(
                     'python "%s" "%s" "%s" "%s" 2>&1',
                     $pythonScript,
@@ -295,32 +330,48 @@ class QuailDetectionController extends Controller
                     $metadataPath
                 );
 
-                \Log::info('Executing fallback command: ' . $command);
+                \Log::info(
+                    'Executing fallback command: ' .
+                    $command
+                );
+
                 $output = shell_exec($command);
-                \Log::info('Python fallback output: ' . substr($output, 0, 500));
+
+                \Log::info(
+                    'Python fallback output: ' .
+                    substr($output, 0, 500)
+                );
 
                 $result = json_decode($output, true);
             }
 
-            // Clean up temp file
             @unlink($fullPath);
 
             if (!$result || !isset($result['predicted_class'])) {
-                \Log::warning('Classification returned no predicted_class. Using fallback.');
-                return $this->getRandomBreedResponse('Classification fallback');
+                \Log::warning(
+                    'Classification returned no predicted_class. Using fallback.'
+                );
+
+                return $this->getRandomBreedResponse(
+                    'Classification fallback'
+                );
             }
 
-            // Map prediction to breed
             $breedMapping = [
-                0 => 1, // Japanese Quail
-                1 => 2, // Taiwan Crossbreed
-                2 => 3, // Pharaoh
-                3 => 4  // English White
+                0 => 1,
+                1 => 2,
+                2 => 3
             ];
 
             $classIndex = $result['predicted_class'];
             $breedId = $breedMapping[$classIndex] ?? 1;
-            $breed = QuailBreed::find($breedId);
+            $breed = QuailBreed::whereIn('id', [1, 2, 3])->find($breedId);
+
+            if (!$breed) {
+                return $this->getRandomBreedResponse(
+                    'Detected breed ID not found'
+                );
+            }
 
             return response()->json([
                 'success' => true,
@@ -331,8 +382,18 @@ class QuailDetectionController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Breed classification error: ' . $e->getMessage() . ' | ' . $e->getFile() . ':' . $e->getLine());
-            return $this->getRandomBreedResponse('Error: ' . $e->getMessage());
+            \Log::error(
+                'Breed classification error: ' .
+                $e->getMessage() .
+                ' | ' .
+                $e->getFile() .
+                ':' .
+                $e->getLine()
+            );
+
+            return $this->getRandomBreedResponse(
+                'Error: ' . $e->getMessage()
+            );
         }
     }
 
@@ -341,9 +402,10 @@ class QuailDetectionController extends Controller
      */
     private function getRandomBreedResponse($reason = '')
     {
-        $breeds = QuailBreed::all();
+        // Only the 3 supported quail breeds
+        $breeds = QuailBreed::whereIn('id', [1, 2, 3])->get();
+
         if ($breeds->isEmpty()) {
-            // Fallback if no breeds exist
             return response()->json([
                 'success' => true,
                 'breed_id' => 1,
@@ -355,7 +417,7 @@ class QuailDetectionController extends Controller
         }
 
         $randomBreed = $breeds->random();
-        
+
         return response()->json([
             'success' => true,
             'breed_id' => $randomBreed->id,
@@ -366,4 +428,3 @@ class QuailDetectionController extends Controller
         ]);
     }
 }
-

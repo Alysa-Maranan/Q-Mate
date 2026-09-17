@@ -4,7 +4,6 @@ require 'vendor/autoload.php';
 require 'bootstrap/app.php';
 
 use App\Models\QuailBreed;
-use Illuminate\Database\QueryException;
 
 $app = require_once 'bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
@@ -65,30 +64,13 @@ $breeds = [
         'common_diseases' => json_encode(['Aspergillosis', 'Coccidiosis']),
         'image_url' => null
     ],
-    [
-        'name' => 'English White Quail',
-        'scientific_name' => 'Coturnix japonica (white strain)',
-        'description' => 'White-feathered variety of Japanese quail. Popular for meat production.',
-        'egg_production_rate' => 270,
-        'mature_weight' => 125.00,
-        'maturity_age' => 43,
-        'is_active' => true,
-        'color_markings' => 'Pure white feathers',
-        'size_category' => 'Small',
-        'optimal_temperature' => 20.5,
-        'optimal_humidity' => 57.5,
-        'care_requirements' => 'Standard quail care requirements',
-        'recommended_feeds' => json_encode(['Premium Pellets', 'Millet']),
-        'common_diseases' => json_encode(['Aspergillosis', 'Coccidiosis']),
-        'image_url' => null
-    ]
 ];
 
 foreach ($breeds as $breed) {
     QuailBreed::create($breed);
 }
 
-echo "✓ Seeded 4 quail breeds successfully!\n";
+echo "✓ Seeded 3 quail breeds successfully!\n";
 $count = QuailBreed::count();
 echo "✓ Total breeds in database: " . $count . "\n";
 

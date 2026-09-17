@@ -18,28 +18,54 @@ if not MOCK_MODE:
 
 app = FastAPI(title="Quail Classifier")
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-MODEL_PATH = os.path.join(PROJECT_ROOT, 'public', 'models', 'quail_breed_model.keras')
-METADATA_PATH = os.path.join(PROJECT_ROOT, 'public', 'models', 'model_metadata.json')
+PROJECT_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', '..')
+)
 
-# Load model and metadata at startup
+MODEL_PATH = os.path.join(
+    PROJECT_ROOT,
+    'public',
+    'models',
+    'quail_breed_model.keras'
+)
+
+METADATA_PATH = os.path.join(
+    PROJECT_ROOT,
+    'public',
+    'models',
+    'model_metadata.json'
+)
+
 model = None
 metadata = {}
+
 
 @app.on_event("startup")
 async def load_model():
     global model, metadata
+
     if MOCK_MODE:
-        # In mock mode, we don't load the TensorFlow model; use demo metadata if available
-        metadata = {'class_names': {'0': 'japanese_quail', '1': 'taiwan_cross', '2': 'pharaoh_quail', '3': 'english_white_quail'}, 'breeds': []}
+        metadata = {
+            'class_names': {
+                '0': 'japanese_quail',
+                '1': 'japanese_coturnix_crossbreed_taiwan',
+                '2': 'pharaoh_quail'
+            },
+            'breeds': [
+                'japanese_quail',
+                'japanese_coturnix_crossbreed_taiwan',
+                'pharaoh_quail'
+            ]
+        }
         return
 
     if not os.path.exists(MODEL_PATH):
         raise RuntimeError(f"Model not found at {MODEL_PATH}")
+
     model = tf.keras.models.load_model(MODEL_PATH)
 
     if os.path.exists(METADATA_PATH):
-        with open(METADATA_PATH, 'r') as f:
+        with open(METADATA_PATH, 'r', encoding='utf-8') as f:
             metadata = json.load(f)
     else:
         metadata = {}
@@ -48,8 +74,13 @@ async def load_model():
 def preprocess_image(file_bytes):
     img = Image.open(io.BytesIO(file_bytes)).convert('RGB')
     img = img.resize((224, 224))
-    arr = np.array(img, dtype=np.float32) / 255.0
+
+    arr = np.array(img, dtype=np.float32)
+
+    arr = tf.keras.applications.mobilenet_v2.preprocess_input(arr)
+
     arr = np.expand_dims(arr, axis=0)
+
     return arr
 
 
@@ -58,14 +89,36 @@ async def classify(image: UploadFile = File(...)):
     try:
         contents = await image.read()
 
+        if not contents:
+            raise HTTPException(
+                status_code=400,
+                detail="Uploaded image is empty."
+            )
+
+        # Mock mode for presentations
         if MOCK_MODE:
-            # Return a deterministic demo response for presentations
-            demo_preds = np.array([[0.85, 0.05, 0.05, 0.05]], dtype=float)
+            demo_preds = np.array(
+                [[0.85, 0.10, 0.05]],
+                dtype=float
+            )
+
             predicted_class = int(np.argmax(demo_preds[0]))
             confidence = float(np.max(demo_preds[0]))
+
             class_names = metadata.get('class_names', {})
-            class_name = class_names.get(str(predicted_class), f'Class {predicted_class}')
-            all_predictions = {class_names.get(str(i), f'Class {i}'): float(p) for i, p in enumerate(demo_preds[0])}
+
+            class_name = class_names.get(
+                str(predicted_class),
+                f'Class {predicted_class}'
+            )
+
+            all_predictions = {
+                class_names.get(
+                    str(i),
+                    f'Class {i}'
+                ): float(p)
+                for i, p in enumerate(demo_preds[0])
+            }
 
             return JSONResponse({
                 'success': True,
@@ -76,16 +129,31 @@ async def classify(image: UploadFile = File(...)):
                 'breeds': metadata.get('breeds', [])
             })
 
+        # Real model prediction
         img_array = preprocess_image(contents)
-        preds = model.predict(img_array, verbose=0)
+
+        preds = model.predict(
+            img_array,
+            verbose=0
+        )
 
         predicted_class = int(np.argmax(preds[0]))
         confidence = float(np.max(preds[0]))
 
         class_names = metadata.get('class_names', {})
-        class_name = class_names.get(str(predicted_class), f'Class {predicted_class}')
 
-        all_predictions = {class_names.get(str(i), f'Class {i}'): float(p) for i, p in enumerate(preds[0])}
+        class_name = class_names.get(
+            str(predicted_class),
+            f'Class {predicted_class}'
+        )
+
+        all_predictions = {
+            class_names.get(
+                str(i),
+                f'Class {i}'
+            ): float(p)
+            for i, p in enumerate(preds[0])
+        }
 
         return JSONResponse({
             'success': True,
@@ -95,9 +163,21 @@ async def classify(image: UploadFile = File(...)):
             'all_predictions': all_predictions,
             'breeds': metadata.get('breeds', [])
         })
+
+    except HTTPException:
+        raise
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
 
 if __name__ == '__main__':
-    uvicorn.run('app:app', host='127.0.0.1', port=8000, log_level='info')
+    uvicorn.run(
+        'app:app',
+        host='0.0.0.0',
+        port=int(os.environ.get('PORT', '8000')),
+        log_level='info'
+    )

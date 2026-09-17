@@ -20,7 +20,6 @@ datasets/quail_images/
 ├── japanese_quail/                          (20 images)
 ├── japanese_coturnix_crossbreed_taiwan/    (20 images)
 ├── pharaoh_quail/                           (20 images)
-└── english_white_quail/                     (20 images)
 ```
 
 ### Step 3: Run Training Script
@@ -64,7 +63,6 @@ After training:
   - `japanese_quail`
   - `japanese_coturnix_crossbreed_taiwan`
   - `pharaoh_quail`
-  - `english_white_quail`
 
 **Error: "CUDA/GPU not found"**
 - Script will automatically use CPU - slower but will work

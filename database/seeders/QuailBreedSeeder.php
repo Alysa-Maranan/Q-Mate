@@ -65,23 +65,5 @@ class QuailBreedSeeder extends Seeder
             "common_diseases" => json_encode(["Coccidiosis"]),
             "image_url" => null
         ]);
-
-        QuailBreed::create([
-            "name" => "English White Quail",
-            "scientific_name" => "Coturnix japonica white",
-            "description" => "White variety.",
-            "egg_production_rate" => 270,
-            "mature_weight" => 125,
-            "maturity_age" => 43,
-            "is_active" => true,
-            "color_markings" => "White",
-            "size_category" => "Small",
-            "optimal_temperature" => 20.5,
-            "optimal_humidity" => 57.5,
-            "care_requirements" => "Standard",
-            "recommended_feeds" => json_encode(["Pellets"]),
-            "common_diseases" => json_encode(["Aspergillosis"]),
-            "image_url" => null
-        ]);
     }
 }

@@ -1352,9 +1352,8 @@
         if (detection.type === 'quail') {
             const breedMapping = {
                 'Japanese Quail': 1,
-                'Taiwan Crossbreed': 2,
+                'Japanese Coturnix Crossbreed (Taiwan)': 2,
                 'Pharaoh Quail': 3,
-                'English White Quail': 4
             };
             
             const breedId = breedMapping[detection.breedName] || 1;
@@ -1719,121 +1718,197 @@
         return capCanvas.toDataURL('image/jpeg', quality);
     }
 
-    async function performDetection() {
-        if (!cocoModel || !video || !video.videoWidth || detectionInProgress) return;
+  async function performDetection() {
+    if (!cocoModel || !video || !video.videoWidth || detectionInProgress) return;
 
-        detectionInProgress = true;
+    detectionInProgress = true;
 
-        try {
-            // Perform detection with COCO-SSD (keeps live overlay boxes updating)
-            const predictions = await cocoModel.detect(video);
+    try {
+        // COCO-SSD detects the object in the camera.
+        const predictions = await cocoModel.detect(video);
 
-            // Only inspect detections that are likely relevant to quail recognition.
-            const filteredPredictions = predictions.filter(pred => pred.score >= 0.25);
+        // Keep only reasonably confident detections.
+        const filteredPredictions = predictions.filter(
+            pred => pred.score >= 0.25
+        );
 
-            // Draw overlay for visual feedback
-            drawOverlay(filteredPredictions);
+        // Draw live detection boxes.
+        drawOverlay(filteredPredictions);
 
-            if (filteredPredictions.length === 0) {
-                lastClassification = null; // nothing visible — drop stale breed label
-                return;
-            }
+        if (filteredPredictions.length === 0) {
+            lastClassification = null;
+            return;
+        }
 
-            const nowMs = Date.now();
-            const suppressed = document.getElementById('detectionModal').classList.contains('show') || nowMs < modalCooldownUntil;
-            if (suppressed) {
-                // Overlay already updated above — skip heavy capture/classify/popups (anti-lag)
-                return;
-            }
+        const nowMs = Date.now();
 
-            // Capture ONLY when we actually need the image (classification/modal/history)
-            const imageData = captureFrame(480, 0.7);   // for classification + modal display
-            const thumbData = captureFrame(160, 0.5);   // small thumbnail stored in history
+        const suppressed =
+            document.getElementById('detectionModal').classList.contains('show') ||
+            nowMs < modalCooldownUntil;
 
-            const detectedClasses = filteredPredictions.map(p => p.class.toLowerCase());
-            const hasQuail = detectedClasses.some(cls =>
-                cls.includes('bird') || cls.includes('quail') || cls.includes('chicken') || cls.includes('duck')
+        if (suppressed) {
+            return;
+        }
+
+        // Capture the current camera frame for the custom quail classifier.
+        const imageData = captureFrame(480, 0.7);
+        const thumbData = captureFrame(160, 0.5);
+
+        const detectedClasses = filteredPredictions.map(
+            p => (p.class || '').toLowerCase()
+        );
+
+        const hasQuail = detectedClasses.some(cls =>
+            cls.includes('bird') ||
+            cls.includes('quail') ||
+            cls.includes('chicken') ||
+            cls.includes('duck')
+        );
+
+        const hasHuman = detectedClasses.some(cls =>
+            cls.includes('person') ||
+            cls.includes('human')
+        );
+
+        // ---------------------------------------------------------
+        // HUMAN DETECTION
+        // ---------------------------------------------------------
+        if (hasHuman && !hasQuail) {
+            lastClassification = null;
+
+            let personScore = 0;
+
+            filteredPredictions.forEach(pred => {
+                const cls = (pred.class || '').toLowerCase();
+
+                if (
+                    (cls.includes('person') || cls.includes('human')) &&
+                    (pred.score || 0) > personScore
+                ) {
+                    personScore = pred.score || 0;
+                }
+            });
+
+            showDetectionResult(
+                'human',
+                'Human Detected',
+                'Please point the camera at a quail',
+                personScore,
+                null,
+                imageData
             );
-            const hasHuman = detectedClasses.some(cls =>
-                cls.includes('person') || cls.includes('human')
+
+            addToHistory(
+                'human',
+                'Human',
+                personScore,
+                thumbData
             );
 
-            if (hasHuman && !hasQuail) {
-                lastClassification = null;
+            modalCooldownUntil = Date.now() + 8000;
 
-                // Use the ACTUAL person-detection score so the on-screen
-                // box percentage matches the modal percentage
-                let personScore = 0;
-                filteredPredictions.forEach(p => {
-                    const cls = (p.class || '').toLowerCase();
-                    if ((cls.includes('person') || cls.includes('human')) && (p.score || 0) > personScore) {
-                        personScore = p.score || 0;
-                    }
-                });
+            return;
+        }
+
+        // ---------------------------------------------------------
+        // QUAIL DETECTION
+        // ---------------------------------------------------------
+        if (hasQuail) {
+
+            const classificationResult =
+                await classifyBreedFromImage(imageData);
+
+            modalCooldownUntil = Date.now() + 8000;
+
+            if (
+                classificationResult &&
+                classificationResult.success
+            ) {
+                /*
+                 * Python classifier returns:
+                 *
+                 * predicted_class:
+                 * 0 = Japanese Quail
+                 * 1 = Japanese Coturnix Crossbreed (Taiwan)
+                 * 2 = Pharaoh Quail
+                 *
+                 * class_name:
+                 * actual model class name
+                 */
+
+                const predictedClass =
+                    Number(classificationResult.predicted_class);
+
+                const confidence =
+                    Number(classificationResult.confidence) || 0;
+
+                const breedId = predictedClass + 1;
+
+                const breedNames = {
+                    0: 'Japanese Quail',
+                    1: 'Japanese Coturnix Crossbreed (Taiwan)',
+                    2: 'Pharaoh Quail'
+                };
+
+                const breedName =
+                    breedNames[predictedClass] ||
+                    classificationResult.class_name ||
+                    'Unknown Quail';
+
+                lastClassification = {
+                    breedName: breedName,
+                    confidence: confidence
+                };
 
                 showDetectionResult(
-                    'human',
-                    'Human Detected',
-                    'Please point the camera at a quail',
-                    personScore,
+                    'quail',
+                    'Quail Detected!',
+                    `Breed: ${breedName}`,
+                    confidence,
+                    breedId,
+                    imageData
+                );
+
+                addToHistory(
+                    'quail',
+                    breedName,
+                    confidence,
+                    thumbData
+                );
+
+                // Show the corresponding breed information.
+                await fetchAndShowBreedInfo(
+                    breedId,
+                    true
+                );
+
+            } else {
+                console.error(
+                    'Quail classification failed:',
+                    classificationResult
+                );
+
+                lastClassification = null;
+
+                // COCO-SSD only detected a bird, but our
+                // custom breed classifier failed.
+                showDetectionResult(
+                    'quail',
+                    'Quail Detected!',
+                    'Breed classification is currently unavailable.',
+                    0,
                     null,
                     imageData
                 );
-                addToHistory('human', 'Human', personScore, thumbData);
-                modalCooldownUntil = Date.now() + 8000;
-                // Don't stop detection — continue scanning in background
-                return;
             }
-
-            if (hasQuail || filteredPredictions.length > 0) {
-                const classificationResult = await classifyBreedFromImage(imageData);
-                modalCooldownUntil = Date.now() + 8000;
-                
-                if (classificationResult.success) {
-                    lastClassification = {
-                        breedName: classificationResult.breed_name,
-                        confidence: classificationResult.confidence
-                    };
-                    showDetectionResult(
-                        'quail',
-                        'Quail Detected!',
-                        `Breed: ${classificationResult.breed_name}`,
-                        classificationResult.confidence,
-                        classificationResult.breed_id,
-                        imageData
-                    );
-
-                    addToHistory('quail', classificationResult.breed_name, classificationResult.confidence, thumbData);
-
-                    await fetchAndShowBreedInfo(classificationResult.breed_id, true);
-                    // Don't stop detection — continue scanning in background
-                } else {
-                    const detectedClass = filteredPredictions[0].class;
-                    const confidence = filteredPredictions[0].score;
-                    lastClassification = { breedName: 'Japanese Quail', confidence: confidence };
-
-                    showDetectionResult(
-                        'quail',
-                        'Quail Detected!',
-                        `Detected: ${detectedClass}`,
-                        confidence,
-                        1,
-                        imageData
-                    );
-                    
-                    addToHistory('quail', 'Japanese Quail', confidence, thumbData);
-                    
-                    await fetchAndShowBreedInfo(1, true);
-                    // Don't stop detection — continue scanning in background
-                }
-            }
-
-        } catch (err) {
-            console.error('Detection error:', err);
-        } finally {
-            detectionInProgress = false;
         }
+
+    } catch (err) {
+        console.error('Detection error:', err);
+    } finally {
+        detectionInProgress = false;
     }
+}
 
     async function classifyBreedFromImage(imageDataUrl) {
         try {
@@ -2090,26 +2165,38 @@
         // For demo purposes, show hardcoded breed info
         // In production, fetch from API: /api/quail-detection/breed/{id}
         
-        const breedData = {
+       const breedData = {
             1: {
                 name: 'Japanese Quail (Coturnix Japonica)',
                 scientific_name: 'Coturnix japonica',
-                description: 'The most popular quail breed for egg and meat production. Known for high egg production rates.',
+                description: 'A popular quail breed known for its good egg and meat production.',
                 egg_production_rate: '280-300 eggs/year',
                 mature_weight: '100-120g',
                 maturity_age: '42-49 days',
                 optimal_temperature: '20-23°C',
                 optimal_humidity: '55-60%'
             },
+
             2: {
-                name: 'Bobwhite Quail (Colinus Virginianus)',
-                scientific_name: 'Colinus virginianus',
-                description: 'Native to North America, valued for game bird production.',
-                egg_production_rate: '100-150 eggs/year',
-                mature_weight: '110-140g',
-                maturity_age: '60-70 days',
-                optimal_temperature: '18-22°C',
-                optimal_humidity: '50-55%'
+                name: 'Japanese Coturnix Crossbreed (Taiwan)',
+                scientific_name: 'Coturnix japonica crossbreed',
+                description: 'A Japanese Coturnix crossbreed associated with Taiwan, known for its hardy characteristics and suitability for quail production.',
+                egg_production_rate: '250-300 eggs/year',
+                mature_weight: '110-130g',
+                maturity_age: '42-49 days',
+                optimal_temperature: '20-23°C',
+                optimal_humidity: '55-60%'
+            },
+
+            3: {
+                name: 'Pharaoh Quail',
+                scientific_name: 'Coturnix japonica (Pharaoh strain)',
+                description: 'A larger Coturnix quail strain commonly raised for meat production and general quail farming.',
+                egg_production_rate: '200-250 eggs/year',
+                mature_weight: '200-300g',
+                maturity_age: '42-49 days',
+                optimal_temperature: '20-23°C',
+                optimal_humidity: '55-60%'
             }
         };
 

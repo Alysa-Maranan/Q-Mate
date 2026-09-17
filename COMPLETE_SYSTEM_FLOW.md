@@ -213,7 +213,7 @@ User → Login Page → LoginController
 1. Japanese Quail (Coturnix japonica)
 2. Taiwan Crossbreed
 3. Pharaoh Quail
-4. English White Quail
+
 
 **Key Files**:
 - `QuailDetectionController.php` - Controller
