@@ -83,6 +83,12 @@ RUN apt-get update \
 
 
 # ============================================
+# Remove Default Nginx Website
+# ============================================
+RUN rm -f /etc/nginx/sites-enabled/default
+
+
+# ============================================
 # Python Virtual Environment
 # ============================================
 RUN python3 -m venv /opt/qmate-venv
