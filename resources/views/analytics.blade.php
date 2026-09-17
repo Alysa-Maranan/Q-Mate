@@ -168,9 +168,6 @@
                 <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6d4c41; margin-bottom: 0.5rem;">To Date:</label>
                 <input type="date" id="analyticsToDate" style="padding: 0.75rem 1rem; border: 1.5px solid #d7ccc8; border-radius: 10px; font-size: 0.95rem; background: #f9fafb;">
             </div>
-                <div style="margin-top: 1.5rem;">
-                    <button onclick="updateAnalytics(this)" style="background: linear-gradient(135deg, #a1887f 0%, #8d6e63 100%); color: white; border: none; border-radius: 10px; padding: 0.75rem 2rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(141, 110, 99, 0.3);">🔄 Update Analytics</button>
-                </div>
         </div>
     </div>
 
@@ -473,48 +470,6 @@ function updateBestSellingTable() {
             <td style="padding: 1rem; font-size: 0.9rem; color: #000;">${item.percentage}%</td>
         </tr>
     `).join('');
-}
-    
-// Update Analytics Function
-function updateAnalytics(button) {
-    console.log('🔄 Update Analytics button clicked!');
-    
-    const fromDate = document.getElementById('analyticsFromDate');
-    const toDate = document.getElementById('analyticsToDate');
-    
-    if (!fromDate || !toDate) {
-        console.error('Date inputs not found!');
-        alert('❌ Error: Date inputs not found!');
-        return;
-    }
-    
-    console.log('Date range:', fromDate.value, 'to', toDate.value);
-    
-    // Show loading state
-    const originalText = button.textContent;
-    button.textContent = '🔄 Updating...';
-    button.disabled = true;
-    
-    // Simulate data loading and update
-    setTimeout(() => {
-        // Update analytics cards with new random data
-        const success = updateAnalyticsCards();
-        
-        // Update Best Selling Products table
-        updateBestSellingTable();
-        
-        // Reset button
-        button.textContent = originalText;
-        button.disabled = false;
-        
-        if (success) {
-            console.log('✅ Analytics update completed!');
-            alert('✅ Analytics updated successfully!');
-        } else {
-            console.error('❌ Failed to update analytics cards');
-            alert('❌ Failed to update analytics!');
-        }
-    }, 1000);
 }
 
 // Update Analytics Cards
