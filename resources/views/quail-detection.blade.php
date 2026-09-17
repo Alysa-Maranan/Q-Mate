@@ -1965,11 +1965,23 @@
     }
 
     function startAutoDetection() {
-        if (autoDetectionActive) {
+        // Do not create duplicate intervals, but recover if the
+        // interval was stopped while the page is still active.
+        if (
+            autoDetectionActive &&
+            autoDetectionInterval
+        ) {
             return;
         }
 
         autoDetectionActive = true;
+
+        if (autoDetectionInterval) {
+            clearInterval(
+                autoDetectionInterval
+            );
+            autoDetectionInterval = null;
+        }
 
         autoDetectionInterval =
             setInterval(() => {
@@ -1982,7 +1994,7 @@
                     performDetection();
                 }
 
-            }, 1500);
+            }, 500);
     }
 
     function stopAutoDetection() {
@@ -1995,6 +2007,14 @@
 
             autoDetectionInterval = null;
         }
+    }
+
+    // UI display confidence: keeps the displayed detection score in the
+    // requested 99%-100% range while the raw COCO-SSD score remains available
+    // internally for detection logic.
+    function getDisplayedDetectionConfidence(score) {
+        const raw = Number(score) || 0;
+        return Math.min(1, Math.max(0.99, raw));
     }
 
     function drawOverlay(predictions) {
@@ -2192,15 +2212,20 @@
 
                     let label;
 
+                    const displayedConfidence =
+                        getDisplayedDetectionConfidence(
+                            score
+                        );
+
                     if (
                         idx === bestBirdIndex &&
                         lastClassification
                     ) {
                         label =
-                            `${lastClassification.breedName} ${(lastClassification.confidence * 100).toFixed(0)}%`;
+                            `${lastClassification.breedName} ${(displayedConfidence * 100).toFixed(0)}%`;
                     } else {
                         label =
-                            `${pred.class} ${(score * 100).toFixed(0)}%`;
+                            `${pred.class} ${(displayedConfidence * 100).toFixed(0)}%`;
                     }
 
                     overlayCtx.font =
@@ -2417,113 +2442,80 @@
                     0.5
                 );
 
-            const detectedClasses =
-                filteredPredictions.map(
-                    p =>
-                        (p.class || '')
-                            .toLowerCase()
+            // Always use the highest-confidence detected object.
+            // This makes ANY COCO-SSD object trigger the modal immediately.
+            const bestPrediction =
+                filteredPredictions.reduce(
+                    (best, current) =>
+                        (
+                            current.score || 0
+                        ) > (
+                            best.score || 0
+                        )
+                            ? current
+                            : best
                 );
 
-            const hasQuail =
-                detectedClasses.some(
-                    cls =>
-                        cls.includes('bird') ||
-                        cls.includes('quail') ||
-                        cls.includes('chicken') ||
-                        cls.includes('duck')
+            const detectedClass =
+                (bestPrediction.class || 'Object')
+                    .trim();
+
+            const detectedClassLower =
+                detectedClass.toLowerCase();
+
+            const rawDetectorConfidence =
+                bestPrediction.score || 0;
+
+            const detectorConfidence =
+                getDisplayedDetectionConfidence(
+                    rawDetectorConfidence
                 );
 
-            const hasHuman =
-                detectedClasses.some(
-                    cls =>
-                        cls.includes('person') ||
-                        cls.includes('human')
-                );
+            const isBird =
+                detectedClassLower.includes('bird') ||
+                detectedClassLower.includes('quail') ||
+                detectedClassLower.includes('chicken') ||
+                detectedClassLower.includes('duck');
 
-            if (
-                hasHuman &&
-                !hasQuail
-            ) {
-                lastClassification =
-                    null;
+            const isHuman =
+                detectedClassLower.includes('person') ||
+                detectedClassLower.includes('human');
 
-                let personScore = 0;
-
-                filteredPredictions.forEach(
-                    pred => {
-
-                        const cls =
-                            (pred.class || '')
-                                .toLowerCase();
-
-                        if (
-                            (
-                                cls.includes(
-                                    'person'
-                                ) ||
-                                cls.includes(
-                                    'human'
-                                )
-                            ) &&
-                            (
-                                pred.score || 0
-                            ) > personScore
-                        ) {
-                            personScore =
-                                pred.score || 0;
-                        }
-                    }
-                );
+            /*
+             * QUAIL/BIRD:
+             * Show the detection modal FIRST, then classify the breed.
+             * This prevents the modal from waiting for the Laravel
+             * breed-classifier request.
+             */
+            if (isBird) {
+                lastClassification = null;
 
                 showDetectionResult(
-                    'human',
-                    'Human Detected',
-                    'Please point the camera at a quail',
-                    personScore,
+                    'quail',
+                    `${detectedClass} Detected!`,
+                    'Detecting quail breed...',
+                    detectorConfidence,
                     null,
-                    imageData
-                );
-
-                addToHistory(
-                    'human',
-                    'Human',
-                    personScore,
-                    thumbData
+                    imageData,
+                    false
                 );
 
                 modalCooldownUntil =
-                    Date.now() + 8000;
-
-                return;
-            }
-
-            if (hasQuail) {
+                    Date.now() + 1000;
 
                 const classificationResult =
                     await classifyBreedFromImage(
                         imageData
                     );
 
-                modalCooldownUntil =
-                    Date.now() + 8000;
-
                 if (
                     classificationResult &&
                     classificationResult.success
                 ) {
-
                     const predictedClass =
                         Number(
                             classificationResult.predicted_class
                         );
-
-                    const confidence =
-                        Number(
-                            classificationResult.confidence
-                        ) || 0;
-
-                    const breedId =
-                        predictedClass + 1;
 
                     const breedNames = {
                         0: 'Japanese Quail',
@@ -2531,53 +2523,142 @@
                         2: 'Pharaoh Quail'
                     };
 
-                    const breedName = breedNames[predictedClass];
+                    const returnedBreedName =
+                        typeof classificationResult.breed_name === 'string'
+                            ? classificationResult.breed_name.trim()
+                            : '';
+
+                    const mappedBreedName =
+                        breedNames[predictedClass] || '';
+
+                    const breedName =
+                        returnedBreedName ||
+                        mappedBreedName;
+
+                    const breedId =
+                        Number.isInteger(predictedClass) &&
+                        breedNames[predictedClass]
+                            ? predictedClass + 1
+                            : null;
+
+                    if (
+                        breedName &&
+                        breedId
+                    ) {
                         lastClassification = {
                             breedName: breedName,
-                            confidence: confidence
+                            confidence: detectorConfidence
                         };
 
-                    showDetectionResult(
-                        'quail',
-                        'Quail Detected!',
-                        `Breed: ${breedName}`,
-                        confidence,
-                        breedId,
-                        imageData
-                    );
+                        showDetectionResult(
+                            'quail',
+                            'Quail Detected!',
+                            `Breed: ${breedName}`,
+                            detectorConfidence,
+                            breedId,
+                            imageData,
+                            true
+                        );
 
-                    addToHistory(
-                        'quail',
-                        breedName,
-                        confidence,
-                        thumbData
-                    );
+                        addToHistory(
+                            'quail',
+                            breedName,
+                            detectorConfidence,
+                            thumbData
+                        );
 
-                    await fetchAndShowBreedInfo(
-                        breedId,
-                        true
-                    );
+                        await fetchAndShowBreedInfo(
+                            breedId,
+                            true
+                        );
 
-                } else {
-
-                    console.error(
-                        'Quail classification failed:',
-                        classificationResult
-                    );
-
-                    lastClassification =
-                        null;
-
-                    showDetectionResult(
-                        'quail',
-                        'Quail Detected!',
-                        'Breed classification is currently unavailable.',
-                        0,
-                        null,
-                        imageData
-                    );
+                        return;
+                    }
                 }
+
+                console.error(
+                    'Quail classification failed:',
+                    classificationResult
+                );
+
+                lastClassification = null;
+
+                showDetectionResult(
+                    'quail',
+                    'Quail Detected!',
+                    'Quail detected. Breed classification is currently unavailable.',
+                    detectorConfidence,
+                    null,
+                    imageData,
+                    true
+                );
+
+                addToHistory(
+                    'quail',
+                    'Quail',
+                    detectorConfidence,
+                    thumbData
+                );
+
+                return;
             }
+
+            /*
+             * HUMAN:
+             * Show immediately using the actual detected class.
+             */
+            if (isHuman) {
+                lastClassification = null;
+
+                showDetectionResult(
+                    'human',
+                    `${detectedClass} Detected!`,
+                    `${detectedClass} detected by COCO-SSD.`,
+                    detectorConfidence,
+                    null,
+                    imageData,
+                    true
+                );
+
+                addToHistory(
+                    'human',
+                    detectedClass,
+                    detectorConfidence,
+                    thumbData
+                );
+
+                modalCooldownUntil =
+                    Date.now() + 1000;
+
+                return;
+            }
+
+            /*
+             * ANY OTHER OBJECT:
+             * No special whitelist. Whatever COCO-SSD detects is shown
+             * immediately in the modal.
+             */
+            lastClassification = null;
+
+            showDetectionResult(
+                'object',
+                `${detectedClass} Detected!`,
+                `${detectedClass} detected by COCO-SSD.`,
+                detectorConfidence,
+                null,
+                imageData,
+                true
+            );
+
+            addToHistory(
+                'object',
+                detectedClass,
+                detectorConfidence,
+                thumbData
+            );
+
+            modalCooldownUntil =
+                Date.now() + 1000;
 
         } catch (err) {
 
@@ -2676,7 +2757,7 @@
         detectedClass,
         confidence
     ) {
-        return 1;
+        return null;
     }
 
     async function fetchAndShowBreedInfo(
@@ -2836,7 +2917,8 @@
         details,
         confidence = 0,
         breedId = null,
-        imageData = null
+        imageData = null,
+        saveRecord = true
     ) {
         const modal =
             document.getElementById(
@@ -3056,6 +3138,29 @@
 
             bottomCloseButton.style.zIndex =
                 '100002';
+
+            // Direct handler: works even if the modal was reopened
+            // many times and avoids duplicate event listeners.
+            bottomCloseButton.onclick =
+                function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    closeDetectionModalAndRefresh(
+                        false
+                    );
+                };
+        }
+
+        if (closeButton) {
+            // Direct handler for the X button.
+            closeButton.onclick =
+                function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    closeDetectionModalAndRefresh(
+                        false
+                    );
+                };
         }
 
         if (
@@ -3067,12 +3172,14 @@
             );
         }
 
-        saveDetectionRecord(
-            type,
-            confidence,
-            breedId,
-            imageData
-        );
+        if (saveRecord) {
+            saveDetectionRecord(
+                type,
+                confidence,
+                breedId,
+                imageData
+            );
+        }
     }
 
     /*
@@ -3085,19 +3192,21 @@ function closeDetectionModalAndRefresh(refresh = false) {
         return;
     }
 
-    // Stop auto detection first so the modal cannot reopen immediately
-    if (autoDetectionActive) {
-        autoDetectionActive = false;
-    }
-
+    // Keep auto detection running so the next detected object
+    // can trigger a new modal without refreshing the page.
     // Hide modal
     modal.classList.remove('show');
     modal.setAttribute('aria-hidden', 'true');
     modal.style.display = 'none';
     modal.style.pointerEvents = 'none';
 
-    // Prevent immediate re-trigger
-    modalCooldownUntil = Date.now() + 1500;
+    // Short cooldown only prevents the same frame from
+    // reopening the modal immediately.
+    modalCooldownUntil = Date.now() + 500;
+
+    // IMPORTANT: closing the modal must NOT stop detection.
+    // Restart the interval if it was stopped for any reason.
+    startAutoDetection();
 
     if (refresh) {
         console.log('Modal closed with refresh requested');
@@ -3665,7 +3774,7 @@ function closeDetectionModalAndRefresh(refresh = false) {
                         event.stopPropagation();
 
                         closeDetectionModalAndRefresh(
-                            true
+                            false
                         );
                     }
                 );
@@ -3685,7 +3794,7 @@ function closeDetectionModalAndRefresh(refresh = false) {
                             modal
                         ) {
                             closeDetectionModalAndRefresh(
-                                true
+                                false
                             );
                         }
                     }
