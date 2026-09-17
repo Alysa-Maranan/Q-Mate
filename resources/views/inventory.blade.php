@@ -854,11 +854,6 @@
                         <label class="form-label">To Date</label>
                         <input type="date" class="form-input" id="analyticsToDate" value="{{ date('Y-m-d') }}" onchange="updateRealAnalyticsData()">
                     </div>
-                    <div class="form-group" style="display: flex; align-items: end;">
-                        <button onclick="updateRealAnalyticsData()" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                            Update Analytics
-                        </button>
-                    </div>
                 </div>
                 
                 <!-- Export Options -->
@@ -1853,6 +1848,7 @@ function updateRealAnalyticsData() {
     .then(result => {
         if (result.success && result.data) {
             const data = result.data;
+
             console.log('Analytics data received:', data);
             console.log('Daily orders:', data.daily_orders);
             console.log('Product sales:', data.product_sales);
@@ -1909,111 +1905,27 @@ function updateRealAnalyticsData() {
                 updateElement('deadQuailsDisplay', farmDead);
                 updateElement('totalQuailsDisplay', farmTotal);
                 updateElement('mortalityRateDisplay', `${farmMortality}%`);
-                updateElement('survivalRateDisplay', `${data.farm_quail_stats.survival_rate ?? (100 - farmMortality)}%`);
-                updateElement('dressedQuailsDisplay', data.farm_quail_stats.dressed_quails ?? 0);
+                updateElement(
+                    'survivalRateDisplay',
+                    `${data.farm_quail_stats.survival_rate ?? (100 - farmMortality)}%`
+                );
+                updateElement(
+                    'dressedQuailsDisplay',
+                    data.farm_quail_stats.dressed_quails ?? 0
+                );
             }
             
             // Update charts
             updateRealCharts(data);
             
             // Update product sales table
-            updateProductSalesTable(data.product_sales, data.product_revenue, data.total_revenue);
+            updateProductSalesTable(
+                data.product_sales,
+                data.product_revenue,
+                data.total_revenue
+            );
             
             console.log('Analytics updated successfully with real data!');
-
-            // Show success popup
-            const existingModal = document.getElementById('analyticsUpdateSuccessModal');
-            if (existingModal) {
-                existingModal.remove();
-            }
-
-            const modal = document.createElement('div');
-            modal.id = 'analyticsUpdateSuccessModal';
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.45);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 99999;
-                padding: 1rem;
-            `;
-
-            modal.innerHTML = `
-                <div style="
-                    background: white;
-                    width: 100%;
-                    max-width: 420px;
-                    border-radius: 18px;
-                    padding: 2rem;
-                    text-align: center;
-                    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
-                    animation: analyticsModalPop 0.25s ease-out;
-                ">
-                    <div style="
-                        width: 64px;
-                        height: 64px;
-                        margin: 0 auto 1rem;
-                        border-radius: 50%;
-                        background: #e8f5e9;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 2rem;
-                    ">
-                        ✓
-                    </div>
-
-                    <p style="
-                        margin: 0 0 1.5rem;
-                        color: #666;
-                        line-height: 1.6;
-                    ">
-                        The latest analytics data has been successfully updated.
-                    </p>
-
-                    <button
-                        type="button"
-                        onclick="document.getElementById('analyticsUpdateSuccessModal').remove()"
-                        style="
-                            width: 100%;
-                            padding: 0.75rem 1.5rem;
-                            border: none;
-                            border-radius: 10px;
-                            background: linear-gradient(135deg, #a1887f 0%, #8d6e63 100%);
-                            color: white;
-                            font-weight: 600;
-                            font-size: 0.95rem;
-                            cursor: pointer;
-                        ">
-                        OK
-                    </button>
-                </div>
-            `;
-
-            document.body.appendChild(modal);
-
-            if (!document.getElementById('analyticsModalAnimationStyle')) {
-                const style = document.createElement('style');
-                style.id = 'analyticsModalAnimationStyle';
-                style.textContent = `
-                    @keyframes analyticsModalPop {
-                        from {
-                            opacity: 0;
-                            transform: scale(0.9);
-                        }
-                        to {
-                            opacity: 1;
-                            transform: scale(1);
-                        }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
 
         } else {
             throw new Error(result.message || 'Failed to fetch analytics data');
@@ -2030,55 +1942,18 @@ function updateRealAnalyticsData() {
         
         // Show fallback message
         if (typeof addNotification === 'function') {
-            addNotification('?', 'Failed to load analytics data. Please try again.', 'error');
+            addNotification(
+                '?',
+                'Failed to load analytics data. Please try again.',
+                'error'
+            );
         } else {
-            alert('Failed to load analytics data. Please check the browser console for more details.');
+            alert(
+                'Failed to load analytics data. Please check the browser console for more details.'
+            );
         }
     });
 }
-
-// Helper function to safely update elements
-function updateElement(id, value) {
-    const element = document.getElementById(id);
-    if (element) {
-        element.textContent = value;
-    } else {
-        console.warn(`Element with id '${id}' not found`);
-    }
-}
-
-// Update charts with real data
-function updateRealCharts(data) {
-    // Check if Chart.js is loaded
-    if (typeof Chart === 'undefined') {
-        return;
-    }
-    
-    // Initialize charts registry if not exists
-    if (!window.squifmCharts) {
-        window.squifmCharts = {};
-    }
-    
-    try {
-        // Update Daily Orders Chart
-        if (data.daily_orders && data.daily_orders.length > 0) {
-            updateDailyOrdersChart(data.daily_orders);
-        }
-        
-        // Update Product Sales Chart
-        if (data.product_sales) {
-            updateProductSalesChart(data.product_sales);
-        }
-        
-        // Update Daily Collection Chart
-        if (data.daily_collections && data.daily_collections.length > 0) {
-            updateDailyCollectionChart(data.daily_collections);
-        }
-    } catch (error) {
-        console.error('Error updating charts:', error);
-    }
-}
-
 // Update Daily Orders Chart
 function updateDailyOrdersChart(dailyOrders) {
     const ctx = document.getElementById('dailyOrdersChart');
@@ -6587,13 +6462,55 @@ function updateNewOrderStatus(selectElement, id) {
 }
 </script>
 
+<!-- Remove obsolete Analytics Update button and success popup -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    function removeObsoleteAnalyticsElements() {
+
+        // Remove "Update Analytics" button only
+        document.querySelectorAll('button').forEach(function (button) {
+            if (button.textContent.trim().toLowerCase() === 'update analytics') {
+                button.remove();
+            }
+        });
+
+        // Remove obsolete Analytics success popup only
+        document.querySelectorAll('*').forEach(function (element) {
+            if (
+                element.textContent &&
+                element.textContent.trim() ===
+                'The latest analytics data has been successfully updated.'
+            ) {
+                element.remove();
+            }
+        });
+    }
+
+    // Run after page loads
+    removeObsoleteAnalyticsElements();
+
+    // Detect elements added dynamically
+    const observer = new MutationObserver(function () {
+        removeObsoleteAnalyticsElements();
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+});
+</script>
+
 <!-- Export Report Modal -->
 <div class="confirm-modal-overlay" id="exportReportModal">
     <div class="confirm-modal" style="max-width: 450px; width: 90%;">
         <div class="confirm-modal-title" id="exportModalTitle">Export Report</div>
+
         <div id="exportModalContent" style="margin: 1.5rem 0; text-align: left;">
             <!-- Dynamic content will be inserted here -->
         </div>
+
         <div class="confirm-modal-buttons">
             <button class="confirm-modal-btn cancel" onclick="closeExportModal()">Cancel</button>
             <button class="confirm-modal-btn confirm" id="exportConfirmBtn" onclick="">Confirm</button>
@@ -6605,12 +6522,3 @@ function updateNewOrderStatus(selectElement, id) {
 <script src="{{ asset('order-notifications.js') }}"></script>
 
 @endsection
-
-
-
-
-
-
-
-
-
