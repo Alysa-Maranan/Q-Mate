@@ -167,7 +167,7 @@ class FeedingScheduleController extends Controller
                     'days' => [], // Empty array means every day
                     'amount' => self::SCHEDULED_DAILY_FEED_DURATION, // 300 seconds = 5 minutes
                     'cage_number' => 1,
-                    'enabled' => true,
+                    'enabled' => \DB::raw('TRUE'),
                     'status' => 'idle',
                 ]);
                 
