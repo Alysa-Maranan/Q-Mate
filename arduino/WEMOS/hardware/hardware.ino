@@ -10,7 +10,7 @@
  
 const char* WIFI_SSID = "GFiber_DD529";
 const char* WIFI_PASSWORD = "CA853854";
-const char* API_BASE_URL = "http://192.168.254.102/CAPSTONE_SQUIFM/public/api";
+const char* API_BASE_URL = "http://192.168.254.128:8000/api";
  
 const unsigned long COMMAND_INTERVAL = 2000;
 const unsigned long SENSOR_INTERVAL = 10000;

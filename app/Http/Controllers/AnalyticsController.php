@@ -45,7 +45,9 @@ class AnalyticsController extends Controller
             $pendingOrders = $totalOrders - $completedOrders;
             
             $activeDays = $collections->groupBy(function($item) {
-                return $item->created_at->format('Y-m-d');
+                // Use collection_time as the primary date, fallback to created_at
+                $date = $item->collection_time ?? $item->created_at;
+                return $date ? Carbon::parse($date)->format('Y-m-d') : 'unknown';
             })->count();
             
             $avgOrdersPerDay = $activeDays > 0 ? round($totalOrders / $activeDays, 1) : 0;
@@ -117,7 +119,9 @@ class AnalyticsController extends Controller
             
             // Group collections by date
             $collectionsByDate = $collections->groupBy(function($item) {
-                return $item->created_at->format('Y-m-d');
+                // Use collection_time as the primary date, fallback to created_at
+                $date = $item->collection_time ?? $item->created_at;
+                return $date ? Carbon::parse($date)->format('Y-m-d') : 'unknown';
             });
             
             // Create daily data arrays

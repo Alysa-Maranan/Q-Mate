@@ -485,21 +485,24 @@
         <p style="margin: 0.5rem 0 0; color: #8d6e63; font-size: 0.95rem;">Record egg collections, manage your daily sales and monitor your farm stocks â€” all in one place.</p>
     </div>
 
-    <!-- Category Tabs -->
-    <div class="category-tabs">
-        <button class="category-tab active" onclick="showCategory('collect')">
-            <span class="category-icon"></span>Collect & Inspect Eggs
-        </button>
-        <button class="category-tab" onclick="showCategory('quail-management')">
-            <span class="category-icon"></span>Quail Management
-        </button>
-        <button class="category-tab" onclick="showCategory('sales')">
-            <span class="category-icon"></span>Record Sales
-        </button>
-        <button class="category-tab" onclick="showCategory('analytics')">
-            <span class="category-icon"></span>Analytics & Reports
-        </button>
-    </div>
+   <!-- Category Tabs -->
+<div class="category-tabs">
+    <button class="category-tab active" onclick="showCategory('collect', event)">
+        <span class="category-icon"></span>Collect & Inspect Eggs
+    </button>
+
+    <button class="category-tab" onclick="showCategory('quail-management', event)">
+        <span class="category-icon"></span>Quail Management
+    </button>
+
+    <button class="category-tab" onclick="showCategory('sales', event)">
+        <span class="category-icon"></span>Record Sales
+    </button>
+
+    <button class="category-tab" onclick="showCategory('analytics', event)">
+        <span class="category-icon"></span>Analytics & Reports
+    </button>
+</div>
 
     <!-- COLLECT & INSPECT EGGS Category -->
     <div id="collect" class="category-content active">
@@ -1804,6 +1807,40 @@ function generateAnalyticsReport() {
     return generateProfessionalReport();
 }
 
+
+// Update charts with real data
+function updateRealCharts(data) {
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        return;
+    }
+    
+    // Initialize charts registry if not exists
+    if (!window.squifmCharts) {
+        window.squifmCharts = {};
+    }
+    
+    try {
+        // Update Daily Orders Chart
+        if (data.daily_orders && data.daily_orders.length > 0) {
+            updateDailyOrdersChart(data.daily_orders);
+        }
+        
+        // Update Product Sales Chart
+        if (data.product_sales) {
+            updateProductSalesChart(data.product_sales);
+        }
+        
+        // Update Daily Collection Chart
+        if (data.daily_collections && data.daily_collections.length > 0) {
+            updateDailyCollectionChart(data.daily_collections);
+        }
+    } catch (error) {
+        console.error('Error updating charts:', error);
+    }
+}
+
+
 // Update Analytics Function for Real Data
 function updateRealAnalyticsData() {
     console.log('Updating analytics with real data...');
@@ -1954,6 +1991,11 @@ function updateRealAnalyticsData() {
         }
     });
 }
+
+
+
+
+
 // Update Daily Orders Chart
 function updateDailyOrdersChart(dailyOrders) {
     const ctx = document.getElementById('dailyOrdersChart');
@@ -2800,7 +2842,7 @@ function updateElement(id, value) {
 
 // --------------------------------------------------------------------------------
 
-function showCategory(categoryId) {
+function showCategory(categoryId, event) {
     // Hide all categories
     document.querySelectorAll('.category-content').forEach(content => {
         content.classList.remove('active');
@@ -6460,46 +6502,6 @@ function updateNewOrderStatus(selectElement, id) {
         selectElement.selectedIndex = originalIndex;
     });
 }
-</script>
-
-<!-- Remove obsolete Analytics Update button and success popup -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    function removeObsoleteAnalyticsElements() {
-
-        // Remove "Update Analytics" button only
-        document.querySelectorAll('button').forEach(function (button) {
-            if (button.textContent.trim().toLowerCase() === 'update analytics') {
-                button.remove();
-            }
-        });
-
-        // Remove obsolete Analytics success popup only
-        document.querySelectorAll('*').forEach(function (element) {
-            if (
-                element.textContent &&
-                element.textContent.trim() ===
-                'The latest analytics data has been successfully updated.'
-            ) {
-                element.remove();
-            }
-        });
-    }
-
-    // Run after page loads
-    removeObsoleteAnalyticsElements();
-
-    // Detect elements added dynamically
-    const observer = new MutationObserver(function () {
-        removeObsoleteAnalyticsElements();
-    });
-
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-});
 </script>
 
 <!-- Export Report Modal -->

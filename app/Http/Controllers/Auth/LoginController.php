@@ -23,10 +23,10 @@ class LoginController extends Controller
 
             \Log::info('LOGIN STEP 1: Validation passed');
 
-            $result = Auth::attempt(
+            $result = Auth::guard('web')->attempt(
                 [
                     'email' => $request->email,
-                    'password' => $request->password
+                    'password' => $request->password,
                 ],
                 (bool) $request->remember
             );
@@ -68,7 +68,7 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::logout();
+        Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

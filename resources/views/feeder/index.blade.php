@@ -889,74 +889,160 @@
     let deleteFormToSubmit = null;
 
     // Handle manual feed form submission
-    let manualFeedInFlight = false;
-    document.getElementById('manualFeedForm')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        if (manualFeedInFlight) {
-            console.warn('[Manual Feed] Duplicate click ignored');
-            return;
+let manualFeedInFlight = false;
+
+document.getElementById('manualFeedForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    if (manualFeedInFlight) {
+        console.warn('[Manual Feed] Duplicate click ignored');
+        return;
+    }
+
+    manualFeedInFlight = true;
+
+    const form = this;
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    if (submitButton) {
+        submitButton.disabled = true;
+    }
+
+    console.log('[Manual Feed] Feed Now clicked');
+
+    const formData = new FormData(form);
+    const duration = parseInt(formData.get('duration'), 10) || 5;
+    const cage = parseInt(formData.get('cage_number'), 10) || 1;
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(async response => {
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.message || 'Failed to start feeding.'
+            );
         }
-        manualFeedInFlight = true;
-        const submitButton = this.querySelector('button[type="submit"]');
-        if (submitButton) submitButton.disabled = true;
-        console.log('[Manual Feed] Feed Now clicked');
-        
-        const formData = new FormData(this);
-        const duration = formData.get('duration');
-        const cage = formData.get('cage_number');
-        
-        fetch(this.action, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: formData
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === 'feeding_now' || data.status === 'queued') {
-                if (typeof notificationSystem !== 'undefined') {
-                    // Bell entry — FEEDING NOW (manual)
-                    notificationSystem.feeder('🍲 FEEDING NOW — Manual feeding started for Cage ' + cage + ' (' + duration + ' sec)', '✅');
-                }
-                playNotifSound('save');
-                // INSTANT DISPENSING: kapag 'feeding_now' (serial mode), i-show AGAD
-                // ang dispensing animation — kasabay ng pag-open ng servo. Bago pa
-                // mag-return ang request, naka-write na ang servo_command.json at
-                // 100ms lang ang command loop ng servo_bridge, kaya sabay na
-                // bumubukas ang servo at lumalabas ang animation.
-                // Kapag na-detect ng polling ang animation_trigger.json (aktwal na
-                // servo open), i-rere-sync lang ang timer — hindi na ulit mag-sstart.
-                if (data.status === 'feeding_now') {
-                    window.showFeedingAnimation(parseInt(duration, 10) || 5, parseInt(cage, 10) || 1);
-                }
-                // Sa 'queued' (WiFi/ESP32 mode), hindi pa agad bumubukas ang servo —
-                // lalabas ang animation kapag na-poll na ang aktwal na feeding.
-            } else if (data.status === 'skipped') {
-                if (typeof notificationSystem !== 'undefined') {
-                    notificationSystem.warning(data.message || 'Feeding skipped — another feed is already in progress.', '⚠️');
-                }
-                playNotifSound('delete');
-                manualFeedInFlight = false;
-                if (submitButton) submitButton.disabled = false;
-            } else {
-                if (typeof notificationSystem !== 'undefined') {
-                    notificationSystem.error('Failed to start feeding', '❌');
-                }
-                manualFeedInFlight = false;
-                if (submitButton) submitButton.disabled = false;
-            }
-        })
-        .catch(err => {
+
+        return data;
+    })
+    .then(data => {
+
+        console.log('[Manual Feed] Server response:', data);
+
+        // ============================================
+        // FEEDING STARTED / QUEUED
+        // ============================================
+        if (data.status === 'feeding_now' || data.status === 'queued') {
+
             if (typeof notificationSystem !== 'undefined') {
-                notificationSystem.error('Connection error: ' + err.message, '❌');
+                notificationSystem.feeder(
+                    '🍲 FEEDING NOW — Manual feeding started for Cage ' +
+                    cage +
+                    ' (' +
+                    duration +
+                    ' sec)',
+                    '✅'
+                );
             }
+
+            playNotifSound('save');
+
+            // START ANIMATION FOR BOTH:
+            // feeding_now = Serial mode
+            // queued      = WiFi/ESP32 mode
+            if (typeof window.showFeedingAnimation === 'function') {
+
+                console.log(
+                    '[Manual Feed] Starting feeding animation:',
+                    duration,
+                    'seconds, Cage',
+                    cage,
+                    'Status:',
+                    data.status
+                );
+
+                window.showFeedingAnimation(
+                    duration,
+                    cage
+                );
+            }
+
+        // ============================================
+        // FEEDING SKIPPED
+        // ============================================
+        } else if (data.status === 'skipped') {
+
+            if (typeof notificationSystem !== 'undefined') {
+                notificationSystem.warning(
+                    data.message ||
+                    'Feeding skipped — another feed is already in progress.',
+                    '⚠️'
+                );
+            }
+
+            playNotifSound('delete');
+
             manualFeedInFlight = false;
-            if (submitButton) submitButton.disabled = false;
-        });
+
+            if (submitButton) {
+                submitButton.disabled = false;
+            }
+
+        // ============================================
+        // UNEXPECTED RESPONSE
+        // ============================================
+        } else {
+
+            console.error(
+                '[Manual Feed] Unexpected server response:',
+                data
+            );
+
+            if (typeof notificationSystem !== 'undefined') {
+                notificationSystem.error(
+                    data.message ||
+                    'Failed to start feeding.',
+                    '❌'
+                );
+            }
+
+            manualFeedInFlight = false;
+
+            if (submitButton) {
+                submitButton.disabled = false;
+            }
+        }
+    })
+    .catch(err => {
+
+        console.error(
+            '[Manual Feed] Request error:',
+            err
+        );
+
+        if (typeof notificationSystem !== 'undefined') {
+            notificationSystem.error(
+                'Connection error: ' + err.message,
+                '❌'
+            );
+        }
+
+        manualFeedInFlight = false;
+
+        if (submitButton) {
+            submitButton.disabled = false;
+        }
     });
+});
 
     function showDeleteScheduleModal(btn, time, cage) {
         document.getElementById('deleteScheduleTime').innerText = time;
@@ -1499,262 +1585,709 @@
     let displayTimer = null;
     let currentCage = 1;
 
-    let animStartTime = null;   // aktwal na servo/animation start (ms epoch)
+    let animStartTime = null;   // actual animation/servo start time (ms)
     let animTotal = 1;          // feeding duration (seconds)
+
+    // IMPORTANT:
+    // True only after the countdown reaches 0.
+    // This prevents "Done Feeding!" from appearing too early.
+    let countdownFinished = false;
 
     const BOWL_EMPTY_Y = 120;
     const BOWL_MAX_H   = 68;
 
     function resetManualFeedButton() {
         manualFeedInFlight = false;
-        const button = document.querySelector('#manualFeedForm button[type="submit"]');
-        if (button) button.disabled = false;
+
+        const button = document.querySelector(
+            '#manualFeedForm button[type="submit"]'
+        );
+
+        if (button) {
+            button.disabled = false;
+        }
     }
 
     function setBowlFill(pct) {
         const fill = document.getElementById('bowl-food-fill');
+
         if (!fill) return;
-        const h = (pct / 100) * BOWL_MAX_H;
+
+        const safePct = Math.max(0, Math.min(100, pct));
+        const h = (safePct / 100) * BOWL_MAX_H;
+
         fill.setAttribute('y', BOWL_EMPTY_Y - h);
         fill.setAttribute('height', h);
     }
 
+    // ============================================================
+    // START FEEDING ANIMATION
+    // ============================================================
     function runAnimation(duration, cage, startedAt) {
-        if (animationShowing) return;
-        animationShowing = true;
-        currentCage = cage || 1;
-        window.__doneFeedingPopupShown = false;   // new feeding cycle — allow exactly ONE Done popup
-        if (safetyTimeout) { clearTimeout(safetyTimeout); safetyTimeout = null; }
 
-        const overlay     = document.getElementById('feeding-overlay');
-        const countdown   = document.getElementById('feed-countdown');
-        const progressBar = document.getElementById('feed-progress-bar');
-        const pctText     = document.getElementById('feed-pct');
-        const cageLabel   = document.getElementById('feed-cage-label');
-
-        overlay.classList.add('show');
-        if (cageLabel) cageLabel.textContent = 'Cage ' + (cage || '-');
-
-        animTotal = Math.max(1, parseInt(duration, 10) || 1);
-        // Use the bridge's start time (when the servo actually opened) so the
-        // animation ends at the EXACT same time as the servo closes. Kapag
-        // instant ang start (Feed Now click), gamitin muna ang oras ngayon —
-        // i-rere-sync ito sa aktwal na servo start kapag na-detect ng polling
-        // ang animation_trigger.json (tingnan ang syncAnimationStart()).
-        animStartTime = startedAt ? new Date(startedAt).getTime() : Date.now();
-        if (isNaN(animStartTime)) animStartTime = Date.now();
-
-        console.log('[Animation] Started - duration: ' + animTotal + ' seconds' + (startedAt ? ' (synced to servo start)' : ' (instant — syncing to servo...)'));
-
-        startDisplayTimer();
-    }
-
-    // Shared display loop — computes elapsed time from animStartTime and
-    // updates the bowl fill, progress bar, percentage and countdown.
-    function startDisplayTimer() {
-        if (displayTimer) clearInterval(displayTimer);
-        const progressBar = document.getElementById('feed-progress-bar');
-        const pctText     = document.getElementById('feed-pct');
-        const countdown   = document.getElementById('feed-countdown');
-        displayTimer = setInterval(function () {
-            const elapsed = (Date.now() - animStartTime) / 1000; // Actual elapsed seconds
-            const remaining = Math.max(0, animTotal - elapsed);
-            const pct = Math.min(100, Math.round((elapsed / animTotal) * 100));
-            
-            setBowlFill(pct);
-            if (progressBar) progressBar.style.width = pct + '%';
-            if (pctText) pctText.textContent = pct + '%';
-            if (countdown) countdown.textContent = Math.ceil(remaining);
-            
-            // Stop timer when duration is reached — show the 100% state and
-            // arm the safety timeout. Ang AKTUAL na pag-hide ng animation ay
-            // ginagawa pa rin ng polling kapag na-delete na ang
-            // animation_trigger.json (pagsara ng servo).
-            if (elapsed >= animTotal) {
-                clearInterval(displayTimer);
-                displayTimer = null;
-                markDurationComplete();
-            }
-        }, 100); // Update every 100ms for smooth animation
-    }
-
-    // 100% completion state — does NOT hide the animation, does NOT show the
-    // Done modal, and does NOT reset animationShowing/lastCheckedActive.
-    // Kaya ISANG BESES LANG ang "Done Feeding!" popup — lalabas ito lang
-    // kapag TAPOS NA talaga ang dispensing animation (servo closed).
-    function markDurationComplete() {
-        setBowlFill(100);
-        const progressBar = document.getElementById('feed-progress-bar');
-        const pctText     = document.getElementById('feed-pct');
-        const countdown   = document.getElementById('feed-countdown');
-        if (progressBar) progressBar.style.width = '100%';
-        if (pctText) pctText.textContent = '100%';
-        if (countdown) countdown.textContent = '0';
-
-        // SAFETY NET: kung hindi kailanman ma-delete ang file (namatay ang
-        // bridge / naka-hang ang servo), auto-hide + Done modal after 15s
-        // para hindi mangulila ang animation sa screen.
-        if (!safetyTimeout) {
-            safetyTimeout = setTimeout(function() {
-                if (animationShowing) {
-                    console.log('[Animation] Safety timeout - servo close never detected, hiding');
-                    hideAnimation();
-                }
-            }, 15000);
+        if (animationShowing) {
+            console.log(
+                '[Animation] Already showing - duplicate animation ignored'
+            );
+            return;
         }
-    }
 
-    // Re-sync the running animation to the servo's ACTUAL start time
-    // ('started_at' ng animation_trigger.json — oras na talagang bumukas ang
-    // servo). Tinatawag ito ng 300ms polling kapag instant nang na-show ang
-    // animation dahil sa Feed Now click — para eksaktong kasabay ng pag-close
-    // ng servo ang pagtatapos ng animation.
-    function syncAnimationStart(startedAt, duration) {
-        if (!animationShowing || !startedAt) return;
-        const servoStart = new Date(startedAt).getTime();
-        if (isNaN(servoStart)) return;
-        if (Math.abs(servoStart - animStartTime) < 500) return; // walang mapapansing drift
-        animStartTime = servoStart;
-        if (duration) animTotal = Math.max(1, parseInt(duration, 10) || animTotal);
-        if (!displayTimer) startDisplayTimer();   // i-restart ang tick kung na-stop na
-        console.log('[Animation] Timer re-synced to actual servo start');
-    }
+        animationShowing = true;
 
-    // Hide animation when the servo closes (animation_trigger.json deleted by bridge)
-    function hideAnimation() {
-        if (!animationShowing) return;
+        // NEW FEEDING CYCLE
+        // Reset this BEFORE the countdown starts.
+        countdownFinished = false;
+
+        currentCage = cage || 1;
+
+        // Allow exactly ONE Done Feeding popup for this feeding cycle.
+        window.__doneFeedingPopupShown = false;
+
+        if (safetyTimeout) {
+            clearTimeout(safetyTimeout);
+            safetyTimeout = null;
+        }
 
         if (animationTimeout) {
             clearTimeout(animationTimeout);
             animationTimeout = null;
         }
+
+        const overlay = document.getElementById('feeding-overlay');
+        const countdown = document.getElementById('feed-countdown');
+        const progressBar = document.getElementById('feed-progress-bar');
+        const pctText = document.getElementById('feed-pct');
+        const cageLabel = document.getElementById('feed-cage-label');
+
+        if (!overlay) {
+            console.warn('[Animation] feeding-overlay not found');
+            animationShowing = false;
+            resetManualFeedButton();
+            return;
+        }
+
+        overlay.classList.add('show');
+
+        if (cageLabel) {
+            cageLabel.textContent = 'Cage ' + (cage || '-');
+        }
+
+        animTotal = Math.max(
+            1,
+            parseInt(duration, 10) || 1
+        );
+
+        // If actual servo start time is available, use it.
+        // Otherwise start immediately when Feed Now is clicked.
+        animStartTime = startedAt
+            ? new Date(startedAt).getTime()
+            : Date.now();
+
+        if (isNaN(animStartTime)) {
+            animStartTime = Date.now();
+        }
+
+        // Reset visual state at the beginning.
+        setBowlFill(0);
+
+        if (progressBar) {
+            progressBar.style.width = '0%';
+        }
+
+        if (pctText) {
+            pctText.textContent = '0%';
+        }
+
+        if (countdown) {
+            countdown.textContent = animTotal;
+        }
+
+        console.log(
+            '[Animation] Started - duration: ' +
+            animTotal +
+            ' seconds' +
+            (
+                startedAt
+                    ? ' (synced to servo start)'
+                    : ' (instant - waiting for servo sync)'
+            )
+        );
+
+        startDisplayTimer();
+    }
+
+    // ============================================================
+    // DISPLAY / COUNTDOWN TIMER
+    // ============================================================
+    function startDisplayTimer() {
+
+        if (displayTimer) {
+            clearInterval(displayTimer);
+        }
+
+        const progressBar =
+            document.getElementById('feed-progress-bar');
+
+        const pctText =
+            document.getElementById('feed-pct');
+
+        const countdown =
+            document.getElementById('feed-countdown');
+
+        displayTimer = setInterval(function () {
+
+            if (!animationShowing) {
+                clearInterval(displayTimer);
+                displayTimer = null;
+                return;
+            }
+
+            const elapsed =
+                (Date.now() - animStartTime) / 1000;
+
+            const remaining =
+                Math.max(0, animTotal - elapsed);
+
+            const pct =
+                Math.min(
+                    100,
+                    Math.round((elapsed / animTotal) * 100)
+                );
+
+            setBowlFill(pct);
+
+            if (progressBar) {
+                progressBar.style.width = pct + '%';
+            }
+
+            if (pctText) {
+                pctText.textContent = pct + '%';
+            }
+
+            if (countdown) {
+                countdown.textContent =
+                    Math.ceil(remaining);
+            }
+
+            // ====================================================
+            // COUNTDOWN FINISHED
+            // ====================================================
+            if (elapsed >= animTotal) {
+
+                clearInterval(displayTimer);
+                displayTimer = null;
+
+                markDurationComplete();
+            }
+
+        }, 100);
+    }
+
+    // ============================================================
+    // COUNTDOWN COMPLETE
+    // ============================================================
+    function markDurationComplete() {
+
+        // VERY IMPORTANT:
+        // The countdown is now officially finished.
+        countdownFinished = true;
+
+        setBowlFill(100);
+
+        const progressBar =
+            document.getElementById('feed-progress-bar');
+
+        const pctText =
+            document.getElementById('feed-pct');
+
+        const countdown =
+            document.getElementById('feed-countdown');
+
+        if (progressBar) {
+            progressBar.style.width = '100%';
+        }
+
+        if (pctText) {
+            pctText.textContent = '100%';
+        }
+
+        if (countdown) {
+            countdown.textContent = '0';
+        }
+
+        console.log(
+            '[Animation] Countdown finished - 100%'
+        );
+
+        console.log(
+            '[Animation] Waiting for servo completion before showing Done Feeding'
+        );
+
+        // ========================================================
+        // SAFETY NET
+        // ========================================================
+        // If the servo never reports completion, prevent the
+        // animation from staying forever.
+        //
+        // This does NOT happen during the normal countdown.
+        // It only starts AFTER countdownFinished = true.
+        // ========================================================
+        if (!safetyTimeout) {
+
+            safetyTimeout = setTimeout(function () {
+
+                if (animationShowing) {
+
+                    console.log(
+                        '[Animation] Safety timeout - servo close was not detected'
+                    );
+
+                    hideAnimation();
+
+                }
+
+            }, 15000);
+        }
+    }
+
+    // ============================================================
+    // SYNC TO ACTUAL SERVO START
+    // ============================================================
+    function syncAnimationStart(startedAt, duration) {
+
+        if (!animationShowing || !startedAt) {
+            return;
+        }
+
+        const servoStart =
+            new Date(startedAt).getTime();
+
+        if (isNaN(servoStart)) {
+            return;
+        }
+
+        // No meaningful difference.
+        if (
+            Math.abs(
+                servoStart - animStartTime
+            ) < 500
+        ) {
+            return;
+        }
+
+        animStartTime = servoStart;
+
+        if (duration) {
+            animTotal = Math.max(
+                1,
+                parseInt(duration, 10) || animTotal
+            );
+        }
+
+        // IMPORTANT:
+        // If timer has already finished before sync happens,
+        // restart it so the countdown follows the actual servo
+        // start time.
+        if (!displayTimer && !countdownFinished) {
+            startDisplayTimer();
+        }
+
+        console.log(
+            '[Animation] Timer re-synced to actual servo start'
+        );
+    }
+
+    // ============================================================
+    // HIDE ANIMATION / SHOW DONE FEEDING
+    // ============================================================
+    function hideAnimation() {
+
+        if (!animationShowing) {
+            return;
+        }
+
+        // ========================================================
+        // CRITICAL PROTECTION
+        // ========================================================
+        // If the backend/polling reports inactive too early,
+        // DO NOT hide the animation and DO NOT show Done Feeding.
+        //
+        // Wait until the countdown reaches 0 first.
+        // ========================================================
+        if (!countdownFinished) {
+
+            console.log(
+                '[Animation] Servo inactive detected, BUT countdown is still running.'
+            );
+
+            console.log(
+                '[Animation] Keeping animation visible. Done Feeding will NOT show yet.'
+            );
+
+            return;
+        }
+
+        // ========================================================
+        // CLEANUP
+        // ========================================================
+        if (animationTimeout) {
+            clearTimeout(animationTimeout);
+            animationTimeout = null;
+        }
+
         if (safetyTimeout) {
             clearTimeout(safetyTimeout);
             safetyTimeout = null;
         }
+
         if (displayTimer) {
             clearInterval(displayTimer);
             displayTimer = null;
         }
 
-        const overlay     = document.getElementById('feeding-overlay');
-        const progressBar = document.getElementById('feed-progress-bar');
-        const pctText     = document.getElementById('feed-pct');
+        const overlay =
+            document.getElementById('feeding-overlay');
 
-        overlay.classList.remove('show');
+        const progressBar =
+            document.getElementById('feed-progress-bar');
+
+        const pctText =
+            document.getElementById('feed-pct');
+
+        if (overlay) {
+            overlay.classList.remove('show');
+        }
+
+        // Reset visual state for next feeding.
         setBowlFill(0);
-        if (progressBar) progressBar.style.width = '0%';
-        if (pctText) pctText.textContent = '0%';
+
+        if (progressBar) {
+            progressBar.style.width = '0%';
+        }
+
+        if (pctText) {
+            pctText.textContent = '0%';
+        }
+
         animationShowing = false;
         lastCheckedActive = false;
+
         resetManualFeedButton();
 
-        console.log('[Animation] Hidden by polling (servo closed)');
+        console.log(
+            '[Animation] Hidden - countdown completed and servo closed'
+        );
+
+        // ========================================================
+        // ONLY NOW SHOW DONE FEEDING
+        // ========================================================
         showDoneFeedingModal(currentCage);
     }
 
-    // Continuously check for feeding animation — handles BOTH manual and scheduled.
-    // servo_bridge.py creates animation_trigger.json at the exact moment the servo
-    // opens and deletes it at the exact moment the servo closes, for ALL feed types.
+    // ============================================================
+    // CONTINUOUS FEEDING CHECK
+    // ============================================================
     function startContinuousCheck() {
-        if (checkingInterval) return;
 
-        console.log('[Feeder] Starting continuous check every 300ms for feeding animation...');
+        if (checkingInterval) {
+            return;
+        }
 
-        checkingInterval = setInterval(function() {
-            // NOTE: do NOT skip while animationShowing — we must keep polling to
-            // detect file deletion (servo closed) and hide the animation simultaneously.
+        console.log(
+            '[Feeder] Starting continuous check every 300ms for feeding animation...'
+        );
+
+        checkingInterval = setInterval(function () {
 
             fetch('/api/feeder/animation')
+
                 .then(r => r.json())
+
                 .then(function (data) {
+
                     if (data.active) {
-                        // Animation file detected — servo just opened
+
+                        // ==================================================
+                        // SERVO IS ACTIVE
+                        // ==================================================
                         if (animationShowing) {
-                            // Instant na na-show ang animation dahil sa Feed Now
-                            // click — i-re-sync lang ang countdown sa aktwal na
-                            // servo start time (walang duplicate animation).
-                            syncAnimationStart(data.started_at, data.duration);
+
+                            // Feed Now may have started the animation
+                            // before the backend detected the servo.
+                            // Re-sync it to actual servo start.
+                            syncAnimationStart(
+                                data.started_at,
+                                data.duration
+                            );
+
                             lastCheckedActive = true;
+
                         } else if (!lastCheckedActive) {
-                                    console.log('[Feeder] Servo opened - starting animation NOW!');
-                            const duration = data.duration || 5;
-                            const cage = data.cage || 1;
-                            const startedAt = data.started_at || null;
-                            // Bell entry — FEEDING NOW (scheduled or manual detected by polling)
-                            if (typeof notificationSystem !== 'undefined') {
-                                const feedType = data.type === 'scheduled' ? 'Scheduled' : 'Manual';
-                                notificationSystem.feeder('🍲 FEEDING NOW — ' + feedType + ' feeding started for Cage ' + cage + ' (' + duration + ' sec)', '✅');
+
+                            // ==================================================
+                            // SERVO OPENED - START ANIMATION
+                            // ==================================================
+                            console.log(
+                                '[Feeder] Servo opened - starting animation NOW!'
+                            );
+
+                            const duration =
+                                data.duration || 5;
+
+                            const cage =
+                                data.cage || 1;
+
+                            const startedAt =
+                                data.started_at || null;
+
+                            if (
+                                typeof notificationSystem !==
+                                'undefined'
+                            ) {
+
+                                const feedType =
+                                    data.type === 'scheduled'
+                                        ? 'Scheduled'
+                                        : 'Manual';
+
+                                notificationSystem.feeder(
+                                    '🍲 FEEDING NOW — ' +
+                                    feedType +
+                                    ' feeding started for Cage ' +
+                                    cage +
+                                    ' (' +
+                                    duration +
+                                    ' sec)',
+                                    '✅'
+                                );
                             }
-                            runAnimation(duration, cage, startedAt);
+
+                            runAnimation(
+                                duration,
+                                cage,
+                                startedAt
+                            );
+
                             lastCheckedActive = true;
                         }
+
                     } else {
-                        // Animation file deleted — servo just closed
+
+                        // ==================================================
+                        // SERVO IS INACTIVE / CLOSED
+                        // ==================================================
                         lastCheckedActive = false;
+
                         if (animationShowing) {
-                            console.log('[Feeder] Feeding completed - hiding animation');
+
+                            console.log(
+                                '[Feeder] Servo inactive detected'
+                            );
+
+                            // hideAnimation() itself checks
+                            // countdownFinished.
+                            //
+                            // Therefore, if the countdown is still
+                            // running, nothing will happen.
                             hideAnimation();
                         }
                     }
+
                 })
+
                 .catch(function (err) {
-                    // Silent fail
+
+                    // Silent fail so the animation remains running
+                    // even if one polling request fails.
+                    console.warn(
+                        '[Feeder] Animation polling error:',
+                        err
+                    );
                 });
+
         }, 300);
     }
 
-    // Poll the schedule checker every 2 seconds so scheduled feeding triggers
-    // even when the auto-checker batch file is not running.
-    function startScheduleCheck() {
-        if (scheduleCheckInterval) return;
+   // ============================================================
+// SCHEDULE CHECK
+// ============================================================
+function startScheduleCheck() {
 
-        scheduleCheckInterval = setInterval(function() {
-            fetch('/feeder/schedules/auto-check')
-                .then(r => r.json())
-                .then(function(data) {
-                    if (data.count > 0) {
-                        console.log('[Feeder] Schedules triggered:', data.triggered);
-                    }
-                })
-                .catch(function(err) {
-                    // Silent fail
-                });
-        }, 2000);
+    if (scheduleCheckInterval) {
+        return;
     }
 
+    scheduleCheckInterval = setInterval(function () {
+
+        fetch('/feeder/schedules/auto-check')
+            .then(r => r.json())
+            .then(function (data) {
+
+                if (data.count > 0 && Array.isArray(data.triggered)) {
+
+                    console.log(
+                        '[Feeder] Scheduled feeds triggered:',
+                        data.triggered
+                    );
+
+                    data.triggered.forEach(function (schedule) {
+
+                        const duration =
+                            parseInt(schedule.amount, 10) || 5;
+
+                        const cage =
+                            parseInt(schedule.cage, 10) || 1;
+
+                        console.log(
+                            '[Feeder] Starting scheduled animation:',
+                            duration,
+                            'seconds, cage',
+                            cage
+                        );
+
+                        // Use the SAME existing animation function
+                        // already used by Manual Feed.
+                        if (typeof window.showFeedingAnimation === 'function') {
+                            window.showFeedingAnimation(
+                                duration,
+                                cage
+                            );
+                        } else {
+                            console.error(
+                                '[Feeder] showFeedingAnimation() is not available.'
+                            );
+                        }
+                    });
+                }
+
+            })
+            .catch(function (err) {
+
+                console.error(
+                    '[Feeder] Schedule check failed:',
+                    err
+                );
+
+            });
+
+    }, 2000);
+}
+
+    // ============================================================
+    // FEEDING DONE NOTIFICATION
+    // ============================================================
     function showFeedingDoneNotif() {
-        const modal = document.getElementById('feeding-notif-modal');
-        const timeEl = document.getElementById('feeding-notif-time');
-        if (!modal) return;
-        
+
+        const modal =
+            document.getElementById(
+                'feeding-notif-modal'
+            );
+
+        const timeEl =
+            document.getElementById(
+                'feeding-notif-time'
+            );
+
+        if (!modal) {
+            return;
+        }
+
         const now = new Date();
-        const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        const months = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December'
+        ];
+
         const hours = now.getHours();
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        const h = hours % 12 || 12;
-        timeEl.textContent = h + ':' + minutes + ' ' + ampm + ' — ' + months[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
+
+        const minutes =
+            String(now.getMinutes()).padStart(2, '0');
+
+        const ampm =
+            hours >= 12 ? 'PM' : 'AM';
+
+        const h =
+            hours % 12 || 12;
+
+        if (timeEl) {
+
+            timeEl.textContent =
+                h +
+                ':' +
+                minutes +
+                ' ' +
+                ampm +
+                ' — ' +
+                months[now.getMonth()] +
+                ' ' +
+                now.getDate() +
+                ', ' +
+                now.getFullYear();
+        }
+
         modal.style.display = 'flex';
     }
 
-    window.closeFeedingNotif = function() {
-        const modal = document.getElementById('feeding-notif-modal');
-        modal.style.display = 'none';
-        // Just reload to show updated history
+    // ============================================================
+    // CLOSE FEEDING NOTIFICATION
+    // ============================================================
+    window.closeFeedingNotif = function () {
+
+        const modal =
+            document.getElementById(
+                'feeding-notif-modal'
+            );
+
+        if (modal) {
+            modal.style.display = 'none';
+        }
+
+        // Reload to show updated feeding history.
         location.reload();
     };
-    
-    // Expose function globally for manual feed
-    window.showFeedingAnimation = function(duration, cage) {
-        console.log('[Manual Feed] Starting animation:', duration, 'seconds, cage', cage);
-        runAnimation(duration, cage);
+
+    // ============================================================
+    // SHOW FEEDING ANIMATION GLOBALLY
+    // ============================================================
+    window.showFeedingAnimation = function (
+        duration,
+        cage
+    ) {
+
+        console.log(
+            '[Manual Feed] Starting animation:',
+            duration,
+            'seconds, cage',
+            cage
+        );
+
+        runAnimation(
+            duration,
+            cage
+        );
     };
 
+    // ============================================================
+    // INITIALIZE
+    // ============================================================
     startContinuousCheck();
     startScheduleCheck();
 
-    console.log('[Feeder] Animation system initialized');
+    console.log(
+        '[Feeder] Animation system initialized'
+    );
+
 })();
 </script>
 @endsection

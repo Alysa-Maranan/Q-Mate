@@ -1,4 +1,4 @@
-
+﻿
 <?php
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -281,7 +281,7 @@ Route::middleware(['web'])->group(function () {
     Route::get('/inventory', function () {
         if (!auth()->check()) return redirect('/login');
         $currentQuailBreed = \App\Helpers\QuailBreedHelper::getCurrentBreed();
-        $farm = [
+       $farm = [
             'live_quails' => \App\Models\FarmSetting::get('live_quails', 0),
             'dead_quails' => \App\Models\FarmSetting::get('dead_quails', 0),
             'dressed_quails_stock' => \App\Models\FarmSetting::get('dressed_quails_stock', 0),
@@ -289,12 +289,17 @@ Route::middleware(['web'])->group(function () {
             'farm_name' => \App\Models\FarmSetting::get('farm_name', "Escalona's Farm") ?: "Escalona's Farm",
             'farm_address' => \App\Models\FarmSetting::get('farm_address', 'Pagkakaisa, Naujan, Or. Mindoro') ?: 'Pagkakaisa, Naujan, Or. Mindoro',
             'farm_phone' => \App\Models\FarmSetting::get('farm_phone', '+63 917 123 4567') ?: '+63 917 123 4567',
-            'farm_email' => \App\Models\FarmSetting::get('farm_email', 'escalona.farm@gmail.com') ?: 'escalona.farm@gmail.com'
+            'farm_email' => \App\Models\FarmSetting::get('farm_email', 'EscalonaFarm@gmail.com') ?: 'EscalonaFarm@gmail.com'
         ];
         
+        $recentOrders = \App\Models\ContactMessage::where('subject', 'LIKE', 'ORDER:%')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+
         $customerOrders = \App\Models\Order::orderBy('created_at', 'desc')->get();
         
-        return view('inventory', compact('currentQuailBreed', 'farm', 'customerOrders'));
+        return view('inventory', compact('currentQuailBreed', 'farm', 'recentOrders', 'customerOrders'));
     })->name('inventory');
 
     // Quail Detection Routes

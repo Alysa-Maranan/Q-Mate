@@ -232,128 +232,122 @@ class FeedingScheduleController extends Controller
     }
 
     public function checkSchedule()
-    {
-        // Release session lock immediately so polling requests aren't blocked
-        if (session()->isStarted()) {
-            session()->save();
-        }
-
-        $now = now();
-        $todayKey = strtolower(substr($now->format('D'), 0, 3));
-        $currentHM = $now->format('H:i');
-        $cmdFile = storage_path('logs/servo_command.json');
-
-        // ── Self-heal schedule statuses ─────────────────────────────────
-        // 1. Finished feeds return to idle so RECURRING schedules (daily
-        //    8/12/5 and weekly) can fire again at their next occurrence.
-        FeedingSchedule::where('status', 'done_feeding')
-            ->where(function ($q) {
-                $q->whereNull('last_feed_at')
-                  ->orWhere('last_feed_at', '<', now()->subMinutes(2));
-            })
-            ->update(['status' => 'idle']);
-
-        // 2. Stale feeding_now (bridge never consumed/failed the command)
-        //    is released after 30 minutes so it cannot block other
-        //    schedules forever.
-        FeedingSchedule::where('status', 'feeding_now')
-            ->where('feeding_started_at', '<', now()->subMinutes(30))
-            ->update(['status' => 'idle']);
-
-        // 3. Stale manual feeds stuck in feeding_now (e.g. when the DB was
-        //    down when the background done-command ran) are closed out so
-        //    they do not show as "Feeding Now" forever.
-        ManualFeed::where('status', 'feeding_now')
-            ->where('created_at', '<', now()->subMinutes(30))
-            ->update(['status' => 'done_feeding', 'completed_at' => now()]);
-
-        $schedules = FeedingSchedule::where('enabled', true)
-            ->whereIn('status', ['idle'])
-            ->whereNotExists(function ($q) {
-                $q->from('feeding_schedules')->where('status', 'feeding_now');
-            })
-            ->get();
-
-        $triggered = [];
-
-        foreach ($schedules as $schedule) {
-            $schedHM = substr($schedule->time, 0, 5);
-            if ($schedHM !== $currentHM) continue;
-
-            $days = $schedule->days ?? [];
-            if (!empty($days) && is_array($days)) {
-                if (!in_array($todayKey, $days)) continue;
-            }
-
-            if ($schedule->last_feed_at && $now->diffInSeconds($schedule->last_feed_at) < 120) continue;
-
-            // ── Never clobber a command the bridge hasn't consumed yet ──
-            // A fresh pending file means the bridge is busy/offline — retry
-            // on the next poll. A stale one (>60s) means the bridge is down;
-            // replace it so the new trigger is not lost.
-            if (file_exists($cmdFile)) {
-                if (time() - filemtime($cmdFile) > 60) {
-                    @unlink($cmdFile);
-                    Log::warning('checkSchedule: replaced stale servo_command.json');
-                } else {
-                    Log::warning('checkSchedule: servo_command.json still pending — skipping this poll');
-                    break;
-                }
-            }
-
-            $startedAt = now();
-            $amount = $schedule->amount ?? 5;
-            $schedule->update([
-                'status'             => 'feeding_now',
-                'last_feed_at'       => $startedAt,
-                'feeding_started_at' => $startedAt,
-            ]);
-
-            $triggered[] = ['id' => $schedule->id, 'time' => $schedule->time, 'amount' => $amount];
-
-            // Write servo_command.json - servo_bridge.py opens the servo and
-            // creates animation_trigger.json at the exact moment it opens.
-            file_put_contents($cmdFile, json_encode([
-                'action'   => 'trigger',
-                'duration' => $amount,
-                'port'     => $this->detectSerialPort(),
-                'cage'     => $schedule->cage_number ?? 1,
-                'type'     => 'scheduled',  // Mark as scheduled - with animation
-            ]));
-
-            Log::info('servo_command.json written for schedule ID: ' . $schedule->id);
-
-            // ── Delivery check ─────────────────────────────────────────
-            // The bridge polls every ~1s and deletes the file when consumed.
-            // If it is still here after a few seconds the bridge is likely
-            // offline — log it and LEAVE the file in place so the bridge
-            // feeds as soon as it starts (the feed is not lost).
-            $consumed = false;
-            for ($i = 0; $i < 8; $i++) {
-                usleep(500000); // 0.5s
-                if (!file_exists($cmdFile)) {
-                    $consumed = true;
-                    break;
-                }
-            }
-            if (!$consumed) {
-                Log::warning('Servo bridge did NOT consume the command within 4s — schedule ID '
-                    . $schedule->id . ' will feed as soon as the bridge comes online.');
-            }
-
-            // Mark done + record history after duration via background process
-            $php     = PHP_BINARY;
-            $artisan = base_path('artisan');
-            $sid     = $schedule->id;
-            if (PHP_OS_FAMILY === 'Windows') {
-                pclose(popen("start /B \"\" \"{$php}\" \"{$artisan}\" feeder:schedule-done --id={$sid} --duration={$amount} > NUL 2>&1", 'r'));
-            } else {
-                exec("\"{$php}\" \"{$artisan}\" feeder:schedule-done --id={$sid} --duration={$amount} > /dev/null 2>&1 &");
-            }
-        }
-
-        return response()->json(['status' => 'ok', 'triggered' => $triggered, 'count' => count($triggered)]);
+{
+    // Release session lock immediately so polling requests aren't blocked
+    if (session()->isStarted()) {
+        session()->save();
     }
+
+    $now = now();
+    $todayKey = strtolower(substr($now->format('D'), 0, 3));
+    $currentHM = $now->format('H:i');
+
+    // ── Self-heal schedule statuses ─────────────────────────────────
+
+    // 1. Finished feeds return to idle so RECURRING schedules
+    //    can fire again at their next occurrence.
+    FeedingSchedule::where('status', 'done_feeding')
+        ->where(function ($q) {
+            $q->whereNull('last_feed_at')
+              ->orWhere('last_feed_at', '<', now()->subMinutes(2));
+        })
+        ->update(['status' => 'idle']);
+
+    // 2. Release stale scheduled feeds so they cannot block
+    //    other schedules forever.
+    FeedingSchedule::where('status', 'feeding_now')
+        ->where('feeding_started_at', '<', now()->subMinutes(30))
+        ->update(['status' => 'idle']);
+
+    // 3. Keep existing Manual Feed self-healing untouched.
+    ManualFeed::where('status', 'feeding_now')
+        ->where('created_at', '<', now()->subMinutes(30))
+        ->update([
+            'status' => 'done_feeding',
+            'completed_at' => now()
+        ]);
+
+    // ── Find schedules that are ready to run ─────────────────────────
+
+    $schedules = FeedingSchedule::where('enabled', true)
+        ->whereIn('status', ['idle'])
+        ->whereNotExists(function ($q) {
+            $q->from('feeding_schedules')
+                ->where('status', 'feeding_now');
+        })
+        ->get();
+
+    $triggered = [];
+
+    foreach ($schedules as $schedule) {
+
+        // Check scheduled time
+        $schedHM = substr($schedule->time, 0, 5);
+
+        if ($schedHM !== $currentHM) {
+            continue;
+        }
+
+        // Check scheduled day
+        $days = $schedule->days ?? [];
+
+        if (!empty($days) && is_array($days)) {
+            if (!in_array($todayKey, $days)) {
+                continue;
+            }
+        }
+
+        // Prevent duplicate triggering within 120 seconds
+        if (
+            $schedule->last_feed_at &&
+            $now->diffInSeconds($schedule->last_feed_at) < 120
+        ) {
+            continue;
+        }
+
+        // ── START SCHEDULED FEED ─────────────────────────────────────
+
+        $startedAt = now();
+        $amount = $schedule->amount ?? 5;
+        $cage = $schedule->cage_number ?? 1;
+
+        // Mark schedule as feeding now
+        $schedule->update([
+            'status'             => 'feeding_now',
+            'last_feed_at'       => $startedAt,
+            'feeding_started_at' => $startedAt,
+        ]);
+
+        // Tell frontend that a scheduled feeding was triggered.
+        $triggered[] = [
+            'id'     => $schedule->id,
+            'time'   => $schedule->time,
+            'amount' => $amount,
+            'cage'   => $cage,
+        ];
+
+        // ── WIFI MODE ────────────────────────────────────────────────
+        // Queue the command exactly like the working Feed Now system,
+        // but using the existing scheduled command method.
+        $command = FeederCommand::queueScheduled(
+            $schedule->id,
+            $amount
+        );
+
+        Log::info('Scheduled feeder command queued via WiFi', [
+            'schedule_id' => $schedule->id,
+            'command_id'  => $command->id,
+            'duration'    => $amount,
+            'cage'        => $cage,
+        ]);
+    }
+
+    return response()->json([
+        'status'    => 'ok',
+        'triggered' => $triggered,
+        'count'     => count($triggered),
+    ]);
+}
 
     /**
      * Backward-compatible alias for checkSchedule().
