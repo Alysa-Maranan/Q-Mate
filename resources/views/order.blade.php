@@ -809,8 +809,8 @@ function showOrderModal(slug, name, price) {
                     </label>
 
                     <div style="background:#f8f5f1; padding:1rem; border-radius:10px; border-left:4px solid #6d4c41;">
-                        <p style="font-size:1.1rem; color:#4e342e; margin:0; font-weight:700;">
-                            09171234567
+                       <p style="font-size:1.1rem; color:#4e342e; margin:0; font-weight:700;">
+                            {{ \App\Models\FarmSetting::get('farm_phone', '+63 917 123 4567') }}
                         </p>
 
                         <p style="font-size:0.85rem; color:#8d6e63; margin:0.5rem 0 0 0;">
