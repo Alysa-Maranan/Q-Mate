@@ -54,6 +54,42 @@ class OrderController extends Controller
         return view('order-receipt', compact('order'));
     }
 
+    /**
+     * Cancel customer order
+     */
+    public function cancelOrder(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:1000',
+        ]);
+
+        $customer = auth('customer')->user();
+
+        // Make sure the order belongs to the currently logged-in customer
+        $order = Order::where('id', $id)
+            ->where('customer_id', $customer->id)
+            ->firstOrFail();
+
+        // Only pending orders can be cancelled
+        if ($order->status !== 'pending') {
+            return back()->with(
+                'error',
+                'This order can no longer be cancelled.'
+            );
+        }
+
+        // Save cancellation details
+        $order->status = 'cancelled';
+        $order->cancellation_reason = $request->reason;
+        $order->cancelled_at = now();
+        $order->save();
+
+        return back()->with(
+            'success',
+            'Order cancelled successfully.'
+        );
+    }
+
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
