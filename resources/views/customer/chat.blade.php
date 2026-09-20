@@ -180,7 +180,8 @@
                             <div class="message-bubble">
                                 @if(!empty($chat->image_path))
                                     <div style="margin-bottom:0.5rem;">
-                                        <img src="{{ asset('storage/' . $chat->image_path) }}" style="max-width: 100%; height:auto; border-radius:12px; border:1px solid rgba(255,255,255,0.25);">
+                                        <img src="{{ \Illuminate\Support\Str::startsWith($chat->image_path, ['http://', 'https://']) ? $chat->image_path : asset('storage/' . $chat->image_path) }}"
+                                             style="max-width: 100%; height:auto; border-radius:12px; border:1px solid rgba(255,255,255,0.25);">
                                     </div>
                                 @endif
                                 {{ $chat->message }}
@@ -376,8 +377,16 @@ function addMessage(text, sender, time, imagePath = null, skipScroll = false) {
     let avatarHtml = sender === 'admin' ? '<div class="message-avatar">S</div>' : '';
 
     const safeText = text ? escapeHtml(text) : '';
-    const imageHtml = imagePath
-        ? `<div style="margin-bottom:0.5rem;"><img src="/storage/${imagePath}" style="max-width:100%; height:auto; border-radius:12px; border:1px solid rgba(255,255,255,0.25);"></div>`
+
+    // Support both Supabase URLs and old local storage paths
+    const imageUrl = imagePath
+        ? (imagePath.startsWith('http://') || imagePath.startsWith('https://')
+            ? imagePath
+            : '/storage/' + imagePath)
+        : '';
+
+    const imageHtml = imageUrl
+        ? `<div style="margin-bottom:0.5rem;"><img src="${imageUrl}" style="max-width:100%; height:auto; border-radius:12px; border:1px solid rgba(255,255,255,0.25);"></div>`
         : '';
 
     messageDiv.innerHTML = `
