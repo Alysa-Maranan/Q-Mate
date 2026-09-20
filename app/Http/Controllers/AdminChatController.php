@@ -12,10 +12,10 @@ class AdminChatController extends Controller
     public function index()
     {
         // Get all customers who have sent at least one message themselves
-        $customers = Customer::whereHas('chats', function($query) {
+        $customers = Customer::whereHas('chats', function ($query) {
                 $query->where('sender', 'customer');
             })
-            ->with(['chats' => function($query) {
+            ->with(['chats' => function ($query) {
                 $query->latest()->take(1);
             }])
             ->get();
@@ -25,7 +25,10 @@ class AdminChatController extends Controller
             ->where('status', 'sent')
             ->count();
 
-        return view('admin.chat', compact('customers', 'unreadCount'));
+        return view('admin.chat', compact(
+            'customers',
+            'unreadCount'
+        ));
     }
 
     public function getCustomerChat($customerId)
@@ -38,9 +41,11 @@ class AdminChatController extends Controller
         Chat::where('customer_id', $customerId)
             ->where('sender', 'customer')
             ->where('status', 'sent')
-            ->update(['status' => 'read']);
+            ->update([
+                'status' => 'read'
+            ]);
 
-        // Check if customer is typing (sent message within last 10 seconds)
+        // Check if customer is typing
         $typing = Chat::where('customer_id', $customerId)
             ->where('sender', 'customer')
             ->where('status', 'sent')
@@ -68,18 +73,24 @@ class AdminChatController extends Controller
         $message = $request->input('message');
         $hasImage = $request->hasFile('image');
 
-        if ((empty($message) || $message === '') && !$hasImage) {
+        // Message or image is required
+        if ((empty($message) || trim($message) === '') && !$hasImage) {
             return response()->json([
                 'success' => false,
                 'message' => 'Message or image is required.'
             ], 422);
         }
 
+        // Store image if attached
         $imagePath = null;
+
         if ($hasImage) {
             $file = $request->file('image');
-            $storedPath = $file->store('chat_attachments', 'public'); // e.g. chat_attachments/xxx.jpg
-            $imagePath = $storedPath;
+
+            $imagePath = $file->store(
+                'chat_attachments',
+                'public'
+            );
         }
 
         $chat = Chat::create([

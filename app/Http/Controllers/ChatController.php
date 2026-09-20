@@ -13,8 +13,8 @@ class ChatController extends Controller
         $customerId = Auth::guard('customer')->id();
 
         $chats = Chat::where('customer_id', $customerId)
-                    ->orderBy('created_at', 'asc')
-                    ->get();
+            ->orderBy('created_at', 'asc')
+            ->get();
 
         return view('customer.chat', compact('chats'));
     }
@@ -22,17 +22,42 @@ class ChatController extends Controller
     public function send(Request $request)
     {
         $request->validate([
-            'message' => 'required|string|max:1000'
+            'message' => 'nullable|string|max:1000',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:5120',
         ]);
 
         $customerId = Auth::guard('customer')->id();
+
+        $message = $request->input('message');
+        $hasImage = $request->hasFile('image');
+
+        // Message or image is required
+        if ((empty($message) || trim($message) === '') && !$hasImage) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Message or image is required.'
+            ], 422);
+        }
+
+        // Store image if attached
+        $imagePath = null;
+
+        if ($hasImage) {
+            $file = $request->file('image');
+
+            $imagePath = $file->store(
+                'chat_attachments',
+                'public'
+            );
+        }
 
         // Check if this is their very first message
         $isFirstMessage = !Chat::where('customer_id', $customerId)->exists();
 
         $chat = Chat::create([
             'customer_id' => $customerId,
-            'message' => $request->message,
+            'message' => $message ?? '',
+            'image_path' => $imagePath,
             'sender' => 'customer',
             'status' => 'sent'
         ]);
@@ -42,8 +67,9 @@ class ChatController extends Controller
             Chat::create([
                 'customer_id' => $customerId,
                 'message' => 'Hello! Welcome to Escalona\'s Quail Farm. How can we help you today?',
+                'image_path' => null,
                 'sender' => 'admin',
-                'status' => 'sent' // Mark as 'sent' so customer sees it as unread notification
+                'status' => 'sent'
             ]);
         }
 
@@ -56,9 +82,10 @@ class ChatController extends Controller
     public function getMessages()
     {
         $customerId = Auth::guard('customer')->id();
+
         $chats = Chat::where('customer_id', $customerId)
-                    ->orderBy('created_at', 'asc')
-                    ->get();
+            ->orderBy('created_at', 'asc')
+            ->get();
 
         // Mark admin messages as read
         Chat::where('customer_id', $customerId)
@@ -66,7 +93,8 @@ class ChatController extends Controller
             ->where('status', 'sent')
             ->update(['status' => 'read']);
 
-        // Check if admin has sent a recent message (within last 10 seconds) - for typing indicator
+        // Check if admin has sent a recent message
+        // within the last 10 seconds - for typing indicator
         $typing = Chat::where('customer_id', $customerId)
             ->where('sender', 'admin')
             ->where('status', 'sent')
@@ -85,9 +113,10 @@ class ChatController extends Controller
         $customerId = Auth::guard('customer')->id();
         $isTyping = $request->input('typing', false);
 
-        // Store typing status in session or cache if needed
-        // For now, just acknowledge
-        return response()->json(['success' => true, 'typing' => $isTyping]);
+        return response()->json([
+            'success' => true,
+            'typing' => $isTyping
+        ]);
     }
 
     public function submitRating(Request $request)
@@ -98,10 +127,13 @@ class ChatController extends Controller
 
         $customerId = Auth::guard('customer')->id();
 
-        // Store rating in session or database as needed
-        // For now, just acknowledge
-        session(['chat_rating' => $request->rating, 'chat_rating_comments' => $request->comments]);
+        session([
+            'chat_rating' => $request->rating,
+            'chat_rating_comments' => $request->comments
+        ]);
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true
+        ]);
     }
 }
