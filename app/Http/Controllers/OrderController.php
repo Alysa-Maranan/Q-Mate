@@ -60,7 +60,7 @@ class OrderController extends Controller
     public function cancelOrder(Request $request, $id)
     {
         $request->validate([
-            'reason' => 'required|string|max:1000',
+            'cancellation_reason' => 'required|string|max:1000',
         ]);
 
         $customer = auth('customer')->user();
@@ -72,22 +72,22 @@ class OrderController extends Controller
 
         // Only pending orders can be cancelled
         if ($order->status !== 'pending') {
-            return back()->with(
-                'error',
-                'This order can no longer be cancelled.'
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'This order can no longer be cancelled.'
+            ], 422);
         }
 
         // Save cancellation details
         $order->status = 'cancelled';
-        $order->cancellation_reason = $request->reason;
+        $order->cancellation_reason = $request->cancellation_reason;
         $order->cancelled_at = now();
         $order->save();
 
-        return back()->with(
-            'success',
-            'Order cancelled successfully.'
-        );
+        return response()->json([
+            'success' => true,
+            'message' => 'Order cancelled successfully.'
+        ]);
     }
 
     public function updateStatus(Request $request, $id)
