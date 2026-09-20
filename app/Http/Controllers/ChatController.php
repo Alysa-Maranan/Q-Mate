@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Chat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ChatController extends Controller
 {
@@ -39,16 +41,73 @@ class ChatController extends Controller
             ], 422);
         }
 
-        // Store image if attached
+        // Store image in Supabase Storage if attached
         $imagePath = null;
 
         if ($hasImage) {
-            $file = $request->file('image');
+            try {
+                $file = $request->file('image');
 
-            $imagePath = $file->store(
-                'chat_attachments',
-                'public'
-            );
+                $supabaseUrl = rtrim(
+                    getenv('SUPABASE_URL') ?: '',
+                    '/'
+                );
+
+                $supabaseKey = getenv('SUPABASE_SERVICE_KEY') ?: '';
+
+                if ($supabaseUrl === '' || $supabaseKey === '') {
+                    throw new \Exception('Supabase Storage environment variables are missing.');
+                }
+
+                $filename = 'chat_' .
+                    now()->format('YmdHis') . '_' .
+                    bin2hex(random_bytes(8)) . '.' .
+                    $file->extension();
+
+                $storagePath = 'customer/' . $filename;
+
+                $uploadUrl =
+                    $supabaseUrl .
+                    '/storage/v1/object/chat-attachments/' .
+                    $storagePath;
+
+                $response = Http::timeout(30)
+                    ->withHeaders([
+                        'Authorization' => 'Bearer ' . $supabaseKey,
+                        'apikey' => $supabaseKey,
+                        'Content-Type' => $file->getMimeType(),
+                    ])
+                    ->withBody(
+                        file_get_contents($file->getRealPath()),
+                        $file->getMimeType()
+                    )
+                    ->post($uploadUrl);
+
+                if (!$response->successful()) {
+                    Log::error('Customer chat image upload failed', [
+                        'status' => $response->status(),
+                        'response' => $response->body(),
+                    ]);
+
+                    throw new \Exception('Supabase image upload failed.');
+                }
+
+                // Save the permanent public URL in the chat record
+                $imagePath =
+                    $supabaseUrl .
+                    '/storage/v1/object/public/chat-attachments/' .
+                    $storagePath;
+
+            } catch (\Throwable $e) {
+                Log::error('Customer chat image upload exception', [
+                    'error' => $e->getMessage(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Image upload failed. Please try again.'
+                ], 500);
+            }
         }
 
         // Check if this is their very first message
