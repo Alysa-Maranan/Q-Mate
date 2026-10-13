@@ -1596,7 +1596,6 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
     let scheduleCheckInterval = null;
     let lastCheckedActive = false;
     let animationTimeout = null;
-    let safetyTimeout = null;
     let displayTimer = null;
     let currentCage = 1;
     let currentFeed = null;
@@ -1662,11 +1661,6 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
 
         // Allow exactly ONE Done Feeding popup for this feeding cycle.
         window.__doneFeedingPopupShown = false;
-
-        if (safetyTimeout) {
-            clearTimeout(safetyTimeout);
-            safetyTimeout = null;
-        }
 
         if (animationTimeout) {
             clearTimeout(animationTimeout);
@@ -1839,35 +1833,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
             '[Animation] Countdown finished - 100%'
         );
 
-        console.log(
-            '[Animation] Waiting for servo completion before showing Done Feeding'
-        );
-
-        // ========================================================
-        // SAFETY NET
-        // ========================================================
-        // If the servo never reports completion, prevent the
-        // animation from staying forever.
-        //
-        // This does NOT happen during the normal countdown.
-        // It only starts AFTER countdownFinished = true.
-        // ========================================================
-        if (!safetyTimeout) {
-
-            safetyTimeout = setTimeout(function () {
-
-                if (animationShowing) {
-
-                    console.log(
-                        '[Animation] Safety timeout - servo close was not detected'
-                    );
-
-                    hideAnimation();
-
-                }
-
-            }, 15000);
-        }
+        hideAnimation();
     }
 
     // ============================================================
@@ -1953,11 +1919,6 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         if (animationTimeout) {
             clearTimeout(animationTimeout);
             animationTimeout = null;
-        }
-
-        if (safetyTimeout) {
-            clearTimeout(safetyTimeout);
-            safetyTimeout = null;
         }
 
         if (displayTimer) {
