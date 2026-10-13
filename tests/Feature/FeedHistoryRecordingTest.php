@@ -179,6 +179,74 @@ class FeedHistoryRecordingTest extends TestCase
         ]);
     }
 
+    public function test_animation_poll_recovers_manual_feed_without_hardware_and_keeps_history_idempotent(): void
+    {
+        $feed = $this->manualFeed();
+        $command = FeederCommand::create([
+            'type' => 'manual',
+            'manual_feed_id' => $feed->id,
+            'duration' => $feed->duration,
+            'status' => 'pending',
+        ]);
+
+        $animation = $this->getJson('/api/feeder/animation')
+            ->assertOk()
+            ->assertJson([
+                'active' => true,
+                'type' => 'manual',
+                'feed_id' => $feed->id,
+                'command_id' => $command->id,
+                'duration' => $feed->duration,
+                'cage' => $feed->cage_number,
+            ]);
+
+        $completion = [
+            'feed_type' => $animation->json('type'),
+            'feed_id' => $animation->json('feed_id'),
+            'command_id' => $animation->json('command_id'),
+            'cage_number' => $animation->json('cage'),
+        ];
+
+        $this->postJson(route('feeder.complete'), $completion)->assertOk();
+        $this->postJson(route('feeder.complete'), $completion)->assertOk();
+
+        $this->assertDatabaseCount('feed_history', 1);
+    }
+
+    public function test_animation_poll_recovers_scheduled_feed_without_hardware_and_keeps_history_idempotent(): void
+    {
+        $schedule = $this->feedingSchedule();
+        $command = FeederCommand::create([
+            'type' => 'scheduled',
+            'schedule_id' => $schedule->id,
+            'duration' => $schedule->amount,
+            'status' => 'pending',
+        ]);
+
+        $animation = $this->getJson('/api/feeder/animation')
+            ->assertOk()
+            ->assertJson([
+                'active' => true,
+                'type' => 'scheduled',
+                'feed_id' => $schedule->id,
+                'command_id' => $command->id,
+                'duration' => $schedule->amount,
+                'cage' => $schedule->cage_number,
+            ]);
+
+        $completion = [
+            'feed_type' => $animation->json('type'),
+            'feed_id' => $animation->json('feed_id'),
+            'command_id' => $animation->json('command_id'),
+            'cage_number' => $animation->json('cage'),
+        ];
+
+        $this->postJson(route('feeder.complete'), $completion)->assertOk();
+        $this->postJson(route('feeder.complete'), $completion)->assertOk();
+
+        $this->assertDatabaseCount('feed_history', 1);
+    }
+
     public function test_manual_hardware_callback_and_animation_report_record_once(): void
     {
         $feed = $this->manualFeed();

@@ -356,23 +356,69 @@ Route::get('/feeder/history', function () {
 // ── Animation Trigger (para sa browser — sabay ng servo open/close) ──
 Route::get('/feeder/animation', function () {
     $file = storage_path('logs/animation_trigger.json');
-    if (!file_exists($file)) return response()->json(['active' => false]);
-    $data = json_decode(file_get_contents($file), true);
+    if (file_exists($file)) {
+        $data = json_decode(file_get_contents($file), true);
 
-    // STALE GUARD: kung lumipas na ang buong duration + 10s grace PERO hindi
-    // pa na-delete ang file (namatay ang bridge sa gitna ng feeding),
-    // itinuturing itong stale — burahin at i-report na walang active feeding.
-    // Kaya HINDI lalabas ang "Dispensing Feed" animation kapag walang tunay
-    // na feeding na nangyayari, kahit may naiwang file.
-    if (!empty($data['started_at']) && !empty($data['duration'])) {
-        $endsAt = strtotime($data['started_at']) + ((int) $data['duration'] + 10);
-        if ($endsAt < time()) {
-            @unlink($file);
-            return response()->json(['active' => false]);
+        if (!empty($data['active'])) {
+            // Ignore stale bridge files, but still allow the active database feed below.
+            if (!empty($data['started_at']) && !empty($data['duration'])) {
+                $endsAt = strtotime($data['started_at']) + ((int) $data['duration'] + 10);
+                if ($endsAt < time()) {
+                    @unlink($file);
+                } else {
+                    return response()->json($data);
+                }
+            } else {
+                return response()->json($data);
+            }
         }
     }
 
-    return response()->json($data ?? ['active' => false]);
+    $schedule = \App\Models\FeedingSchedule::where('status', 'feeding_now')
+        ->latest('id')
+        ->first();
+
+    if ($schedule) {
+        $command = \App\Models\FeederCommand::where('schedule_id', $schedule->id)
+            ->whereIn('status', ['pending', 'in_progress'])
+            ->latest('id')
+            ->first();
+
+        return response()->json([
+            'active' => true,
+            'type' => 'scheduled',
+            'feed_id' => $schedule->id,
+            'command_id' => $command?->id,
+            'duration' => $schedule->amount,
+            'cage' => $schedule->cage_number ?? 1,
+            'started_at' => $schedule->feeding_started_at
+                ?? $schedule->last_feed_at
+                ?? $schedule->updated_at,
+        ]);
+    }
+
+    $manualFeed = \App\Models\ManualFeed::where('status', 'feeding_now')
+        ->latest('id')
+        ->first();
+
+    if ($manualFeed) {
+        $command = \App\Models\FeederCommand::where('manual_feed_id', $manualFeed->id)
+            ->whereIn('status', ['pending', 'in_progress'])
+            ->latest('id')
+            ->first();
+
+        return response()->json([
+            'active' => true,
+            'type' => 'manual',
+            'feed_id' => $manualFeed->id,
+            'command_id' => $command?->id,
+            'duration' => $manualFeed->duration,
+            'cage' => $manualFeed->cage_number ?? 1,
+            'started_at' => $manualFeed->started_at ?? $manualFeed->created_at,
+        ]);
+    }
+
+    return response()->json(['active' => false]);
 });
 
 // ── Feeding Notification (para sa dashboard modal) ──

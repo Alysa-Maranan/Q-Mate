@@ -2120,7 +2120,11 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
                                 );
                             }
 
-                            window.setFeedHistoryContext({ type: data.type });
+                            window.setFeedHistoryContext({
+                                type: data.type,
+                                id: data.feed_id || data.id,
+                                commandId: data.command_id || null
+                            });
                             runAnimation(duration, cage, startedAt);
 
                             lastCheckedActive = true;
