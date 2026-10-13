@@ -6,6 +6,7 @@ use App\Models\FeedingSchedule;
 use App\Models\ManualFeed;
 use App\Models\FeedHistory;
 use App\Models\FeederCommand;
+use App\Services\FeedHistoryRecorder;
 use App\Services\TwilioService;
 
 use Illuminate\Http\Request;
@@ -318,22 +319,24 @@ class FeedingScheduleController extends Controller
             'feeding_started_at' => $startedAt,
         ]);
 
+        // Queue the command before returning it to the frontend.
+        $command = FeederCommand::queueScheduled(
+            $schedule->id,
+            $amount
+        );
+
         // Tell frontend that a scheduled feeding was triggered.
         $triggered[] = [
             'id'     => $schedule->id,
             'time'   => $schedule->time,
             'amount' => $amount,
             'cage'   => $cage,
+            'command_id' => $command->id,
         ];
 
         // ── WIFI MODE ────────────────────────────────────────────────
         // Queue the command exactly like the working Feed Now system,
         // but using the existing scheduled command method.
-        $command = FeederCommand::queueScheduled(
-            $schedule->id,
-            $amount
-        );
-
         Log::info('Scheduled feeder command queued via WiFi', [
             'schedule_id' => $schedule->id,
             'command_id'  => $command->id,
@@ -429,6 +432,76 @@ class FeedingScheduleController extends Controller
         return redirect()->route('feeder')->withFragment('history')->with('success', 'History record deleted.');
     }
 
+    public function completeAnimation(Request $request, FeedHistoryRecorder $recorder)
+    {
+        $data = $request->validate([
+            'feed_type' => 'required|in:manual,scheduled',
+            'feed_id' => 'nullable|integer',
+            'command_id' => 'nullable|integer|exists:feeder_commands,id',
+            'cage_number' => 'nullable|integer|min:1|max:10',
+        ]);
+
+        if (!empty($data['feed_id'])) {
+            $feed = $data['feed_type'] === 'manual'
+                ? ManualFeed::findOrFail($data['feed_id'])
+                : FeedingSchedule::findOrFail($data['feed_id']);
+        } else {
+            $query = $data['feed_type'] === 'manual'
+                ? ManualFeed::where('status', 'feeding_now')
+                : FeedingSchedule::where('status', 'feeding_now');
+
+            if (!empty($data['cage_number'])) {
+                $query->where('cage_number', $data['cage_number']);
+            }
+
+            $feed = $query->latest('id')->first();
+        }
+
+        if (!$feed) {
+            return response()->json([
+                'recorded' => false,
+                'status' => 'not_active',
+            ]);
+        }
+
+        if (!empty($data['command_id'])) {
+            $command = FeederCommand::findOrFail($data['command_id']);
+            $matchesFeed = $data['feed_type'] === 'manual'
+                ? $command->type === 'manual' && (int) $command->manual_feed_id === (int) $feed->id
+                : $command->type === 'scheduled' && (int) $command->schedule_id === (int) $feed->id;
+
+            if (!$matchesFeed) {
+                return response()->json([
+                    'recorded' => false,
+                    'status' => 'command_mismatch',
+                ], 422);
+            }
+
+            if ($command->status === 'in_progress') {
+                return response()->json([
+                    'recorded' => false,
+                    'status' => 'awaiting_hardware',
+                ]);
+            }
+
+            if (in_array($command->status, ['completed', 'failed'], true)) {
+                return response()->json([
+                    'recorded' => false,
+                    'status' => $command->status,
+                ]);
+            }
+        }
+
+        $recorded = $data['feed_type'] === 'manual'
+            ? $recorder->completeManual($feed)
+            : $recorder->completeScheduled($feed);
+
+        return response()->json([
+            'recorded' => $recorded,
+            'status' => $recorded ? 'completed' : 'already_completed',
+        ]);
+    }
+
 
     public function triggerNow(FeedingSchedule $feedingSchedule)
     {
@@ -443,12 +516,15 @@ class FeedingScheduleController extends Controller
 
         // Check FEEDER_MODE: 'wifi' uses ESP32 polling, 'serial' uses Python script
         if (env('FEEDER_MODE', 'serial') === 'wifi') {
-            FeederCommand::queueScheduled($feedingSchedule->id, $amount);
+            $command = FeederCommand::queueScheduled($feedingSchedule->id, $amount);
 
             if (request()->wantsJson() || request()->ajax()) {
                 return response()->json([
                     'status' => 'queued',
                     'id' => $feedingSchedule->id,
+                    'command_id' => $command->id,
+                    'duration' => $amount,
+                    'cage_number' => $feedingSchedule->cage_number ?? 1,
                     'message' => 'Feed command queued. ESP32 will pick it up shortly.',
                 ]);
             }
@@ -479,7 +555,12 @@ class FeedingScheduleController extends Controller
         }
 
         if (request()->wantsJson() || request()->ajax()) {
-            return response()->json(['status' => 'ok', 'id' => $feedingSchedule->id]);
+            return response()->json([
+                'status' => 'ok',
+                'id' => $feedingSchedule->id,
+                'duration' => $amount,
+                'cage_number' => $feedingSchedule->cage_number ?? 1,
+            ]);
         }
 
         return redirect()->back()->with('success', 'Feeding started for Cage ' . $feedingSchedule->cage_number . '!');
@@ -553,6 +634,7 @@ class FeedingScheduleController extends Controller
                 'mode'        => 'serial',
                 'duration'    => $manualFeed->duration,
                 'cage_number' => $manualFeed->cage_number,
+                'feed_id'     => $manualFeed->id,
                 'message'     => $started
                     ? 'Manual feeding started for Cage ' . $manualFeed->cage_number . '.'
                     : 'Manual feed skipped — a scheduled feeding command is already in progress for the servo.',
@@ -569,6 +651,7 @@ class FeedingScheduleController extends Controller
                 'mode' => 'wifi',
                 'duration' => $manualFeed->duration,
                 'cage_number' => $manualFeed->cage_number,
+                'feed_id' => $manualFeed->id,
                 'message' => 'Manual feed command queued for Cage ' . $manualFeed->cage_number . '. ESP32 will pick it up shortly.',
             ]);
         }
@@ -596,23 +679,11 @@ class FeedingScheduleController extends Controller
         exec($command . ' 2>&1', $output, $returnCode);
 
         if ($returnCode === 0) {
-            $manualFeed->update([
-                'status' => 'done_feeding',
-                'completed_at' => now(),
-            ]);
+            $recorded = app(FeedHistoryRecorder::class)->completeManual($manualFeed);
+            if ($recorded) {
+                $this->sendSmsNotification("Manual feeding completed: {$manualFeed->duration} seconds");
+            }
 
-            FeedHistory::create([
-                'feed_type' => 'manual',
-                'feed_brand' => cache('feed_brand', 'Quail Layer Smash'),
-                'manual_feed_id' => $manualFeed->id,
-                'duration' => $manualFeed->duration,
-                'cage_number' => $manualFeed->cage_number,
-                'days' => $manualFeed->days,
-                'status' => 'completed',
-                'fed_at' => now(),
-            ]);
-
-            $this->sendSmsNotification("Manual feeding completed: {$manualFeed->duration} seconds");
             return true;
         }
 
@@ -790,25 +861,22 @@ class FeedingScheduleController extends Controller
         }
 
         $command = "\"$python\" \"$script\" trigger $amount $port";
+        $startedAt = now();
+        $schedule->update([
+            'status' => 'feeding_now',
+            'last_feed_at' => $startedAt,
+            'feeding_started_at' => $startedAt,
+        ]);
+
         exec($command . ' 2>&1', $output, $returnCode);
 
         if ($returnCode === 0) {
-            // Success - update status to done_feeding
-            $schedule->update(['status' => 'done_feeding']);
-            
-            // Record to feed history
-            FeedHistory::create([
-                'feed_type' => 'scheduled',
-                'feed_brand' => cache('feed_brand', 'Quail Layer Smash'),
-                'schedule_id' => $schedule->id,
-                'duration' => $amount,
-                'cage_number' => $schedule->cage_number,
-                'status' => 'completed',
-                'fed_at' => \Carbon\Carbon::createFromFormat(strlen($schedule->time) > 5 ? 'H:i:s' : 'H:i', $schedule->time)->setDateFrom(now()),
-            ]);
+            $recorded = app(FeedHistoryRecorder::class)->completeScheduled($schedule, $amount);
 
             // Send SMS notification
-            $this->sendSmsNotification("Scheduled feeding completed at {$schedule->time} for {$amount} seconds");
+            if ($recorded) {
+                $this->sendSmsNotification("Scheduled feeding completed at {$schedule->time} for {$amount} seconds");
+            }
             
             Log::info('Direct schedule trigger succeeded', [
                 'schedule_id' => $scheduleId,
@@ -819,17 +887,6 @@ class FeedingScheduleController extends Controller
         } else {
             // Failed - update status to idle
             $schedule->update(['status' => 'idle']);
-            
-            // Record failed feeding to history
-            FeedHistory::create([
-                'feed_type' => 'scheduled',
-                'feed_brand' => cache('feed_brand', 'Quail Layer Smash'),
-                'schedule_id' => $schedule->id,
-                'duration' => $amount,
-                'cage_number' => $schedule->cage_number,
-                'status' => 'failed',
-                'fed_at' => now(),
-            ]);
             
             Log::error('Direct schedule trigger failed', [
                 'schedule_id' => $scheduleId,

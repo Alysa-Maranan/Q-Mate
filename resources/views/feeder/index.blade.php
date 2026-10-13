@@ -970,6 +970,11 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
                     data.status
                 );
 
+                window.setFeedHistoryContext({
+                    type: 'manual',
+                    id: data.feed_id,
+                    commandId: data.command_id || null
+                });
                 window.showFeedingAnimation(
                     duration,
                     cage
@@ -1082,7 +1087,17 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
                     notificationSystem.success('Feeding triggered successfully!', '✅');
                 }
                 playNotifSound('save');
-                setTimeout(() => location.reload(), 1500);
+                if (typeof window.showFeedingAnimation === 'function') {
+                    window.setFeedHistoryContext({
+                        type: 'scheduled',
+                        id: data.id,
+                        commandId: data.command_id || null
+                    });
+                    window.showFeedingAnimation(
+                        data.duration || 5,
+                        data.cage_number || 1
+                    );
+                }
             } else {
                 if (typeof notificationSystem !== 'undefined') {
                     notificationSystem.error('Failed to trigger feeding', '❌');
@@ -1584,6 +1599,8 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
     let safetyTimeout = null;
     let displayTimer = null;
     let currentCage = 1;
+    let currentFeed = null;
+    let pendingFeedContext = null;
 
     let animStartTime = null;   // actual animation/servo start time (ms)
     let animTotal = 1;          // feeding duration (seconds)
@@ -1626,6 +1643,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
     function runAnimation(duration, cage, startedAt) {
 
         if (animationShowing) {
+            pendingFeedContext = null;
             console.log(
                 '[Animation] Already showing - duplicate animation ignored'
             );
@@ -1639,6 +1657,8 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         countdownFinished = false;
 
         currentCage = cage || 1;
+        currentFeed = pendingFeedContext;
+        pendingFeedContext = null;
 
         // Allow exactly ONE Done Feeding popup for this feeding cycle.
         window.__doneFeedingPopupShown = false;
@@ -1973,6 +1993,8 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         lastCheckedActive = false;
 
         resetManualFeedButton();
+        reportFeedCompletion(currentFeed);
+        currentFeed = null;
 
         console.log(
             '[Animation] Hidden - countdown completed and servo closed'
@@ -1982,6 +2004,42 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         // ONLY NOW SHOW DONE FEEDING
         // ========================================================
         showDoneFeedingModal(currentCage);
+    }
+
+    function reportFeedCompletion(feed) {
+        if (!feed || !['manual', 'scheduled'].includes(feed.type)) {
+            return;
+        }
+
+        fetch('{{ route('feeder.complete') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            keepalive: true,
+            body: JSON.stringify({
+                feed_type: feed.type,
+                feed_id: feed.id || null,
+                command_id: feed.commandId || null,
+                cage_number: currentCage
+            })
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to record completed feeding.');
+            }
+            if (data.status === 'awaiting_hardware') {
+                console.info('[Feed History] Waiting for hardware completion callback.');
+            } else if (!data.recorded && !['already_completed', 'completed'].includes(data.status)) {
+                console.warn('[Feed History] Completion was not recorded:', data.status);
+            }
+        })
+        .catch(error => {
+            console.error('[Feed History] Completion report failed:', error);
+        });
     }
 
     // ============================================================
@@ -2062,11 +2120,8 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
                                 );
                             }
 
-                            runAnimation(
-                                duration,
-                                cage,
-                                startedAt
-                            );
+                            window.setFeedHistoryContext({ type: data.type });
+                            runAnimation(duration, cage, startedAt);
 
                             lastCheckedActive = true;
                         }
@@ -2148,6 +2203,11 @@ function startScheduleCheck() {
                         // Use the SAME existing animation function
                         // already used by Manual Feed.
                         if (typeof window.showFeedingAnimation === 'function') {
+                            window.setFeedHistoryContext({
+                                type: 'scheduled',
+                                id: schedule.id,
+                                commandId: schedule.command_id || null
+                            });
                             window.showFeedingAnimation(
                                 duration,
                                 cage
@@ -2276,6 +2336,10 @@ function startScheduleCheck() {
             duration,
             cage
         );
+    };
+
+    window.setFeedHistoryContext = function (feedContext) {
+        pendingFeedContext = feedContext || null;
     };
 
     // ============================================================

@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\FeederCommand; 
 use App\Models\FeedingSchedule; 
 use App\Models\ManualFeed; 
-use App\Models\FeedHistory; 
+use App\Services\FeedHistoryRecorder;
 use Illuminate\Http\Request; 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log; 
 
 class FeederCommandController extends Controller 
@@ -56,14 +57,49 @@ class FeederCommandController extends Controller
      * POST /api/feeder/command-done 
      * Body: { "command_id": 5 } 
      */ 
-    public function commandDone(Request $request) 
+    public function commandDone(Request $request, FeedHistoryRecorder $recorder)
     { 
         $validated = $request->validate([ 
             'command_id' => 'required|integer|exists:feeder_commands,id', 
         ]); 
 
-        $command = FeederCommand::findOrFail($validated['command_id']); 
-        $command->markCompleted(); 
+        [$command, $recorded, $processed] = DB::transaction(function () use ($validated, $recorder) {
+            $command = FeederCommand::query()
+                ->lockForUpdate()
+                ->findOrFail($validated['command_id']);
+
+            if ($command->status === 'completed') {
+                return [$command, false, true];
+            }
+
+            if ($command->status === 'failed') {
+                return [$command, false, false];
+            }
+
+            $command->markCompleted();
+            $recorded = false;
+
+            if ($command->type === 'scheduled' && $command->schedule_id) {
+                $schedule = FeedingSchedule::find($command->schedule_id);
+                if ($schedule) {
+                    $recorded = $recorder->completeScheduled($schedule, $command->duration);
+                }
+            } elseif ($command->type === 'manual' && $command->manual_feed_id) {
+                $manualFeed = ManualFeed::find($command->manual_feed_id);
+                if ($manualFeed) {
+                    $recorded = $recorder->completeManual($manualFeed, $command->duration);
+                }
+            }
+
+            return [$command, $recorded, true];
+        });
+
+        if (!$processed) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed feeder commands cannot be recorded as completed.',
+            ], 409);
+        }
 
         Log::info('ESP32 reported command done', [ 
             'command_id' => $command->id, 
@@ -71,24 +107,9 @@ class FeederCommandController extends Controller
             'duration' => $command->duration, 
         ]); 
 
-        // Update the related schedule or manual feed status 
-        if ($command->type === 'scheduled' && $command->schedule_id) { 
+        if ($recorded && $command->type === 'scheduled' && $command->schedule_id) {
             $schedule = FeedingSchedule::find($command->schedule_id); 
             if ($schedule) { 
-                $schedule->update(['status' => 'done_feeding']); 
-
-                // Record to feed history 
-                $feedHistory = FeedHistory::create([ 
-                    'feed_type' => 'scheduled', 
-                    'feed_brand' => cache('feed_brand', 'Quail Layer Smash'), 
-                    'schedule_id' => $schedule->id, 
-                    'duration' => $command->duration, 
-                    'cage_number' => $schedule->cage_number ?? 1, 
-                    'status' => 'completed', 
-                    'fed_at' => now(), 
-                ]); 
-
-                // Log to dashboard notifications via JavaScript dispatch 
                 Log::info('Scheduled feeding completed via ESP32 WiFi', [ 
                     'schedule_id' => $schedule->id, 
                 ]); 
@@ -102,26 +123,13 @@ class FeederCommandController extends Controller
                     'breed' => optional($schedule->breed)->name ?? 'Unknown', 
                 ]); 
             } 
-        } elseif ($command->type === 'manual' && $command->manual_feed_id) { 
+        } elseif (
+            $recorded
+            && $command->type === 'manual'
+            && $command->manual_feed_id
+        ) {
             $manualFeed = ManualFeed::find($command->manual_feed_id); 
             if ($manualFeed) { 
-                $manualFeed->update([ 
-                    'status' => 'done_feeding', 
-                    'completed_at' => now(), 
-                ]); 
-
-                // Record to feed history 
-                $feedHistory = FeedHistory::create([ 
-                    'feed_type' => 'manual', 
-                    'feed_brand' => cache('feed_brand', 'Quail Layer Smash'), 
-                    'manual_feed_id' => $manualFeed->id, 
-                    'duration' => $command->duration, 
-                    'cage_number' => $manualFeed->cage_number ?? 1, 
-                    'days' => $manualFeed->days, 
-                    'status' => 'completed', 
-                    'fed_at' => now(), 
-                ]); 
-
                 Log::info('Manual feeding completed via ESP32 WiFi', [ 
                     'manual_feed_id' => $manualFeed->id, 
                 ]); 
@@ -137,12 +145,13 @@ class FeederCommandController extends Controller
             } 
         } 
 
-        // Send SMS notification 
-        $this->sendSmsNotification($command); 
+        if ($recorded) {
+            $this->sendSmsNotification($command);
+        }
 
         return response()->json([ 
             'success' => true, 
-            'message' => 'Command marked as completed', 
+            'message' => $recorded ? 'Command marked as completed' : 'Command was already completed',
         ]); 
     } 
 

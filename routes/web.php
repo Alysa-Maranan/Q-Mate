@@ -225,6 +225,7 @@ Route::middleware(['web'])->group(function () {
 
     Route::get('/feeder', [App\Http\Controllers\FeedingScheduleController::class, 'index'])->name('feeder');
     Route::post('/feeder/feed', [App\Http\Controllers\FeedingScheduleController::class, 'manualFeed'])->name('feeder.feed');
+    Route::post('/feeder/complete', [App\Http\Controllers\FeedingScheduleController::class, 'completeAnimation'])->name('feeder.complete');
     Route::post('/feeder/toggle', [App\Http\Controllers\FeedingScheduleController::class, 'toggleFeeder'])->name('feeder.toggle');
     Route::delete('/feeder/history/{feedHistory}', [App\Http\Controllers\FeedingScheduleController::class, 'deleteHistory'])->name('feeder.history.delete');
 
