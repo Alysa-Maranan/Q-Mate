@@ -142,6 +142,43 @@ class FeedHistoryRecordingTest extends TestCase
         $this->assertDatabaseCount('feed_history', 1);
     }
 
+    public function test_scheduled_feed_without_completion_callback_is_recorded_once_after_duration(): void
+    {
+        $schedule = $this->feedingSchedule();
+        $startedAt = now()->subSeconds(306);
+        $schedule->update([
+            'time' => now()->subMinutes(5)->format('H:i:s'),
+            'amount' => 300,
+            'last_feed_at' => $startedAt,
+            'feeding_started_at' => $startedAt,
+        ]);
+        $command = FeederCommand::create([
+            'type' => 'scheduled',
+            'schedule_id' => $schedule->id,
+            'duration' => 300,
+            'status' => 'pending',
+        ]);
+
+        $this->getJson('/feeder/schedules/auto-check')->assertOk();
+        $this->getJson('/feeder/schedules/auto-check')->assertOk();
+
+        $this->assertDatabaseCount('feed_history', 1);
+        $this->assertDatabaseHas('feed_history', [
+            'schedule_id' => $schedule->id,
+            'feed_type' => 'scheduled',
+            'duration' => 300,
+            'status' => 'completed',
+        ]);
+        $this->assertDatabaseHas('feeding_schedules', [
+            'id' => $schedule->id,
+            'status' => 'idle',
+        ]);
+        $this->assertDatabaseHas('feeder_commands', [
+            'id' => $command->id,
+            'status' => 'failed',
+        ]);
+    }
+
     public function test_manual_hardware_callback_and_animation_report_record_once(): void
     {
         $feed = $this->manualFeed();

@@ -245,6 +245,25 @@ class FeedingScheduleController extends Controller
 
     // ── Self-heal schedule statuses ─────────────────────────────────
 
+    // Complete expired scheduled feeds when the browser or hardware callback is unavailable.
+    $recorder = app(FeedHistoryRecorder::class);
+    $activeSchedules = FeedingSchedule::where('status', 'feeding_now')
+        ->whereNotNull('feeding_started_at')
+        ->get();
+
+    foreach ($activeSchedules as $activeSchedule) {
+        $duration = (int) ($activeSchedule->amount ?? 5);
+        $completionTime = $activeSchedule->feeding_started_at
+            ->copy()
+            ->addSeconds($duration + 5);
+
+        if ($completionTime->lte($now) && $recorder->completeScheduled($activeSchedule, $duration)) {
+            FeederCommand::where('schedule_id', $activeSchedule->id)
+                ->where('status', 'pending')
+                ->update(['status' => 'failed']);
+        }
+    }
+
     // 1. Finished feeds return to idle so RECURRING schedules
     //    can fire again at their next occurrence.
     FeedingSchedule::where('status', 'done_feeding')
