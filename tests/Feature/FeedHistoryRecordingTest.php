@@ -8,6 +8,8 @@ use App\Models\FeederCommand;
 use App\Models\FeedingSchedule;
 use App\Models\ManualFeed;
 use App\Services\FeedHistoryRecorder;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
@@ -122,6 +124,27 @@ class FeedHistoryRecordingTest extends TestCase
         ]);
     }
 
+    public function test_simulated_feed_history_status_is_supported_by_migration(): void
+    {
+        $migration = require database_path('migrations/2026_04_10_000000_allow_simulated_feed_history_status.php');
+        $migration->up();
+
+        FeedHistory::create([
+            'feed_type' => 'scheduled',
+            'schedule_id' => 1,
+            'duration' => 300,
+            'cage_number' => 1,
+            'status' => 'simulated',
+            'fed_at' => now(),
+        ]);
+
+        $this->assertDatabaseHas('feed_history', [
+            'feed_type' => 'scheduled',
+            'status' => 'simulated',
+            'duration' => 300,
+        ]);
+    }
+
     public function test_scheduled_animation_does_not_record_before_hardware_processes_command(): void
     {
         $schedule = $this->feedingSchedule();
@@ -142,9 +165,12 @@ class FeedHistoryRecordingTest extends TestCase
             'cage_number' => $schedule->cage_number,
         ];
 
-        $this->postJson(route('feeder.complete'), $payload)->assertOk()->assertJson([
+        $this->getJson('/feeder/schedules/auto-check')->assertOk()->assertJsonCount(0, 'triggered');
+        $this->assertDatabaseCount('feeder_commands', 1);
+
+        $this->postJson(route('feeder.complete'), $payload)->assertStatus(409)->assertJson([
             'recorded' => false,
-            'status' => 'awaiting_hardware',
+            'status' => 'duration_not_complete',
         ]);
         $this->assertDatabaseCount('feed_history', 0);
         $this->assertDatabaseHas('feeder_commands', [
@@ -158,10 +184,10 @@ class FeedHistoryRecordingTest extends TestCase
         $this->assertDatabaseCount('feed_history', 0);
     }
 
-    public function test_scheduled_feed_without_completion_callback_is_recorded_once_after_duration(): void
+    public function test_scheduled_hardware_timeout_is_recorded_as_failed_once(): void
     {
         $schedule = $this->feedingSchedule();
-        $startedAt = now()->subSeconds(306);
+        $startedAt = now()->subSeconds(336);
         $schedule->update([
             'time' => now()->subMinutes(5)->format('H:i:s'),
             'amount' => 300,
@@ -175,7 +201,6 @@ class FeedHistoryRecordingTest extends TestCase
             'status' => 'in_progress',
             'picked_up_at' => $startedAt,
         ]);
-
         $this->getJson('/feeder/schedules/auto-check')->assertOk();
         $this->getJson('/feeder/schedules/auto-check')->assertOk();
 
@@ -184,7 +209,7 @@ class FeedHistoryRecordingTest extends TestCase
             'schedule_id' => $schedule->id,
             'feed_type' => 'scheduled',
             'duration' => 300,
-            'status' => 'completed',
+            'status' => 'failed',
         ]);
         $this->assertDatabaseHas('feeding_schedules', [
             'id' => $schedule->id,
@@ -192,11 +217,11 @@ class FeedHistoryRecordingTest extends TestCase
         ]);
         $this->assertDatabaseHas('feeder_commands', [
             'id' => $command->id,
-            'status' => 'completed',
+            'status' => 'failed',
         ]);
     }
 
-    public function test_unprocessed_scheduled_command_does_not_create_history_after_duration(): void
+    public function test_unprocessed_scheduled_command_records_one_simulation_after_duration(): void
     {
         $schedule = $this->feedingSchedule();
         $startedAt = now()->subSeconds(306);
@@ -215,11 +240,149 @@ class FeedHistoryRecordingTest extends TestCase
 
         $this->getJson('/feeder/schedules/auto-check')->assertOk();
 
-        $this->assertDatabaseCount('feed_history', 0);
+        $this->assertDatabaseCount('feed_history', 1);
+        $this->assertDatabaseHas('feed_history', [
+            'schedule_id' => $schedule->id,
+            'feed_type' => 'scheduled',
+            'duration' => 300,
+            'status' => 'simulated',
+        ]);
+        $notifications = app(NotificationFeedController::class)->feed()->getData(true)['items'];
+        $eventId = 'schedule_' . $schedule->id . '_' . $startedAt->timestamp;
+        $this->assertSame(1, collect($notifications)->where('key', $eventId . '_start')->count());
+        $this->assertSame(1, collect($notifications)->where('key', $eventId . '_done')->count());
+        $this->assertSame(
+            'Schedule Feeder Done',
+            collect($notifications)->firstWhere('key', $eventId . '_done')['title']
+        );
         $this->assertDatabaseHas('feeder_commands', [
             'id' => $command->id,
-            'status' => 'pending',
+            'status' => 'failed',
         ]);
+    }
+
+    public function test_backend_scheduler_runs_once_and_records_simulation_without_browser(): void
+    {
+        $now = now();
+        DB::table('farm_settings')->insert([
+            ['key' => 'scheduled_feeding_enabled', 'value' => '1', 'created_at' => $now, 'updated_at' => $now],
+            ['key' => 'feed_time_morning', 'value' => $now->copy()->subHours(3)->format('H:i'), 'created_at' => $now, 'updated_at' => $now],
+            ['key' => 'feed_time_afternoon', 'value' => $now->copy()->subHours(2)->format('H:i'), 'created_at' => $now, 'updated_at' => $now],
+            ['key' => 'feed_time_evening', 'value' => $now->copy()->subHours(1)->format('H:i'), 'created_at' => $now, 'updated_at' => $now],
+        ]);
+        $schedule = FeedingSchedule::create([
+            'time' => $now->format('H:i:s'),
+            'days' => [strtolower($now->format('D'))],
+            'amount' => 300,
+            'cage_number' => 1,
+            'enabled' => true,
+            'status' => 'idle',
+        ]);
+
+        $previousMode = getenv('FEEDER_MODE');
+        $previousEnvMode = $_ENV['FEEDER_MODE'] ?? null;
+        $previousServerMode = $_SERVER['FEEDER_MODE'] ?? null;
+        $_ENV['FEEDER_MODE'] = 'wifi';
+        $_SERVER['FEEDER_MODE'] = 'wifi';
+        putenv('FEEDER_MODE=wifi');
+
+        try {
+            Artisan::call('feeder:check');
+            Artisan::call('feeder:check');
+
+            $this->assertDatabaseCount('feeder_commands', 1);
+            $command = FeederCommand::firstOrFail();
+            $this->assertSame('pending', $command->status);
+            $this->assertSame('feeding_now', $schedule->fresh()->status);
+            $this->getJson('/api/feeder/animation')->assertOk()->assertJson([
+                'active' => true,
+                'type' => 'scheduled',
+                'feed_id' => $schedule->id,
+                'command_id' => $command->id,
+                'duration' => 300,
+                'event_id' => 'schedule_' . $schedule->id . '_' . $now->timestamp,
+            ]);
+
+            \Illuminate\Support\Carbon::setTestNow($now->copy()->addSeconds(300));
+            Artisan::call('feeder:check');
+
+            $this->assertDatabaseCount('feed_history', 1);
+            $this->assertDatabaseHas('feed_history', [
+                'schedule_id' => $schedule->id,
+                'status' => 'simulated',
+                'duration' => 300,
+            ]);
+            $this->assertSame('failed', $command->fresh()->status);
+            $eventId = 'schedule_' . $schedule->id . '_' . $now->timestamp;
+            $notifications = app(NotificationFeedController::class)->feed()->getData(true)['items'];
+            $this->assertSame(1, collect($notifications)->where('key', $eventId . '_start')->count());
+            $this->assertSame(1, collect($notifications)->where('key', $eventId . '_done')->count());
+        } finally {
+            if ($previousMode === false) {
+                putenv('FEEDER_MODE');
+            } else {
+                putenv('FEEDER_MODE=' . $previousMode);
+            }
+            if ($previousEnvMode === null) {
+                unset($_ENV['FEEDER_MODE']);
+            } else {
+                $_ENV['FEEDER_MODE'] = $previousEnvMode;
+            }
+            if ($previousServerMode === null) {
+                unset($_SERVER['FEEDER_MODE']);
+            } else {
+                $_SERVER['FEEDER_MODE'] = $previousServerMode;
+            }
+        }
+    }
+
+    public function test_serial_scheduler_records_a_no_hardware_run_without_browser(): void
+    {
+        $startedAt = now()->subSeconds(300);
+        $schedule = FeedingSchedule::create([
+            'time' => $startedAt->format('H:i:s'),
+            'days' => [strtolower($startedAt->format('D'))],
+            'amount' => 300,
+            'cage_number' => 1,
+            'enabled' => true,
+            'status' => 'feeding_now',
+            'last_feed_at' => $startedAt,
+            'feeding_started_at' => $startedAt,
+        ]);
+
+        $previousMode = getenv('FEEDER_MODE');
+        $previousEnvMode = $_ENV['FEEDER_MODE'] ?? null;
+        $previousServerMode = $_SERVER['FEEDER_MODE'] ?? null;
+        $_ENV['FEEDER_MODE'] = 'serial';
+        $_SERVER['FEEDER_MODE'] = 'serial';
+        putenv('FEEDER_MODE=serial');
+
+        try {
+            Artisan::call('feeder:check');
+            $this->assertDatabaseCount('feeder_commands', 0);
+            $this->assertDatabaseHas('feed_history', [
+                'schedule_id' => $schedule->id,
+                'feed_type' => 'scheduled',
+                'duration' => 300,
+                'status' => 'simulated',
+            ]);
+        } finally {
+            if ($previousMode === false) {
+                putenv('FEEDER_MODE');
+            } else {
+                putenv('FEEDER_MODE=' . $previousMode);
+            }
+            if ($previousEnvMode === null) {
+                unset($_ENV['FEEDER_MODE']);
+            } else {
+                $_ENV['FEEDER_MODE'] = $previousEnvMode;
+            }
+            if ($previousServerMode === null) {
+                unset($_SERVER['FEEDER_MODE']);
+            } else {
+                $_SERVER['FEEDER_MODE'] = $previousServerMode;
+            }
+        }
     }
 
     public function test_animation_poll_recovers_manual_feed_without_hardware_and_keeps_history_idempotent(): void
@@ -284,9 +447,9 @@ class FeedHistoryRecordingTest extends TestCase
             'cage_number' => $animation->json('cage'),
         ];
 
-        $this->postJson(route('feeder.complete'), $completion)->assertOk()->assertJson([
+        $this->postJson(route('feeder.complete'), $completion)->assertStatus(409)->assertJson([
             'recorded' => false,
-            'status' => 'awaiting_hardware',
+            'status' => 'duration_not_complete',
         ]);
 
         $this->assertDatabaseCount('feed_history', 0);
@@ -359,15 +522,21 @@ class FeedHistoryRecordingTest extends TestCase
         ]);
 
         $feed = app(NotificationFeedController::class)->feed()->getData(true);
-        $key = 'feed_sched_' . $schedule->id . '_' . $startedAt->timestamp;
+        $key = 'schedule_' . $schedule->id . '_' . $startedAt->timestamp . '_start';
         $this->assertSame(1, collect($feed['items'])->where('key', $key)->count());
 
         $this->assertTrue(app(FeedHistoryRecorder::class)->completeScheduled($schedule, $schedule->amount));
 
         $feed = app(NotificationFeedController::class)->feed()->getData(true);
-        $scheduledNotification = collect($feed['items'])->firstWhere('key', $key);
-        $this->assertNotNull($scheduledNotification);
-        $this->assertSame('Done Feeding', $scheduledNotification['title']);
+        $scheduledStart = collect($feed['items'])->firstWhere('key', $key);
+        $scheduledDone = collect($feed['items'])->firstWhere(
+            'key',
+            'schedule_' . $schedule->id . '_' . $startedAt->timestamp . '_done'
+        );
+        $this->assertNotNull($scheduledStart);
+        $this->assertNotNull($scheduledDone);
+        $this->assertSame('Schedule Feeder Start', $scheduledStart['title']);
+        $this->assertSame('Schedule Feeder Done', $scheduledDone['title']);
         $this->assertSame(1, collect($feed['items'])->where('key', $key)->count());
         $this->assertDatabaseHas('feed_history', [
             'schedule_id' => $schedule->id,

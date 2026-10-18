@@ -4,9 +4,11 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\FeedingSchedule;
-use App\Models\FeedHistory;
+use App\Models\FeederCommand;
+use App\Services\FeedHistoryRecorder;
 use App\Services\TwilioService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class FeederCheck extends Command
 {
@@ -26,6 +28,8 @@ class FeederCheck extends Command
             $this->triggerSchedule($schedule);
             return 0;
         }
+
+        $this->finalizeScheduledCommands();
 
         if (\App\Models\FarmSetting::get('scheduled_feeding_enabled', '1') !== '1') {
             return 0;
@@ -80,14 +84,14 @@ class FeederCheck extends Command
     protected function triggerSchedule(FeedingSchedule $s)
     {
         $amount    = $s->amount ?? 5;
-        $startedAt = now();
         $port      = env('SERVO_SERIAL_PORT', 'COM3');
         $cmdFile   = storage_path('logs/servo_command.json');
+        $wifiMode  = env('FEEDER_MODE', 'serial') === 'wifi';
 
         // ── Never clobber a command the bridge hasn't consumed yet ──
         // Fresh pending file => bridge busy/offline, skip this run.
         // Stale file (>60s) => bridge was down; replace it.
-        if (file_exists($cmdFile)) {
+        if (!$wifiMode && file_exists($cmdFile)) {
             if (time() - filemtime($cmdFile) > 60) {
                 @unlink($cmdFile);
                 $this->warn('Replaced stale servo_command.json');
@@ -97,24 +101,43 @@ class FeederCheck extends Command
             }
         }
 
-        // 1. Set feeding_now FIRST
-        $s->update([
-            'status'             => 'feeding_now',
-            'last_feed_at'       => $startedAt,
-            'feeding_started_at' => $startedAt,
-        ]);
+        [$started, $startedAt, $schedule] = DB::transaction(function () use ($s) {
+            $schedule = FeedingSchedule::query()->lockForUpdate()->find($s->id);
+            if (!$schedule || $schedule->status !== 'idle'
+                || FeedingSchedule::where('status', 'feeding_now')->exists()) {
+                return [false, null, null];
+            }
 
-        $this->info('Status set to feeding_now for schedule ID: ' . $s->id);
+            $startedAt = now();
+            $schedule->update([
+                'status' => 'feeding_now',
+                'last_feed_at' => $startedAt,
+                'feeding_started_at' => $startedAt,
+            ]);
 
-        // 2. Write servo_command.json directly (non-blocking) so servo_bridge.py
-        //    can open the servo and create animation_trigger.json at the exact
-        //    moment the servo opens.
+            return [true, $startedAt, $schedule];
+        });
+
+        if (!$started) {
+            return;
+        }
+
+        $eventId = 'schedule_' . $schedule->id . '_' . $startedAt->timestamp;
+        $this->info('Status set to feeding_now for schedule ID: ' . $schedule->id);
+
+        if ($wifiMode) {
+            FeederCommand::queueScheduled($schedule->id, $amount);
+            $this->info('Scheduled feeder command queued for ESP32 WiFi');
+            return;
+        }
+
         file_put_contents($cmdFile, json_encode([
             'action'   => 'trigger',
             'duration' => $amount,
             'port'     => $port,
-            'cage'     => $s->cage_number ?? 1,
+            'cage'     => $schedule->cage_number ?? 1,
             'type'     => 'scheduled',
+            'event_id' => $eventId,
         ]));
         $this->info("Feeding function triggered; servo command sent on {$port}");
 
@@ -131,28 +154,90 @@ class FeederCheck extends Command
         }
         if (!$consumed) {
             $this->warn('Servo bridge did NOT consume the command within 4s — schedule ID '
-                . $s->id . ' was not processed; no history will be recorded.');
-            $s->update([
-                'status' => 'idle',
-                'last_feed_at' => null,
-                'feeding_started_at' => null,
-            ]);
-            return;
+                . $schedule->id . '; running software-only schedule.');
+            $pendingCommand = is_file($cmdFile)
+                ? json_decode((string) file_get_contents($cmdFile), true)
+                : null;
+            if (($pendingCommand['event_id'] ?? null) === $eventId) {
+                @unlink($cmdFile);
+            }
+            $simulationOption = '--simulation';
+        } else {
+            $simulationOption = '';
         }
 
-        // 3. Mark done + record history after the servo finishes via a background
-        //    process — do NOT sleep here, that would block the scheduler loop for
-        //    the entire feed duration (5 minutes for scheduled feeds).
         $php     = PHP_BINARY;
         $artisan = base_path('artisan');
-        $sid     = $s->id;
+        $sid     = $schedule->id;
         if (PHP_OS_FAMILY === 'Windows') {
-            pclose(popen("start /B \"\" \"{$php}\" \"{$artisan}\" feeder:schedule-done --id={$sid} --duration={$amount} > NUL 2>&1", 'r'));
+            pclose(popen("start /B \"\" \"{$php}\" \"{$artisan}\" feeder:schedule-done --id={$sid} --duration={$amount} --event-id={$eventId} {$simulationOption} > NUL 2>&1", 'r'));
         } else {
-            exec("\"{$php}\" \"{$artisan}\" feeder:schedule-done --id={$sid} --duration={$amount} > /dev/null 2>&1 &");
+            exec("\"{$php}\" \"{$artisan}\" feeder:schedule-done --id={$sid} --duration={$amount} --event-id={$eventId} {$simulationOption} > /dev/null 2>&1 &");
         }
 
-        $this->info('Background feeder:schedule-done scheduled for schedule ID: ' . $s->id);
+        $this->info('Background feeder:schedule-done scheduled for schedule ID: ' . $schedule->id);
+    }
+
+    private function finalizeScheduledCommands(): void
+    {
+        $recorder = app(FeedHistoryRecorder::class);
+        FeedingSchedule::where('status', 'feeding_now')
+            ->whereNotNull('feeding_started_at')
+            ->get()
+            ->each(function (FeedingSchedule $schedule) use ($recorder) {
+                $duration = (int) ($schedule->amount ?? 5);
+                $finishedAt = $schedule->feeding_started_at->copy()->addSeconds($duration);
+                $command = FeederCommand::where('schedule_id', $schedule->id)
+                    ->where('type', 'scheduled')
+                    ->whereIn('status', ['pending', 'in_progress', 'failed'])
+                    ->where('created_at', '>=', $schedule->feeding_started_at)
+                    ->latest('id')
+                    ->first();
+
+                if (!$command) {
+                    if (env('FEEDER_MODE', 'serial') !== 'serial' || $finishedAt->isFuture()) {
+                        return;
+                    }
+
+                    $eventId = 'schedule_' . $schedule->id . '_' . $schedule->feeding_started_at->timestamp;
+                    $resultPath = storage_path('logs/servo_result.json');
+                    $result = is_file($resultPath)
+                        ? json_decode((string) file_get_contents($resultPath), true)
+                        : null;
+
+                    if (($result['event_id'] ?? null) !== $eventId) {
+                        $recorder->finalizeScheduledRun($schedule, $duration, 'simulated');
+                        return;
+                    }
+
+                    if (($result['status'] ?? null) === 'in_progress') {
+                        if ($finishedAt->copy()->addSeconds(30)->isFuture()) {
+                            return;
+                        }
+                        $status = 'failed';
+                    } else {
+                        $status = ($result['success'] ?? false) === true ? 'completed' : 'failed';
+                    }
+
+                    $recorder->finalizeScheduledRun($schedule, $duration, $status);
+                    return;
+                }
+
+                $finishedAt = $schedule->feeding_started_at->copy()->addSeconds((int) $command->duration);
+                if (
+                    in_array($command->status, ['pending', 'failed'], true)
+                    && !$command->picked_up_at
+                    && $finishedAt->lte(now())
+                ) {
+                    $recorder->completeScheduledSimulation($schedule, $command, (int) $command->duration);
+                } elseif (
+                    in_array($command->status, ['in_progress', 'failed'], true)
+                    && $command->picked_up_at
+                    && $finishedAt->copy()->addSeconds(30)->lte(now())
+                ) {
+                    $recorder->failScheduled($schedule, $command, (int) $command->duration);
+                }
+            });
     }
 
     protected function sendSmsNotification($message)

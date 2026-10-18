@@ -383,6 +383,9 @@ Route::get('/feeder/animation', function () {
             ->whereIn('status', ['pending', 'in_progress'])
             ->latest('id')
             ->first();
+        $startedAt = $schedule->feeding_started_at
+            ?? $schedule->last_feed_at
+            ?? $schedule->updated_at;
 
         return response()->json([
             'active' => true,
@@ -391,9 +394,8 @@ Route::get('/feeder/animation', function () {
             'command_id' => $command?->id,
             'duration' => $schedule->amount,
             'cage' => $schedule->cage_number ?? 1,
-            'started_at' => $schedule->feeding_started_at
-                ?? $schedule->last_feed_at
-                ?? $schedule->updated_at,
+            'started_at' => $startedAt,
+            'event_id' => 'schedule_' . $schedule->id . '_' . strtotime((string) $startedAt),
         ]);
     }
 

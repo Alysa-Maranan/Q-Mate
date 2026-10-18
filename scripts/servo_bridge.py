@@ -227,10 +227,24 @@ def main():
                     result = do_close(state, cmd_port)
                 else:
                     print(f'[{ts()}] Command received: {duration}s cage {cage} ({feed_type})', flush=True)
+                    if cmd.get('event_id'):
+                        with open(RESULT_FILE, 'w') as f:
+                            json.dump({
+                                'event_id': cmd['event_id'],
+                                'status': 'in_progress',
+                                'success': False,
+                                'timestamp': time.time(),
+                            }, f)
                     result = do_trigger(state, cmd_port, duration, cage, feed_type)
 
                 with open(RESULT_FILE, 'w') as f:
-                    json.dump({**result, 'port': port, 'timestamp': time.time()}, f)
+                    json.dump({
+                        **result,
+                        **({'event_id': cmd['event_id']} if cmd.get('event_id') else {}),
+                        **({'status': 'completed' if result['success'] else 'failed'} if cmd.get('event_id') else {}),
+                        'port': port,
+                        'timestamp': time.time(),
+                    }, f)
 
                 if result['success']:
                     print(f'[{ts()}] SUCCESS', flush=True)

@@ -292,12 +292,12 @@ class NotificationFeedController extends Controller
                 ->each(function ($s) use ($items) {
                     $ts = $s->feeding_started_at ? strtotime((string) $s->feeding_started_at) : time();
                     $items->push([
-                        'key'      => 'feed_sched_' . $s->id . '_' . $ts,
+                        'key'      => 'schedule_' . $s->id . '_' . $ts . '_start',
                         'category' => 'feeder',
                         'icon'     => '🍲',
-                        'title'    => 'Feeding Now',
-                        'message'  => 'Scheduled feeding in progress for Cage ' . ($s->cage_number ?? 1) .
-                                      ' — servo open (' . ($s->amount ?? 5) . ' sec).',
+                        'title'    => 'Schedule Feeder Start',
+                        'message'  => 'Scheduled feeding started for Cage ' . ($s->cage_number ?? 1) .
+                                      ' (' . ($s->amount ?? 5) . ' seconds).',
                         'time'     => date('M j, Y g:i A', $ts),
                         '_ts'      => $ts,
                         'url'      => '/feeder',
@@ -328,13 +328,52 @@ class NotificationFeedController extends Controller
             \Log::warning('Notification feed [feeding now]: ' . $e->getMessage());
         }
 
-        // ── Feeder: scheduled completions persist in the bell via Feed History ──
+        // ── Feeder: scheduled run notifications persist via Feed History ──
         try {
-            $completedScheduled = FeedHistory::where('status', 'completed')
-                ->where('feed_type', 'scheduled')
+            $scheduledRuns = FeedHistory::where('feed_type', 'scheduled')
+                ->whereIn('status', ['completed', 'simulated', 'failed'])
                 ->orderByDesc('fed_at')
                 ->limit(10)
                 ->get();
+
+            $scheduledRuns->each(function ($history) use ($items) {
+                $ts = $history->fed_at ? strtotime((string) $history->fed_at) : time();
+                $eventId = 'schedule_' . $history->schedule_id . '_' . $ts;
+                $type = match ($history->status) {
+                    'completed' => 'done',
+                    'simulated' => 'done',
+                    default => 'failed',
+                };
+
+                $items->push([
+                    'key' => $eventId . '_start',
+                    'category' => 'feeder',
+                    'icon' => '🍲',
+                    'title' => 'Schedule Feeder Start',
+                    'message' => 'Scheduled feeding started for Cage ' . ($history->cage_number ?? 1) .
+                        ' (' . ($history->duration ?? 5) . ' seconds).',
+                    'time' => date('M j, Y g:i A', $ts),
+                    '_ts' => $ts,
+                    'url' => '/feeder',
+                ]);
+
+                $isSimulation = $history->status === 'simulated';
+                $doneTs = $history->created_at ? $history->created_at->timestamp : $ts;
+                $items->push([
+                    'key' => $eventId . '_' . $type,
+                    'category' => 'feeder',
+                    'icon' => $type === 'failed' ? '⚠️' : '✅',
+                    'title' => $type === 'failed' ? 'Schedule Feeder Failed' : 'Schedule Feeder Done',
+                    'message' => $type === 'failed'
+                        ? 'Scheduled feeding command failed for Cage ' . ($history->cage_number ?? 1) . '.'
+                        : 'Scheduled feeding ' . ($isSimulation ? 'simulation ' : '') .
+                            'finished for Cage ' . ($history->cage_number ?? 1) .
+                            ($isSimulation ? '; no hardware completion was reported.' : '.'),
+                    'time' => date('M j, Y g:i A', $doneTs),
+                    '_ts' => $doneTs,
+                    'url' => '/feeder',
+                ]);
+            });
 
             $recentManual = FeedHistory::where('status', 'completed')
                 ->where('feed_type', 'manual')
@@ -343,24 +382,21 @@ class NotificationFeedController extends Controller
                 ->limit(5)
                 ->get();
 
-            $completedScheduled->concat($recentManual)
+            $recentManual
                 ->each(function ($h) use ($items) {
-                    $ts   = $h->fed_at ? strtotime((string) $h->fed_at) : time();
-                    $type = $h->feed_type === 'manual' ? 'Manual' : 'Scheduled';
+                    $ts = $h->fed_at ? strtotime((string) $h->fed_at) : time();
                     $items->push([
-                        'key'      => $type === 'Scheduled' && $h->schedule_id
-                            ? 'feed_sched_' . $h->schedule_id . '_' . $ts
-                            : 'feed_done_' . $h->id,
+                        'key' => 'feed_done_' . $h->id,
                         'category' => 'feeder',
-                        'icon'     => '✅',
-                        'title'    => 'Done Feeding',
-                        'message'  => $type . ' feeding completed for Cage ' . ($h->cage_number ?? 1) .
-                                      ' (' . ($h->duration ?? 5) . ' sec).',
-                        'time'     => date('M j, Y g:i A', $ts),
-                        '_ts'      => $ts,
-                        'url'      => '/feeder',
+                        'icon' => '✅',
+                        'title' => 'Done Feeding',
+                        'message' => 'Manual feeding completed for Cage ' . ($h->cage_number ?? 1) .
+                            ' (' . ($h->duration ?? 5) . ' sec).',
+                        'time' => date('M j, Y g:i A', $ts),
+                        '_ts' => $ts,
+                        'url' => '/feeder',
                     ]);
-                });
+            });
         } catch (\Throwable $e) {
             \Log::warning('Notification feed [done feeding]: ' . $e->getMessage());
         }

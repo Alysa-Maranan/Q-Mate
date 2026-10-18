@@ -250,7 +250,7 @@ class FeedingScheduleController extends Controller
 
     // ── Self-heal schedule statuses ─────────────────────────────────
 
-    // Complete expired scheduled feeds when the browser or hardware callback is unavailable.
+    // Finalize timed-out simulation runs and hardware runs that never reported success.
     $recorder = app(FeedHistoryRecorder::class);
     $activeSchedules = FeedingSchedule::where('status', 'feeding_now')
         ->whereNotNull('feeding_started_at')
@@ -258,26 +258,31 @@ class FeedingScheduleController extends Controller
 
     foreach ($activeSchedules as $activeSchedule) {
         $duration = (int) ($activeSchedule->amount ?? 5);
+        $startedAt = $activeSchedule->feeding_started_at;
+        $completionAt = $startedAt->copy()->addSeconds($duration);
         $activeCommand = FeederCommand::where('schedule_id', $activeSchedule->id)
             ->where('type', 'scheduled')
-            ->where('status', 'in_progress')
-            ->whereNotNull('picked_up_at')
-            ->latest('picked_up_at')
+            ->whereIn('status', ['pending', 'in_progress', 'failed'])
+            ->where('created_at', '>=', $startedAt)
+            ->latest('id')
             ->first();
 
         if (!$activeCommand) {
             continue;
         }
 
-        $completionTime = $activeCommand->picked_up_at
-            ->copy()
-            ->addSeconds($duration + 5);
-
-        if ($completionTime->lte($now) && $recorder->completeScheduled($activeSchedule, $duration)) {
-            $activeCommand->markCompleted();
-            FeederCommand::where('schedule_id', $activeSchedule->id)
-                ->where('status', 'pending')
-                ->update(['status' => 'failed']);
+        if (
+            in_array($activeCommand->status, ['pending', 'failed'], true)
+            && !$activeCommand->picked_up_at
+            && $completionAt->lte($now)
+        ) {
+            $recorder->completeScheduledSimulation($activeSchedule, $activeCommand, $duration);
+        } elseif (
+            in_array($activeCommand->status, ['in_progress', 'failed'], true)
+            && $activeCommand->picked_up_at
+            && $completionAt->copy()->addSeconds(30)->lte($now)
+        ) {
+            $recorder->failScheduled($activeSchedule, $activeCommand, $duration);
         }
     }
 
@@ -367,18 +372,32 @@ class FeedingScheduleController extends Controller
         $amount = $schedule->amount ?? 5;
         $cage = $schedule->cage_number ?? 1;
 
-        // Mark schedule as feeding now
-        $schedule->update([
-            'status'             => 'feeding_now',
-            'last_feed_at'       => $startedAt,
-            'feeding_started_at' => $startedAt,
-        ]);
+        [$started, $command, $startedAt] = \Illuminate\Support\Facades\DB::transaction(function () use ($schedule, $startedAt, $amount) {
+            $lockedSchedule = FeedingSchedule::query()->lockForUpdate()->find($schedule->id);
+            if (!$lockedSchedule || $lockedSchedule->status !== 'idle') {
+                return [false, null, null];
+            }
 
-        // Queue the command before returning it to the frontend.
-        $command = FeederCommand::queueScheduled(
-            $schedule->id,
-            $amount
-        );
+            if (FeedingSchedule::where('status', 'feeding_now')->exists()) {
+                return [false, null, null];
+            }
+
+            $lockedSchedule->update([
+                'status' => 'feeding_now',
+                'last_feed_at' => $startedAt,
+                'feeding_started_at' => $startedAt,
+            ]);
+
+            return [
+                true,
+                FeederCommand::queueScheduled($lockedSchedule->id, $amount),
+                $startedAt,
+            ];
+        });
+
+        if (!$started || !$command) {
+            continue;
+        }
 
         // Tell frontend that a scheduled feeding was triggered.
         $triggered[] = [
@@ -387,6 +406,8 @@ class FeedingScheduleController extends Controller
             'amount' => $amount,
             'cage'   => $cage,
             'command_id' => $command->id,
+            'started_at' => $startedAt->toIso8601String(),
+            'event_id' => 'schedule_' . $schedule->id . '_' . $startedAt->timestamp,
         ];
 
         // ── WIFI MODE ────────────────────────────────────────────────
@@ -550,9 +571,43 @@ class FeedingScheduleController extends Controller
                 ], 422);
             }
 
+            if ($command->status === 'completed') {
+                return response()->json([
+                    'recorded' => false,
+                    'status' => 'already_completed',
+                ]);
+            }
+
+            $startedAt = $feed->feeding_started_at ?? $feed->last_feed_at;
+            $duration = (int) $command->duration;
+            if (!$startedAt || now()->lt($startedAt->copy()->addSeconds($duration))) {
+                return response()->json([
+                    'recorded' => false,
+                    'status' => 'duration_not_complete',
+                ], 409);
+            }
+
+            if (
+                in_array($command->status, ['pending', 'failed'], true)
+                && !$command->picked_up_at
+            ) {
+                $recorded = $recorder->completeScheduledSimulation($feed, $command, $duration);
+                return response()->json([
+                    'recorded' => $recorded,
+                    'status' => $recorded ? 'simulated' : 'already_completed',
+                ]);
+            }
+
+            if ($command->status === 'failed') {
+                return response()->json([
+                    'recorded' => false,
+                    'status' => 'failed',
+                ]);
+            }
+
             return response()->json([
                 'recorded' => false,
-                'status' => $command->status === 'failed' ? 'failed' : 'awaiting_hardware',
+                'status' => 'awaiting_hardware',
             ]);
         }
 
@@ -597,6 +652,7 @@ class FeedingScheduleController extends Controller
     {
         $startedAt = now();
         $amount = $feedingSchedule->amount ?? 5;
+        $eventId = 'schedule_' . $feedingSchedule->id . '_' . $startedAt->timestamp;
         
         $feedingSchedule->update([
             'status' => 'feeding_now',
@@ -630,6 +686,7 @@ class FeedingScheduleController extends Controller
             'port' => $port,
             'cage' => $feedingSchedule->cage_number ?? 1,
             'type' => 'scheduled',
+            'event_id' => $eventId,
         ]));
 
         Log::info('Manual trigger: servo_command.json written for schedule ID: ' . $feedingSchedule->id);
@@ -639,9 +696,9 @@ class FeedingScheduleController extends Controller
         $artisan = base_path('artisan');
         $sid = $feedingSchedule->id;
         if (PHP_OS_FAMILY === 'Windows') {
-            pclose(popen("start /B \"\" \"{$php}\" \"{$artisan}\" feeder:schedule-done --id={$sid} --duration={$amount} > NUL 2>&1", 'r'));
+            pclose(popen("start /B \"\" \"{$php}\" \"{$artisan}\" feeder:schedule-done --id={$sid} --duration={$amount} --event-id={$eventId} > NUL 2>&1", 'r'));
         } else {
-            exec("\"{$php}\" \"{$artisan}\" feeder:schedule-done --id={$sid} --duration={$amount} > /dev/null 2>&1 &");
+            exec("\"{$php}\" \"{$artisan}\" feeder:schedule-done --id={$sid} --duration={$amount} --event-id={$eventId} > /dev/null 2>&1 &");
         }
 
         if (request()->wantsJson() || request()->ajax()) {

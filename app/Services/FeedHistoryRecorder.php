@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\FeedHistory;
+use App\Models\FeederCommand;
 use App\Models\FeedingSchedule;
 use App\Models\ManualFeed;
 use Illuminate\Support\Facades\DB;
@@ -48,12 +49,19 @@ class FeedHistoryRecorder
         });
     }
 
-    public function completeScheduled(FeedingSchedule $schedule, ?int $duration = null): bool
-    {
-        return DB::transaction(function () use ($schedule, $duration) {
+    public function completeScheduled(
+        FeedingSchedule $schedule,
+        ?int $duration = null,
+        string $status = 'completed'
+    ): bool {
+        return DB::transaction(function () use ($schedule, $duration, $status) {
             $feed = FeedingSchedule::query()->lockForUpdate()->find($schedule->id);
 
-            if (!$feed || $feed->status !== 'feeding_now') {
+            if (
+                !$feed
+                || $feed->status !== 'feeding_now'
+                || !in_array($status, ['completed', 'simulated', 'failed'], true)
+            ) {
                 return false;
             }
 
@@ -62,27 +70,105 @@ class FeedHistoryRecorder
                 return false;
             }
 
-            if (FeedHistory::where('schedule_id', $feed->id)
-                ->where('feed_type', 'scheduled')
-                ->where('fed_at', $startedAt)
-                ->exists()) {
+            if ($this->scheduledRunExists($feed, $startedAt)) {
                 $feed->update(['status' => 'done_feeding']);
                 return false;
             }
 
-            FeedHistory::create([
-                'feed_type' => 'scheduled',
-                'feed_brand' => cache('feed_brand', 'Quail Layer Smash'),
-                'schedule_id' => $feed->id,
-                'duration' => $duration ?? $feed->amount ?? 5,
-                'cage_number' => $feed->cage_number ?? 1,
-                'status' => 'completed',
-                'fed_at' => $startedAt,
-            ]);
-
+            $this->recordScheduledRun($feed, $startedAt, $duration, $status);
             $feed->update(['status' => 'done_feeding']);
 
             return true;
         });
+    }
+
+    public function completeScheduledSimulation(
+        FeedingSchedule $schedule,
+        FeederCommand $command,
+        ?int $duration = null
+    ): bool {
+        return $this->finalizeScheduledCommand($schedule, $command, $duration, 'simulated');
+    }
+
+    public function failScheduled(
+        FeedingSchedule $schedule,
+        FeederCommand $command,
+        ?int $duration = null
+    ): bool {
+        return $this->finalizeScheduledCommand($schedule, $command, $duration, 'failed');
+    }
+
+    private function finalizeScheduledCommand(
+        FeedingSchedule $schedule,
+        FeederCommand $command,
+        ?int $duration,
+        string $result
+    ): bool {
+        return DB::transaction(function () use ($schedule, $command, $duration, $result) {
+            $feed = FeedingSchedule::query()->lockForUpdate()->find($schedule->id);
+            $feederCommand = FeederCommand::query()->lockForUpdate()->find($command->id);
+
+            if (!$feed || !$feederCommand || $feed->status !== 'feeding_now') {
+                return false;
+            }
+
+            $isSimulation = $result === 'simulated'
+                && in_array($feederCommand->status, ['pending', 'failed'], true)
+                && !$feederCommand->picked_up_at;
+            $isHardwareFailure = $result === 'failed'
+                && in_array($feederCommand->status, ['in_progress', 'failed'], true)
+                && $feederCommand->picked_up_at;
+
+            if (!$isSimulation && !$isHardwareFailure) {
+                return false;
+            }
+
+            $startedAt = $feed->feeding_started_at ?? $feed->last_feed_at;
+            if (!$startedAt) {
+                return false;
+            }
+
+            if (!$this->scheduledRunExists($feed, $startedAt)) {
+                $this->recordScheduledRun($feed, $startedAt, $duration, $result);
+            }
+
+            $feederCommand->update(['status' => $result === 'simulated' ? 'failed' : $result]);
+            $feed->update(['status' => 'done_feeding']);
+
+            return true;
+        });
+    }
+
+    public function finalizeScheduledRun(
+        FeedingSchedule $schedule,
+        ?int $duration,
+        string $status
+    ): bool {
+        return $this->completeScheduled($schedule, $duration, $status);
+    }
+
+    private function scheduledRunExists(FeedingSchedule $schedule, $startedAt): bool
+    {
+        return FeedHistory::where('schedule_id', $schedule->id)
+            ->where('feed_type', 'scheduled')
+            ->where('fed_at', $startedAt)
+            ->exists();
+    }
+
+    private function recordScheduledRun(
+        FeedingSchedule $schedule,
+        $startedAt,
+        ?int $duration,
+        string $status
+    ): void {
+        FeedHistory::create([
+            'feed_type' => 'scheduled',
+            'feed_brand' => cache('feed_brand', 'Quail Layer Smash'),
+            'schedule_id' => $schedule->id,
+            'duration' => $duration ?? $schedule->amount ?? 5,
+            'cage_number' => $schedule->cage_number ?? 1,
+            'status' => $status,
+            'fed_at' => $startedAt,
+        ]);
     }
 }
