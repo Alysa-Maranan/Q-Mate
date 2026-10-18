@@ -295,7 +295,7 @@ class NotificationFeedController extends Controller
                         'key'      => 'schedule_' . $s->id . '_' . $ts . '_start',
                         'category' => 'feeder',
                         'icon'     => '🍲',
-                        'title'    => 'Schedule Feeder Start',
+                        'title'    => 'Feeding Now',
                         'message'  => 'Scheduled feeding started for Cage ' . ($s->cage_number ?? 1) .
                                       ' (' . ($s->amount ?? 5) . ' seconds).',
                         'time'     => date('M j, Y g:i A', $ts),
@@ -349,7 +349,7 @@ class NotificationFeedController extends Controller
                     'key' => $eventId . '_start',
                     'category' => 'feeder',
                     'icon' => '🍲',
-                    'title' => 'Schedule Feeder Start',
+                    'title' => 'Feeding Now',
                     'message' => 'Scheduled feeding started for Cage ' . ($history->cage_number ?? 1) .
                         ' (' . ($history->duration ?? 5) . ' seconds).',
                     'time' => date('M j, Y g:i A', $ts),
@@ -363,7 +363,7 @@ class NotificationFeedController extends Controller
                     'key' => $eventId . '_' . $type,
                     'category' => 'feeder',
                     'icon' => $type === 'failed' ? '⚠️' : '✅',
-                    'title' => $type === 'failed' ? 'Schedule Feeder Failed' : 'Schedule Feeder Done',
+                    'title' => $type === 'failed' ? 'Scheduled Feeding Failed' : 'Done Feeding',
                     'message' => $type === 'failed'
                         ? 'Scheduled feeding command failed for Cage ' . ($history->cage_number ?? 1) . '.'
                         : 'Scheduled feeding ' . ($isSimulation ? 'simulation ' : '') .

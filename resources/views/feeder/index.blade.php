@@ -1364,7 +1364,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         fill.setAttribute('height', h);
     }
 
-    function showDoneFeedingModal(cage) {
+    function showDoneFeedingModal(cage, feedType = 'manual') {
         // ONE-SHOT GUARD: kahit tawagin ito ng polling hide path o ng safety
         // timeout, ISANG BESES LANG ito lalabas kada feeding cycle.
         if (window.__doneFeedingPopupShown) return;
@@ -1378,7 +1378,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
             playNotifSound('save');
         }
         // Bell entry — DONE FEEDING (once per feeding cycle)
-        if (typeof notificationSystem !== 'undefined') {
+        if (feedType !== 'scheduled' && typeof notificationSystem !== 'undefined') {
             notificationSystem.feeder('✅ DONE FEEDING — Feeding completed for Cage ' + cage, '✅');
         }
     }
@@ -1978,6 +1978,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
 
         resetManualFeedButton();
         reportFeedCompletion(currentFeed);
+        const completedFeedType = currentFeed?.type;
         currentFeed = null;
 
         console.log(
@@ -1987,7 +1988,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         // ========================================================
         // ONLY NOW SHOW DONE FEEDING
         // ========================================================
-        showDoneFeedingModal(currentCage);
+        showDoneFeedingModal(currentCage, completedFeedType);
     }
 
     function reportFeedCompletion(feed) {
@@ -2083,6 +2084,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
                                 data.started_at || null;
 
                             if (
+                                data.type !== 'scheduled' &&
                                 typeof notificationSystem !==
                                 'undefined'
                             ) {

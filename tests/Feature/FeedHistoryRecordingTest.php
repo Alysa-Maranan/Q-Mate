@@ -252,7 +252,7 @@ class FeedHistoryRecordingTest extends TestCase
         $this->assertSame(1, collect($notifications)->where('key', $eventId . '_start')->count());
         $this->assertSame(1, collect($notifications)->where('key', $eventId . '_done')->count());
         $this->assertSame(
-            'Schedule Feeder Done',
+            'Done Feeding',
             collect($notifications)->firstWhere('key', $eventId . '_done')['title']
         );
         $this->assertDatabaseHas('feeder_commands', [
@@ -535,8 +535,8 @@ class FeedHistoryRecordingTest extends TestCase
         );
         $this->assertNotNull($scheduledStart);
         $this->assertNotNull($scheduledDone);
-        $this->assertSame('Schedule Feeder Start', $scheduledStart['title']);
-        $this->assertSame('Schedule Feeder Done', $scheduledDone['title']);
+        $this->assertSame('Feeding Now', $scheduledStart['title']);
+        $this->assertSame('Done Feeding', $scheduledDone['title']);
         $this->assertSame(1, collect($feed['items'])->where('key', $key)->count());
         $this->assertDatabaseHas('feed_history', [
             'schedule_id' => $schedule->id,

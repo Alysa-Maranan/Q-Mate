@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 echo "============================================"
 
 echo "Q-MATE Laravel Startup"
