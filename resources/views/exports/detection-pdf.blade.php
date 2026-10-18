@@ -101,7 +101,7 @@
 <body>
     <div class="header">
         <h1>🔍 Detection History Report</h1>
-        <p>Generated on {{ date('F d, Y H:i:s') }}</p>
+        <p>Generated on {{ date('F d, Y g:i:s A') }}</p>
         <p>Period: {{ $dateFrom }} to {{ $dateTo }}</p>
     </div>
 
@@ -141,7 +141,7 @@
         <tbody>
             @forelse($detections as $detection)
                 <tr>
-                    <td>{{ $detection->created_at->format('M d, Y H:i') }}</td>
+                    <td>{{ $detection->created_at->format('M d, Y g:i A') }}</td>
                     <td>
                         @if($detection->detection_type === 'quail')
                             <span class="badge badge-quail">✓ QUAIL</span>

@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use App\Helpers\QuailBreedHelper;
 use App\Models\QuailBreed;
 use App\Models\FarmSetting;
+use App\Models\FeedingSchedule;
+use App\Support\TimeFormat;
+use Illuminate\Support\Facades\DB;
 
 class SettingsController extends Controller
 {
@@ -151,9 +154,9 @@ class SettingsController extends Controller
     {
         // Validate feeding times
         $request->validate([
-            'feed_time_morning'   => 'required|date_format:H:i',
-            'feed_time_afternoon' => 'required|date_format:H:i',
-            'feed_time_evening'   => 'required|date_format:H:i',
+            'feed_time_morning'   => ['required', 'string', TimeFormat::validationRule()],
+            'feed_time_afternoon' => ['required', 'string', TimeFormat::validationRule()],
+            'feed_time_evening'   => ['required', 'string', TimeFormat::validationRule()],
         ]);
 
         // Check if any NEW time is in the past (only check changed times)
@@ -165,9 +168,9 @@ class SettingsController extends Controller
         ];
         
         $newTimes = [
-            'Morning' => $request->feed_time_morning,
-            'Afternoon' => $request->feed_time_afternoon,
-            'Evening' => $request->feed_time_evening,
+            'Morning' => TimeFormat::normalize($request->feed_time_morning),
+            'Afternoon' => TimeFormat::normalize($request->feed_time_afternoon),
+            'Evening' => TimeFormat::normalize($request->feed_time_evening),
         ];
 
         foreach ($newTimes as $label => $time) {
@@ -175,15 +178,40 @@ class SettingsController extends Controller
             if ($time !== $currentTimes[$label]) {
                 $scheduleTime = \Carbon\Carbon::createFromFormat('H:i', $time)->setDateFrom($now);
                 if ($scheduleTime->isPast()) {
-                    return redirect()->route('settings')->with('error', "Cannot set {$label} feed time to a past time ({$time}).");
+                    return redirect()->route('settings')->with('error', "Cannot set {$label} feed time to a past time (" . TimeFormat::display($time) . ').');
                 }
             }
         }
 
-        // Save feeding times to FarmSetting
-        FarmSetting::set('feed_time_morning', $request->feed_time_morning);
-        FarmSetting::set('feed_time_afternoon', $request->feed_time_afternoon);
-        FarmSetting::set('feed_time_evening', $request->feed_time_evening);
+        DB::transaction(function () use ($currentTimes, $newTimes) {
+            $dailySchedules = FeedingSchedule::query()
+                ->where('cage_number', 1)
+                ->where('amount', 300)
+                ->where(function ($query) {
+                    $query->whereNull('days')->orWhere('days', '[]');
+                })
+                ->where('status', '!=', 'feeding_now')
+                ->orderBy('id')
+                ->get();
+            $updatedScheduleIds = [];
+
+            foreach (['Morning', 'Afternoon', 'Evening'] as $label) {
+                $oldTime = $currentTimes[$label];
+                $schedule = $dailySchedules->first(function ($schedule) use ($oldTime, $updatedScheduleIds) {
+                    return !in_array($schedule->id, $updatedScheduleIds, true)
+                        && substr((string) $schedule->time, 0, 5) === $oldTime;
+                });
+
+                if ($schedule) {
+                    $schedule->update(['time' => $newTimes[$label] . ':00']);
+                    $updatedScheduleIds[] = $schedule->id;
+                }
+            }
+
+            FarmSetting::set('feed_time_morning', $newTimes['Morning']);
+            FarmSetting::set('feed_time_afternoon', $newTimes['Afternoon']);
+            FarmSetting::set('feed_time_evening', $newTimes['Evening']);
+        });
 
         // Clear any cached feeding schedule
         \Illuminate\Support\Facades\Cache::forget('feeding_schedule');

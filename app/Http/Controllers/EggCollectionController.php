@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\EggCollection;
+use App\Support\TimeFormat;
 use Illuminate\Support\Facades\Validator;
 
 class EggCollectionController extends Controller
@@ -32,7 +33,7 @@ class EggCollectionController extends Controller
             'total_eggs' => 'required|integer|min:0',
             'good_eggs' => 'required|integer|min:0',
             'cracked_eggs' => 'required|integer|min:0',
-            'collection_time' => 'required|string',
+            'collection_time' => ['required', 'string', TimeFormat::validationRule()],
             'egg_size' => 'nullable|string',
             'feed_brand' => 'nullable|string'
         ]);
@@ -51,7 +52,7 @@ class EggCollectionController extends Controller
                 'total_eggs' => $request->total_eggs,
                 'good_eggs' => $request->good_eggs,
                 'cracked_eggs' => $request->cracked_eggs,
-                'collection_time' => $request->collection_time,
+                'collection_time' => TimeFormat::normalize($request->collection_time),
                 'notes' => $request->notes ?? "Egg Size: " . ($request->egg_size ?? 'mixed') . ", Feed Brand: " . ($request->feed_brand ?? 'Quail Layer Smash')
             ]);
             
@@ -92,7 +93,7 @@ class EggCollectionController extends Controller
             'total_eggs' => 'required|integer|min:0',
             'good_eggs' => 'required|integer|min:0',
             'cracked_eggs' => 'required|integer|min:0',
-            'collection_time' => 'required|string'
+            'collection_time' => ['required', 'string', TimeFormat::validationRule()]
         ]);
         
         if ($validator->fails()) {
@@ -111,7 +112,7 @@ class EggCollectionController extends Controller
                 'total_eggs' => $request->total_eggs,
                 'good_eggs' => $request->good_eggs,
                 'cracked_eggs' => $request->cracked_eggs,
-                'collection_time' => $request->collection_time,
+                'collection_time' => TimeFormat::normalize($request->collection_time),
                 'notes' => $request->notes
             ]);
             

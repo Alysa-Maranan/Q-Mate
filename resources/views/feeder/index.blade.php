@@ -1164,7 +1164,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
                     }
 
                     if (upd && data.last_updated) {
-                        upd.textContent = 'Updated: ' + new Date(data.last_updated).toLocaleTimeString();
+                        upd.textContent = 'Updated: ' + new Date(data.last_updated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
                     }
 
                     // Determine notification state based on percentage

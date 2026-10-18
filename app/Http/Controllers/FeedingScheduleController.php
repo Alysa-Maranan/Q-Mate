@@ -8,6 +8,7 @@ use App\Models\FeedHistory;
 use App\Models\FeederCommand;
 use App\Services\FeedHistoryRecorder;
 use App\Services\TwilioService;
+use App\Support\TimeFormat;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -381,33 +382,48 @@ class FeedingScheduleController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'schedule_datetime' => 'required|date_format:Y-m-d\TH:i',
+        $data = $request->validate([
+            'schedule_datetime' => 'nullable|date_format:Y-m-d\TH:i',
+            'time' => ['required_without:schedule_datetime', 'nullable', 'string', TimeFormat::validationRule()],
+            'date' => 'nullable|date',
+            'days' => 'nullable|array',
             'amount' => 'required|integer|min:1|max:60',
-            'cage_number' => 'required|integer|min:1|max:10',
+            'cage_number' => 'nullable|integer|min:1|max:10',
         ]);
 
-        $dt = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $request->schedule_datetime);
+        if (!empty($data['schedule_datetime'])) {
+            $dt = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['schedule_datetime']);
+            $days = [strtolower($dt->format('D'))];
+        } else {
+            $time = TimeFormat::normalize($data['time']);
+            $dt = \Carbon\Carbon::parse($data['date'] ?? now()->toDateString())
+                ->setTimeFromTimeString($time);
+            $days = array_values(array_unique(array_map('strtolower', $data['days'] ?? [])));
+        }
 
-        if ($dt->copy()->subMinute()->isPast() && $dt->isPast()) {
+        if (
+            (!empty($data['schedule_datetime']) || !empty($data['date']))
+            && $dt->copy()->subMinute()->isPast()
+            && $dt->isPast()
+        ) {
             return redirect()->route('feeder')->withFragment('schedule')->with('error', 'Cannot set a schedule in the past.');
         }
 
         $time = $dt->format('H:i');
-        $day = strtolower($dt->format('D'));
+        $cageNumber = $data['cage_number'] ?? 1;
 
         $existingSchedule = FeedingSchedule::where('time', $time . ':00')
-            ->where('cage_number', $request->cage_number)
+            ->where('cage_number', $cageNumber)
             ->first();
         if ($existingSchedule) {
-            return redirect()->route('feeder')->withFragment('schedule')->with('error', 'A schedule at this time already exists for Cage ' . $request->cage_number . '.');
+            return redirect()->route('feeder')->withFragment('schedule')->with('error', 'A schedule at this time already exists for Cage ' . $cageNumber . '.');
         }
 
         $schedule = FeedingSchedule::create([
             'time'        => $time,
-            'days'        => [$day],
-            'amount'      => $request->amount,
-            'cage_number' => $request->cage_number,
+            'days'        => $days,
+            'amount'      => $data['amount'],
+            'cage_number' => $cageNumber,
             'enabled'     => true,
         ]);
 
@@ -433,7 +449,7 @@ class FeedingScheduleController extends Controller
                 shell_exec("\"{$php}\" \"{$artisan}\" feeder:check --id={$schedule->id} > /dev/null 2>&1 &");
             }
 
-            return redirect()->route('feeder')->withFragment('schedule')->with('success', 'Feeding started now for Cage ' . $request->cage_number . '!');
+            return redirect()->route('feeder')->withFragment('schedule')->with('success', 'Feeding started now for Cage ' . $cageNumber . '!');
         }
 
         return redirect()->route('feeder')->withFragment('schedule')->with('success', 'Schedule added successfully for Cage ' . $request->cage_number . '.');

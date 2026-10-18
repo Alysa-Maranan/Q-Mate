@@ -9,7 +9,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium text-green-700">Time</label>
-                <input type="time" name="time" class="mt-1 block w-full px-3 py-2 border border-[#bcaaa4] rounded-md" required value="{{ old('time') }}">
+                <input type="text" name="time" class="mt-1 block w-full px-3 py-2 border border-[#bcaaa4] rounded-md" required placeholder="8:30 AM" pattern="(0?[1-9]|1[0-2]):[0-5][0-9] ?([Aa][Mm]|[Pp][Mm])" title="Enter a time such as 8:30 AM" value="{{ old('time') }}">
             </div>
             <div>
                 <label class="block text-sm font-medium text-green-700">Days</label>
@@ -45,7 +45,7 @@
             @foreach($schedules as $s)
             <tr class="border-b border-[#a1887f]">
                 <td class="py-2 text-green-800">{{ 
-                    \Carbon\Carbon::createFromFormat('H:i:s', $s->time)->format('h:i A')
+                    \App\Support\TimeFormat::display($s->time)
                 }}</td>
                 <td class="py-2 text-[#6d4c41]">{{ empty($s->days) ? 'Every Day' : implode(', ', $s->days) }}</td>
                 <td class="py-2">

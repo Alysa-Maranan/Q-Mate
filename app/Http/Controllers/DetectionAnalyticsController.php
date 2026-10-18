@@ -182,7 +182,7 @@ class DetectionAnalyticsController extends Controller
             // Write data
             foreach ($detections as $detection) {
                 fputcsv($file, [
-                    $detection->created_at->format('Y-m-d H:i:s'),
+                    $detection->created_at->format('Y-m-d g:i:s A'),
                     $detection->detection_type,
                     $detection->breed?->name ?? 'N/A',
                     $detection->confidence ? ($detection->confidence * 100) . '%' : 'N/A',
@@ -232,7 +232,7 @@ class DetectionAnalyticsController extends Controller
             // Write data
             foreach ($detections as $detection) {
                 fputcsv($file, [
-                    $detection->created_at->format('Y-m-d H:i:s'),
+                    $detection->created_at->format('Y-m-d g:i:s A'),
                     $detection->breed?->name ?? 'N/A',
                     $detection->feedItem?->name ?? $detection->feed_name ?? 'Unknown',
                     $detection->compatibility_status,

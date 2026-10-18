@@ -30,7 +30,7 @@
     <form method="POST" action="{{ url('/feeder/schedules') }}">
         @csrf
         <label>Time</label>
-        <input type="time" name="time" required value="{{ old('time') }}">
+        <input type="text" name="time" required placeholder="8:30 AM" pattern="(0?[1-9]|1[0-2]):[0-5][0-9] ?([Aa][Mm]|[Pp][Mm])" title="Enter a time such as 8:30 AM" value="{{ old('time') }}">
 
         <label>Days</label>
         <div>
@@ -54,7 +54,7 @@
     <ul id="schedules-list">
         @foreach($schedules as $s)
             <li data-id="{{ $s->id }}">
-                <span class="sched-info">{{ $s->time }} — {{ implode(',', $s->days ?? []) }} — x{{ $s->amount }}</span>
+                <span class="sched-info">{{ \App\Support\TimeFormat::display($s->time) }} — {{ implode(',', $s->days ?? []) }} — x{{ $s->amount }}</span>
                 <form method="POST" action="{{ url('/feeder/schedules/'.$s->id) }}" style="display:inline" class="delete-form">
                     @csrf
                     @method('DELETE')

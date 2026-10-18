@@ -146,7 +146,7 @@ addNotification(message, type = 'info', icon = null, source = null) {
         type: type, // 'success', 'info', 'warning', 'error'
         icon: icon,
         source: source,
-        timestamp: new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        timestamp: new Date().toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })
     };
 
     // Add to notifications array

@@ -355,8 +355,8 @@
                         <label style="display: flex; align-items: center; gap: 0.5rem;">
                             <span>🌅 Morning Feed</span>
                         </label>
-                        <input type="time" name="feed_time_morning" value="{{ $feedTimes['morning'] ?? '08:00' }}" required style="font-size: 1rem;">
-                        <p style="margin: 0.5rem 0 0 0; color: #8d6e63; font-size: 0.8rem;">Recommended: 08:00</p>
+                        <input type="text" name="feed_time_morning" value="{{ \App\Support\TimeFormat::display($feedTimes['morning'] ?? '08:00') }}" placeholder="8:00 AM" pattern="(0?[1-9]|1[0-2]):[0-5][0-9] ?([Aa][Mm]|[Pp][Mm])" title="Enter a time such as 8:00 AM" required style="font-size: 1rem;">
+                        <p style="margin: 0.5rem 0 0 0; color: #8d6e63; font-size: 0.8rem;">Recommended: 8:00 AM</p>
                     </div>
 
                     <!-- Afternoon Feed Time -->
@@ -364,8 +364,8 @@
                         <label style="display: flex; align-items: center; gap: 0.5rem;">
                             <span>☀️ Afternoon Feed</span>
                         </label>
-                        <input type="time" name="feed_time_afternoon" value="{{ $feedTimes['afternoon'] ?? '12:00' }}" required style="font-size: 1rem;">
-                        <p style="margin: 0.5rem 0 0 0; color: #8d6e63; font-size: 0.8rem;">Recommended: 12:00</p>
+                        <input type="text" name="feed_time_afternoon" value="{{ \App\Support\TimeFormat::display($feedTimes['afternoon'] ?? '12:00') }}" placeholder="12:00 PM" pattern="(0?[1-9]|1[0-2]):[0-5][0-9] ?([Aa][Mm]|[Pp][Mm])" title="Enter a time such as 12:00 PM" required style="font-size: 1rem;">
+                        <p style="margin: 0.5rem 0 0 0; color: #8d6e63; font-size: 0.8rem;">Recommended: 12:00 PM</p>
                     </div>
 
                     <!-- Evening Feed Time -->
@@ -373,8 +373,8 @@
                         <label style="display: flex; align-items: center; gap: 0.5rem;">
                             <span>🌙 Evening Feed</span>
                         </label>
-                        <input type="time" name="feed_time_evening" value="{{ $feedTimes['evening'] ?? '17:00' }}" required style="font-size: 1rem;">
-                        <p style="margin: 0.5rem 0 0 0; color: #8d6e63; font-size: 0.8rem;">Recommended: 17:00</p>
+                        <input type="text" name="feed_time_evening" value="{{ \App\Support\TimeFormat::display($feedTimes['evening'] ?? '17:00') }}" placeholder="5:00 PM" pattern="(0?[1-9]|1[0-2]):[0-5][0-9] ?([Aa][Mm]|[Pp][Mm])" title="Enter a time such as 5:00 PM" required style="font-size: 1rem;">
+                        <p style="margin: 0.5rem 0 0 0; color: #8d6e63; font-size: 0.8rem;">Recommended: 5:00 PM</p>
                     </div>
                 </div>
 
@@ -387,15 +387,15 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                     <div style="padding: 0.75rem; background: linear-gradient(135deg, #fff9f5 0%, #fff7f2 100%); border-radius: 8px; border-left: 3px solid #a1887f; text-align: center;">
                         <p style="margin: 0 0 0.25rem 0; color: #8d6e63; font-size: 0.75rem; font-weight: 600;">Morning</p>
-                        <p style="margin: 0; color: #6d4c41; font-size: 1.2rem; font-weight: 700;">{{ $feedTimes['morning'] ?? '08:00' }}</p>
+                        <p style="margin: 0; color: #6d4c41; font-size: 1.2rem; font-weight: 700;">{{ \App\Support\TimeFormat::display($feedTimes['morning'] ?? '08:00') }}</p>
                     </div>
                     <div style="padding: 0.75rem; background: linear-gradient(135deg, #fff9f5 0%, #fff7f2 100%); border-radius: 8px; border-left: 3px solid #a1887f; text-align: center;">
                         <p style="margin: 0 0 0.25rem 0; color: #8d6e63; font-size: 0.75rem; font-weight: 600;">Afternoon</p>
-                        <p style="margin: 0; color: #6d4c41; font-size: 1.2rem; font-weight: 700;">{{ $feedTimes['afternoon'] ?? '12:00' }}</p>
+                        <p style="margin: 0; color: #6d4c41; font-size: 1.2rem; font-weight: 700;">{{ \App\Support\TimeFormat::display($feedTimes['afternoon'] ?? '12:00') }}</p>
                     </div>
                     <div style="padding: 0.75rem; background: linear-gradient(135deg, #fff9f5 0%, #fff7f2 100%); border-radius: 8px; border-left: 3px solid #a1887f; text-align: center;">
                         <p style="margin: 0 0 0.25rem 0; color: #8d6e63; font-size: 0.75rem; font-weight: 600;">Evening</p>
-                        <p style="margin: 0; color: #6d4c41; font-size: 1.2rem; font-weight: 700;">{{ $feedTimes['evening'] ?? '17:00' }}</p>
+                        <p style="margin: 0; color: #6d4c41; font-size: 1.2rem; font-weight: 700;">{{ \App\Support\TimeFormat::display($feedTimes['evening'] ?? '17:00') }}</p>
                     </div>
                 </div>
             </div>
