@@ -82,6 +82,10 @@ class FeederCommandController extends Controller
                 return [$command, false, false];
             }
 
+            if ($command->type === 'scheduled' && $command->status !== 'in_progress') {
+                return [$command, false, false];
+            }
+
             $command->markCompleted();
             $recorded = false;
 
@@ -103,7 +107,9 @@ class FeederCommandController extends Controller
         if (!$processed) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed feeder commands cannot be recorded as completed.',
+                'message' => $command->type === 'scheduled'
+                    ? 'Scheduled command must be picked up by the feeder before completion.'
+                    : 'Failed feeder commands cannot be recorded as completed.',
             ], 409);
         }
 

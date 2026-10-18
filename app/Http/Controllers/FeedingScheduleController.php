@@ -258,11 +258,23 @@ class FeedingScheduleController extends Controller
 
     foreach ($activeSchedules as $activeSchedule) {
         $duration = (int) ($activeSchedule->amount ?? 5);
-        $completionTime = $activeSchedule->feeding_started_at
+        $activeCommand = FeederCommand::where('schedule_id', $activeSchedule->id)
+            ->where('type', 'scheduled')
+            ->where('status', 'in_progress')
+            ->whereNotNull('picked_up_at')
+            ->latest('picked_up_at')
+            ->first();
+
+        if (!$activeCommand) {
+            continue;
+        }
+
+        $completionTime = $activeCommand->picked_up_at
             ->copy()
             ->addSeconds($duration + 5);
 
         if ($completionTime->lte($now) && $recorder->completeScheduled($activeSchedule, $duration)) {
+            $activeCommand->markCompleted();
             FeederCommand::where('schedule_id', $activeSchedule->id)
                 ->where('status', 'pending')
                 ->update(['status' => 'failed']);
@@ -522,6 +534,28 @@ class FeedingScheduleController extends Controller
             ]);
         }
 
+        if ($data['feed_type'] === 'scheduled') {
+            if (empty($data['command_id'])) {
+                return response()->json([
+                    'recorded' => false,
+                    'status' => 'awaiting_hardware',
+                ]);
+            }
+
+            $command = FeederCommand::findOrFail($data['command_id']);
+            if ($command->type !== 'scheduled' || (int) $command->schedule_id !== (int) $feed->id) {
+                return response()->json([
+                    'recorded' => false,
+                    'status' => 'command_mismatch',
+                ], 422);
+            }
+
+            return response()->json([
+                'recorded' => false,
+                'status' => $command->status === 'failed' ? 'failed' : 'awaiting_hardware',
+            ]);
+        }
+
         if (!empty($data['command_id'])) {
             $command = FeederCommand::findOrFail($data['command_id']);
             $matchesFeed = $data['feed_type'] === 'manual'
@@ -550,9 +584,7 @@ class FeedingScheduleController extends Controller
             }
         }
 
-        $recorded = $data['feed_type'] === 'manual'
-            ? $recorder->completeManual($feed)
-            : $recorder->completeScheduled($feed);
+        $recorded = $recorder->completeManual($feed);
 
         return response()->json([
             'recorded' => $recorded,

@@ -292,7 +292,7 @@ class NotificationFeedController extends Controller
                 ->each(function ($s) use ($items) {
                     $ts = $s->feeding_started_at ? strtotime((string) $s->feeding_started_at) : time();
                     $items->push([
-                        'key'      => 'feed_now_sched_' . $s->id . '_' . $ts,
+                        'key'      => 'feed_sched_' . $s->id . '_' . $ts,
                         'category' => 'feeder',
                         'icon'     => '🍲',
                         'title'    => 'Feeding Now',
@@ -328,20 +328,29 @@ class NotificationFeedController extends Controller
             \Log::warning('Notification feed [feeding now]: ' . $e->getMessage());
         }
 
-        // ── Feeder: feedings completed in the last 10 minutes (DONE FEEDING) ──
-        // Records are created by the feeder:manual-done / feeder:schedule-done
-        // background commands right after the servo closes.
+        // ── Feeder: scheduled completions persist in the bell via Feed History ──
         try {
-            FeedHistory::where('status', 'completed')
+            $completedScheduled = FeedHistory::where('status', 'completed')
+                ->where('feed_type', 'scheduled')
+                ->orderByDesc('fed_at')
+                ->limit(10)
+                ->get();
+
+            $recentManual = FeedHistory::where('status', 'completed')
+                ->where('feed_type', 'manual')
                 ->where('fed_at', '>=', now()->subMinutes(10))
                 ->orderByDesc('fed_at')
                 ->limit(5)
-                ->get()
+                ->get();
+
+            $completedScheduled->concat($recentManual)
                 ->each(function ($h) use ($items) {
                     $ts   = $h->fed_at ? strtotime((string) $h->fed_at) : time();
-                    $type = ($h->feed_type === 'manual') ? 'Manual' : 'Scheduled';
+                    $type = $h->feed_type === 'manual' ? 'Manual' : 'Scheduled';
                     $items->push([
-                        'key'      => 'feed_done_' . $h->id,
+                        'key'      => $type === 'Scheduled' && $h->schedule_id
+                            ? 'feed_sched_' . $h->schedule_id . '_' . $ts
+                            : 'feed_done_' . $h->id,
                         'category' => 'feeder',
                         'icon'     => '✅',
                         'title'    => 'Done Feeding',
@@ -374,4 +383,3 @@ class NotificationFeedController extends Controller
         ]);
     }
 }
-

@@ -62,6 +62,14 @@ class FeedHistoryRecorder
                 return false;
             }
 
+            if (FeedHistory::where('schedule_id', $feed->id)
+                ->where('feed_type', 'scheduled')
+                ->where('fed_at', $startedAt)
+                ->exists()) {
+                $feed->update(['status' => 'done_feeding']);
+                return false;
+            }
+
             FeedHistory::create([
                 'feed_type' => 'scheduled',
                 'feed_brand' => cache('feed_brand', 'Quail Layer Smash'),
@@ -69,7 +77,7 @@ class FeedHistoryRecorder
                 'duration' => $duration ?? $feed->amount ?? 5,
                 'cage_number' => $feed->cage_number ?? 1,
                 'status' => 'completed',
-                'fed_at' => now(),
+                'fed_at' => $startedAt,
             ]);
 
             $feed->update(['status' => 'done_feeding']);

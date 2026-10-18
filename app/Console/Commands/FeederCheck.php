@@ -27,6 +27,17 @@ class FeederCheck extends Command
             return 0;
         }
 
+        if (\App\Models\FarmSetting::get('scheduled_feeding_enabled', '1') !== '1') {
+            return 0;
+        }
+
+        $enabledAt = \App\Models\FarmSetting::get('scheduled_feeding_enabled_at');
+        if ($enabledAt !== '' && Carbon::parse($enabledAt)->format('Y-m-d H:i') === now()->format('Y-m-d H:i')) {
+            return 0;
+        }
+
+        \App\Http\Controllers\FeedingScheduleController::ensureDailySchedulesExist();
+
         $now = Carbon::now();
         $todayKey = strtolower(substr($now->format('D'), 0, 3));
         $currentHM = $now->format('H:i');
@@ -120,7 +131,13 @@ class FeederCheck extends Command
         }
         if (!$consumed) {
             $this->warn('Servo bridge did NOT consume the command within 4s — schedule ID '
-                . $s->id . ' will feed as soon as the bridge comes online.');
+                . $s->id . ' was not processed; no history will be recorded.');
+            $s->update([
+                'status' => 'idle',
+                'last_feed_at' => null,
+                'feeding_started_at' => null,
+            ]);
+            return;
         }
 
         // 3. Mark done + record history after the servo finishes via a background

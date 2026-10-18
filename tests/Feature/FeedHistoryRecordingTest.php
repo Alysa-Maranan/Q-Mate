@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\NotificationFeedController;
+use App\Models\FeedHistory;
 use App\Models\FeederCommand;
 use App\Models\FeedingSchedule;
 use App\Models\ManualFeed;
+use App\Services\FeedHistoryRecorder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
@@ -119,7 +122,7 @@ class FeedHistoryRecordingTest extends TestCase
         ]);
     }
 
-    public function test_scheduled_simulation_records_once_per_schedule_run(): void
+    public function test_scheduled_animation_does_not_record_before_hardware_processes_command(): void
     {
         $schedule = $this->feedingSchedule();
         $schedule->update([
@@ -140,14 +143,19 @@ class FeedHistoryRecordingTest extends TestCase
         ];
 
         $this->postJson(route('feeder.complete'), $payload)->assertOk()->assertJson([
-            'recorded' => true,
-            'status' => 'completed',
+            'recorded' => false,
+            'status' => 'awaiting_hardware',
         ]);
-        $this->postJson(route('feeder.complete'), $payload)->assertOk();
+        $this->assertDatabaseCount('feed_history', 0);
+        $this->assertDatabaseHas('feeder_commands', [
+            'id' => $scheduledFeed['command_id'],
+            'status' => 'pending',
+        ]);
+        $this->postJson('/api/feeder/command-done', [
+            'command_id' => $scheduledFeed['command_id'],
+        ])->assertStatus(409);
 
-        $this->assertDatabaseCount('feed_history', 1);
-
-        $this->assertDatabaseCount('feed_history', 1);
+        $this->assertDatabaseCount('feed_history', 0);
     }
 
     public function test_scheduled_feed_without_completion_callback_is_recorded_once_after_duration(): void
@@ -164,7 +172,8 @@ class FeedHistoryRecordingTest extends TestCase
             'type' => 'scheduled',
             'schedule_id' => $schedule->id,
             'duration' => 300,
-            'status' => 'pending',
+            'status' => 'in_progress',
+            'picked_up_at' => $startedAt,
         ]);
 
         $this->getJson('/feeder/schedules/auto-check')->assertOk();
@@ -183,7 +192,33 @@ class FeedHistoryRecordingTest extends TestCase
         ]);
         $this->assertDatabaseHas('feeder_commands', [
             'id' => $command->id,
-            'status' => 'failed',
+            'status' => 'completed',
+        ]);
+    }
+
+    public function test_unprocessed_scheduled_command_does_not_create_history_after_duration(): void
+    {
+        $schedule = $this->feedingSchedule();
+        $startedAt = now()->subSeconds(306);
+        $schedule->update([
+            'time' => now()->subMinutes(5)->format('H:i:s'),
+            'amount' => 300,
+            'last_feed_at' => $startedAt,
+            'feeding_started_at' => $startedAt,
+        ]);
+        $command = FeederCommand::create([
+            'type' => 'scheduled',
+            'schedule_id' => $schedule->id,
+            'duration' => 300,
+            'status' => 'pending',
+        ]);
+
+        $this->getJson('/feeder/schedules/auto-check')->assertOk();
+
+        $this->assertDatabaseCount('feed_history', 0);
+        $this->assertDatabaseHas('feeder_commands', [
+            'id' => $command->id,
+            'status' => 'pending',
         ]);
     }
 
@@ -221,7 +256,7 @@ class FeedHistoryRecordingTest extends TestCase
         $this->assertDatabaseCount('feed_history', 1);
     }
 
-    public function test_animation_poll_recovers_scheduled_feed_without_hardware_and_keeps_history_idempotent(): void
+    public function test_animation_poll_does_not_record_scheduled_feed_without_hardware(): void
     {
         $schedule = $this->feedingSchedule();
         $command = FeederCommand::create([
@@ -249,10 +284,12 @@ class FeedHistoryRecordingTest extends TestCase
             'cage_number' => $animation->json('cage'),
         ];
 
-        $this->postJson(route('feeder.complete'), $completion)->assertOk();
-        $this->postJson(route('feeder.complete'), $completion)->assertOk();
+        $this->postJson(route('feeder.complete'), $completion)->assertOk()->assertJson([
+            'recorded' => false,
+            'status' => 'awaiting_hardware',
+        ]);
 
-        $this->assertDatabaseCount('feed_history', 1);
+        $this->assertDatabaseCount('feed_history', 0);
     }
 
     public function test_manual_hardware_callback_and_animation_report_record_once(): void
@@ -307,6 +344,34 @@ class FeedHistoryRecordingTest extends TestCase
         $this->assertDatabaseCount('feed_history', 1);
         $this->assertDatabaseHas('feed_history', [
             'schedule_id' => $schedule->id,
+            'status' => 'completed',
+        ]);
+    }
+
+    public function test_scheduled_notification_uses_feed_history_and_stable_event_key(): void
+    {
+        $schedule = $this->feedingSchedule();
+        $startedAt = now()->subMinutes(20);
+        $schedule->update([
+            'status' => 'feeding_now',
+            'last_feed_at' => $startedAt,
+            'feeding_started_at' => $startedAt,
+        ]);
+
+        $feed = app(NotificationFeedController::class)->feed()->getData(true);
+        $key = 'feed_sched_' . $schedule->id . '_' . $startedAt->timestamp;
+        $this->assertSame(1, collect($feed['items'])->where('key', $key)->count());
+
+        $this->assertTrue(app(FeedHistoryRecorder::class)->completeScheduled($schedule, $schedule->amount));
+
+        $feed = app(NotificationFeedController::class)->feed()->getData(true);
+        $scheduledNotification = collect($feed['items'])->firstWhere('key', $key);
+        $this->assertNotNull($scheduledNotification);
+        $this->assertSame('Done Feeding', $scheduledNotification['title']);
+        $this->assertSame(1, collect($feed['items'])->where('key', $key)->count());
+        $this->assertDatabaseHas('feed_history', [
+            'schedule_id' => $schedule->id,
+            'fed_at' => $startedAt->format('Y-m-d H:i:s'),
             'status' => 'completed',
         ]);
     }
