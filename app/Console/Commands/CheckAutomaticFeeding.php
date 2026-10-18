@@ -19,6 +19,11 @@ class CheckAutomaticFeeding extends Command
         }
 
         $now = now();
+        $enabledAt = FarmSetting::get('scheduled_feeding_enabled_at');
+        if ($enabledAt !== '' && \Carbon\Carbon::parse($enabledAt)->format('Y-m-d H:i') === $now->format('Y-m-d H:i')) {
+            return 0;
+        }
+
         $currentTime = $now->format('H:i');
         
         // Get feeding times from settings (DYNAMIC - reads every time)

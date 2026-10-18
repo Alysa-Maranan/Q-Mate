@@ -104,18 +104,22 @@ class FeedingScheduleController extends Controller
 
         // Compute next feeding time
         $now = now();
-        $nextFeeding = null;
         $feedTimes = self::getFeedingTimes();
+        $scheduledFeedingEnabled = \App\Models\FarmSetting::get('scheduled_feeding_enabled', '1') === '1';
+        $nextFeedingCandidates = [];
         foreach ($feedTimes as $t) {
             $candidate = \Carbon\Carbon::createFromFormat('H:i', $t)->setDateFrom($now);
             if ($candidate->gt($now)) {
-                $nextFeeding = $candidate;
-                break;
+                $nextFeedingCandidates[] = $candidate;
             }
         }
-        if (!$nextFeeding) {
-            $nextFeeding = \Carbon\Carbon::createFromFormat('H:i', $feedTimes[0])->addDay()->setDateFrom($now->copy()->addDay());
+        if (!$nextFeedingCandidates) {
+            foreach ($feedTimes as $t) {
+                $nextFeedingCandidates[] = \Carbon\Carbon::createFromFormat('H:i', $t)->setDateFrom($now->copy()->addDay());
+            }
         }
+        usort($nextFeedingCandidates, static fn ($a, $b) => $a->getTimestamp() <=> $b->getTimestamp());
+        $nextFeeding = $nextFeedingCandidates[0];
 
         // Get current quail breed
         $currentQuailBreed = \App\Helpers\QuailBreedHelper::getCurrentBreed();
@@ -142,7 +146,7 @@ class FeedingScheduleController extends Controller
             $feedTimesWithLabels[$time] = $label;
         }
 
-        return view('feeder.index', compact('feedHistory', 'feedBrand', 'nextFeeding', 'fedToday', 'fedThisWeek', 'currentQuailBreed', 'currentBreeds', 'feedTimes', 'feedTimesWithLabels'));
+        return view('feeder.index', compact('feedHistory', 'feedBrand', 'nextFeeding', 'fedToday', 'fedThisWeek', 'currentQuailBreed', 'currentBreeds', 'feedTimes', 'feedTimesWithLabels', 'scheduledFeedingEnabled'));
     }
 
     /**
@@ -289,12 +293,22 @@ class FeedingScheduleController extends Controller
         ]);
 
     if (\App\Models\FarmSetting::get('scheduled_feeding_enabled', '1') !== '1') {
-            return response()->json([
-                'status' => 'ok',
-                'triggered' => [],
-                'count' => 0,
-                'scheduled_feeding_enabled' => false,
-            ]);
+        return response()->json([
+            'status' => 'ok',
+            'triggered' => [],
+            'count' => 0,
+            'scheduled_feeding_enabled' => false,
+        ]);
+    }
+
+    $enabledAt = \App\Models\FarmSetting::get('scheduled_feeding_enabled_at');
+    if ($enabledAt !== '' && \Carbon\Carbon::parse($enabledAt)->format('Y-m-d H:i') === $now->format('Y-m-d H:i')) {
+        return response()->json([
+            'status' => 'ok',
+            'triggered' => [],
+            'count' => 0,
+            'scheduled_feeding_enabled' => true,
+        ]);
     }
 
     // ── Find schedules that are ready to run ─────────────────────────

@@ -6,6 +6,7 @@ use App\Models\FarmSetting;
 use App\Models\FeederCommand;
 use App\Models\FeedingSchedule;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
@@ -35,6 +36,19 @@ class FeederScheduleSettingsTest extends TestCase
             $table->string('status')->default('idle');
             $table->timestamp('last_feed_at')->nullable();
             $table->timestamp('feeding_started_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('feed_history', function (Blueprint $table) {
+            $table->id();
+            $table->string('feed_type');
+            $table->string('feed_brand')->nullable();
+            $table->unsignedBigInteger('schedule_id')->nullable();
+            $table->unsignedBigInteger('manual_feed_id')->nullable();
+            $table->integer('duration');
+            $table->integer('cage_number')->default(1);
+            $table->string('status');
+            $table->timestamp('fed_at');
             $table->timestamps();
         });
 
@@ -93,6 +107,7 @@ class FeederScheduleSettingsTest extends TestCase
     {
         \Illuminate\Support\Carbon::setTestNow();
         Schema::dropIfExists('quail_breeds');
+        Schema::dropIfExists('feed_history');
         Schema::dropIfExists('feeder_commands');
         Schema::dropIfExists('manual_feeds');
         Schema::dropIfExists('feeding_schedules');
@@ -215,7 +230,15 @@ class FeederScheduleSettingsTest extends TestCase
             ->assertOk()
             ->assertJsonPath('count', 0)
             ->assertJsonPath('scheduled_feeding_enabled', false);
+        $this->assertSame(0, Artisan::call('feeder:check-automatic'));
         $this->assertSame('idle', FeedingSchedule::orderBy('id')->first()->status);
+        $this->get('/feeder')
+            ->assertOk()
+            ->assertSee('Scheduled Feeding is OFF')
+            ->assertSee('node-paused')
+            ->assertSee('badge-paused">Paused', false)
+            ->assertDontSee('badge-done">Done', false)
+            ->assertSee('8:00 AM');
 
         $scheduledCommand = FeederCommand::create([
             'type' => 'scheduled',
@@ -249,8 +272,41 @@ class FeederScheduleSettingsTest extends TestCase
         $this->assertSame('08:00', FarmSetting::get('feed_time_morning'));
         $this->getJson('/feeder/schedules/auto-check')
             ->assertOk()
+            ->assertJsonPath('count', 0)
+            ->assertJsonPath('scheduled_feeding_enabled', true);
+
+        $this->assertSame('idle', FeedingSchedule::orderBy('id')->first()->status);
+        \Illuminate\Support\Carbon::setTestNow(
+            \Illuminate\Support\Carbon::parse('2026-10-14 08:00:00', config('app.timezone'))
+        );
+        $this->getJson('/feeder/schedules/auto-check')
+            ->assertOk()
             ->assertJsonPath('count', 1)
             ->assertJsonPath('triggered.0.time', '08:00:00');
+
+        \Illuminate\Support\Carbon::setTestNow(
+            \Illuminate\Support\Carbon::parse('2026-10-14 08:01:00', config('app.timezone'))
+        );
+        $this->get('/feeder')
+            ->assertOk()
+            ->assertSee('>--:--:--</div>', false)
+            ->assertSee('node-done')
+            ->assertSee('badge-done">Done', false);
+    }
+
+    public function test_feeder_countdown_uses_the_earliest_saved_time(): void
+    {
+        \Illuminate\Support\Carbon::setTestNow(
+            \Illuminate\Support\Carbon::parse('2026-10-13 10:00:00', config('app.timezone'))
+        );
+        FarmSetting::set('feed_time_morning', '19:00');
+        FarmSetting::set('feed_time_afternoon', '12:00');
+        FarmSetting::set('feed_time_evening', '17:00');
+
+        $this->get('/feeder')
+            ->assertOk()
+            ->assertSee('12:00 PM')
+            ->assertSee('Today');
     }
 
     public function test_custom_schedule_accepts_ampm_and_runs_at_normalized_time(): void

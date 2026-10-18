@@ -482,10 +482,12 @@
         <!-- Next Feeding Card -->
         <div class="section-card" style="text-align:center;padding:2.5rem 2rem;margin-top:1.5rem;">
             <div style="font-size:0.95rem;font-weight:600;color:#8d6e63;margin-bottom:0.5rem;letter-spacing:1px;">NEXT FEEDING IN</div>
-            <div id="countdown-display" style="font-size:3rem;font-weight:800;color:#6d4c41;letter-spacing:4px;font-variant-numeric:tabular-nums;">--:--:--</div>
+            <div id="countdown-display" style="font-size:{{ $scheduledFeedingEnabled ? '3rem' : '1.5rem' }};font-weight:800;color:{{ $scheduledFeedingEnabled ? '#6d4c41' : '#757575' }};letter-spacing:{{ $scheduledFeedingEnabled ? '4px' : 'normal' }};font-variant-numeric:tabular-nums;">{{ $scheduledFeedingEnabled ? '--:--:--' : 'Scheduled Feeding is OFF' }}</div>
+            @if($scheduledFeedingEnabled)
             <div style="font-size:1rem;font-weight:600;color:#a1887f;margin-top:0.5rem;">
                 {{ $nextFeeding->format('g:i A') }} &mdash; {{ $nextFeeding->isToday() ? 'Today' : 'Tomorrow' }}
             </div>
+            @endif
             <div id="realtime-date" style="font-size:0.85rem;font-weight:700;color:#a1887f;margin-top:0.35rem;"></div>
         </div>
 
@@ -501,14 +503,15 @@
                     $isNext   = $nextFeeding->format('H:i') === $time && $nextFeeding->isToday();
                     $isLast   = $time === end($feedTimes);
                     $label    = $feedTimesWithLabels[$time] ?? $time;
+                    $nodeState = !$scheduledFeedingEnabled ? 'node-paused' : ($isPast ? 'node-done' : ($isNext ? 'node-next' : 'node-upcoming'));
                 @endphp
                 <div style="display:flex;align-items:center;flex:1;">
                     <!-- Node -->
                     <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
-                        <div class="timeline-node {{ $isPast ? 'node-done' : ($isNext ? 'node-next' : 'node-upcoming') }}">
-                            @if($isPast)
+                        <div class="timeline-node {{ $nodeState }}">
+                            @if($scheduledFeedingEnabled && $isPast)
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            @elseif($isNext)
+                            @elseif($scheduledFeedingEnabled && $isNext)
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                             @else
                                 @php
@@ -523,9 +526,11 @@
                                 @endif
                             @endif
                         </div>
-                        <div style="margin-top:0.75rem;font-weight:700;color:#4e342e;font-size:0.95rem;">{!! $label !!}</div>
+                        <div style="margin-top:0.75rem;font-weight:700;color:{{ $scheduledFeedingEnabled ? '#4e342e' : '#757575' }};font-size:0.95rem;">{!! $label !!}</div>
                         <div style="font-size:0.78rem;color:#8d6e63;margin-top:0.2rem;">20s &bull; ~250g</div>
-                        @if($isPast)
+                        @if(!$scheduledFeedingEnabled)
+                            <div class="tl-badge badge-paused">Paused</div>
+                        @elseif($isPast)
                             <div class="tl-badge badge-done">Done</div>
                         @elseif($isNext)
                             <div class="tl-badge badge-next">Next</div>
@@ -535,7 +540,7 @@
                     </div>
                     <!-- Connector line (not after last) -->
                     @if(!$isLast)
-                    <div style="flex:1;height:3px;background:{{ $isPast ? 'linear-gradient(90deg,#a1887f,#a1887f)' : '#efebe9' }};margin-bottom:3rem;border-radius:2px;"></div>
+                    <div style="flex:1;height:3px;background:{{ !$scheduledFeedingEnabled ? '#bdbdbd' : ($isPast ? 'linear-gradient(90deg,#a1887f,#a1887f)' : '#efebe9') }};margin-bottom:3rem;border-radius:2px;"></div>
                     @endif
                 </div>
                 @endforeach
@@ -559,6 +564,12 @@
     color: white;
     font-size: 1.5rem;
     animation: checkPop 0.4s ease;
+}
+.node-paused {
+    background: #e0e0e0;
+    color: #757575;
+    box-shadow: none;
+    animation: none;
 }
 @keyframes checkPop {
     0%   { transform: scale(0.7); }
@@ -587,6 +598,7 @@
     font-weight: 700;
 }
 .badge-done     { background:#d1fae5; color:#065f46; }
+.badge-paused   { background:#e0e0e0; color:#616161; }
 .badge-next     { background:#fef3c7; color:#92400e; }
 .badge-upcoming { background:#efebe9; color:#6d4c41; }
 </style>
@@ -748,26 +760,35 @@
     // Countdown to next feeding
     (function() {
         const feedTimes = @json($feedTimes);
+        const scheduledFeedingEnabled = @json($scheduledFeedingEnabled);
         const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
         function getNextFeeding() {
             const now = new Date();
-            for (const t of feedTimes) {
+            const todayCandidates = feedTimes.map(function(t) {
                 const [h, m] = t.split(':').map(Number);
                 const candidate = new Date(now);
                 candidate.setHours(h, m, 0, 0);
-                if (candidate > now) return candidate;
-            }
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const [h, m] = feedTimes[0].split(':').map(Number);
-            tomorrow.setHours(h, m, 0, 0);
-            return tomorrow;
+                return candidate;
+            }).filter(candidate => candidate > now).sort((a, b) => a - b);
+            if (todayCandidates.length) return todayCandidates[0];
+
+            return feedTimes.map(function(t) {
+                const [h, m] = t.split(':').map(Number);
+                const candidate = new Date(now);
+                candidate.setDate(candidate.getDate() + 1);
+                candidate.setHours(h, m, 0, 0);
+                return candidate;
+            }).sort((a, b) => a - b)[0];
         }
 
         function updateCountdown() {
             const el = document.getElementById('countdown-display');
             if (!el) return;
+            if (!scheduledFeedingEnabled) {
+                el.textContent = 'Scheduled Feeding is OFF';
+                return;
+            }
             const diff = Math.max(0, getNextFeeding() - new Date());
             const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
             const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
@@ -784,7 +805,9 @@
 
         updateCountdown();
         updateDate();
-        setInterval(updateCountdown, 1000);
+        if (scheduledFeedingEnabled) {
+            setInterval(updateCountdown, 1000);
+        }
         setInterval(updateDate, 1000);
     })();
 

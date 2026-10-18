@@ -209,6 +209,9 @@ class SettingsController extends Controller
             FarmSetting::set('feed_time_morning', $newTimes['Morning']);
             FarmSetting::set('feed_time_afternoon', $newTimes['Afternoon']);
             FarmSetting::set('feed_time_evening', $newTimes['Evening']);
+            if ($scheduledFeedingEnabled && FarmSetting::get('scheduled_feeding_enabled', '1') === '0') {
+                FarmSetting::set('scheduled_feeding_enabled_at', now()->format('Y-m-d H:i:s'));
+            }
             FarmSetting::set('scheduled_feeding_enabled', $scheduledFeedingEnabled ? '1' : '0');
         });
 
