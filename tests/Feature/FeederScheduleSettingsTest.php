@@ -153,6 +153,35 @@ class FeederScheduleSettingsTest extends TestCase
             ->assertJsonPath('triggered.0.time', '13:30:00');
     }
 
+    public function test_feeder_times_can_be_changed_to_times_that_have_passed_today(): void
+    {
+        \Illuminate\Support\Carbon::setTestNow(
+            \Illuminate\Support\Carbon::parse('2026-10-13 20:00:00', config('app.timezone'))
+        );
+
+        $this->post(route('settings.feeder-schedule'), [
+            'feed_time_morning' => '7:15 AM',
+            'feed_time_afternoon' => '1:30 PM',
+            'feed_time_evening' => '8:30 PM',
+        ])->assertRedirect(route('settings'))
+            ->assertSessionHas('schedule_saved', true)
+            ->assertSessionMissing('error');
+
+        $this->assertSame('07:15', FarmSetting::get('feed_time_morning'));
+        $this->assertSame('13:30', FarmSetting::get('feed_time_afternoon'));
+        $this->assertSame('20:30', FarmSetting::get('feed_time_evening'));
+        $this->assertSame(
+            ['07:15:00', '13:30:00', '20:30:00'],
+            FeedingSchedule::orderBy('id')->pluck('time')->map(fn ($time) => (string) $time)->all()
+        );
+
+        $this->get('/settings')
+            ->assertOk()
+            ->assertSee('7:15 AM')
+            ->assertSee('1:30 PM')
+            ->assertSee('8:30 PM');
+    }
+
     public function test_custom_schedule_accepts_ampm_and_runs_at_normalized_time(): void
     {
         \Illuminate\Support\Carbon::setTestNow(

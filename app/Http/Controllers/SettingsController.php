@@ -159,8 +159,6 @@ class SettingsController extends Controller
             'feed_time_evening'   => ['required', 'string', TimeFormat::validationRule()],
         ]);
 
-        // Check if any NEW time is in the past (only check changed times)
-        $now = now();
         $currentTimes = [
             'Morning' => FarmSetting::get('feed_time_morning', '08:00'),
             'Afternoon' => FarmSetting::get('feed_time_afternoon', '12:00'),
@@ -172,16 +170,6 @@ class SettingsController extends Controller
             'Afternoon' => TimeFormat::normalize($request->feed_time_afternoon),
             'Evening' => TimeFormat::normalize($request->feed_time_evening),
         ];
-
-        foreach ($newTimes as $label => $time) {
-            // Only validate if the time was changed
-            if ($time !== $currentTimes[$label]) {
-                $scheduleTime = \Carbon\Carbon::createFromFormat('H:i', $time)->setDateFrom($now);
-                if ($scheduleTime->isPast()) {
-                    return redirect()->route('settings')->with('error', "Cannot set {$label} feed time to a past time (" . TimeFormat::display($time) . ').');
-                }
-            }
-        }
 
         DB::transaction(function () use ($currentTimes, $newTimes) {
             $dailySchedules = FeedingSchedule::query()
