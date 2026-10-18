@@ -348,7 +348,19 @@
 
             <form method="POST" action="{{ route('settings.feeder-schedule') }}" id="feederScheduleForm">
                 @csrf
-                
+
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
+                    <label for="scheduledFeedingToggle" style="display: inline-flex; align-items: center; gap: 0.75rem; color: #6d4c41; font-weight: 700; cursor: pointer;">
+                        <span>Scheduled Feeding</span>
+                        <span style="position: relative; display: inline-block; width: 48px; height: 26px;">
+                            <input type="hidden" name="scheduled_feeding_enabled" value="0">
+                            <input type="checkbox" id="scheduledFeedingToggle" name="scheduled_feeding_enabled" value="1" {{ $scheduledFeedingEnabled ? 'checked' : '' }} aria-label="Scheduled Feeding" style="position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 2;">
+                            <span aria-hidden="true" style="position: absolute; inset: 0; border-radius: 999px; background: {{ $scheduledFeedingEnabled ? '#8d6e63' : '#bcaaa4' }}; transition: background 0.2s;"></span>
+                            <span aria-hidden="true" style="position: absolute; top: 3px; left: {{ $scheduledFeedingEnabled ? '25px' : '3px' }}; width: 20px; height: 20px; border-radius: 50%; background: #fff9f5; box-shadow: 0 1px 4px rgba(0,0,0,0.2); transition: left 0.2s;"></span>
+                        </span>
+                    </label>
+                </div>
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
                     <!-- Morning Feed Time -->
                     <div class="form-field">
@@ -760,6 +772,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add feeder schedule form submission listener
     const feederScheduleForm = document.getElementById('feederScheduleForm');
     if (feederScheduleForm) {
+        const scheduledFeedingToggle = document.getElementById('scheduledFeedingToggle');
+        if (scheduledFeedingToggle) {
+            scheduledFeedingToggle.addEventListener('change', function() {
+                const track = scheduledFeedingToggle.nextElementSibling;
+                const knob = track.nextElementSibling;
+                track.style.background = scheduledFeedingToggle.checked ? '#8d6e63' : '#bcaaa4';
+                knob.style.left = scheduledFeedingToggle.checked ? '25px' : '3px';
+                feederScheduleForm.requestSubmit();
+            });
+        }
+
         feederScheduleForm.addEventListener('submit', function(e) {
             const morningTime = document.querySelector('input[name="feed_time_morning"]').value;
             const afternoonTime = document.querySelector('input[name="feed_time_afternoon"]').value;

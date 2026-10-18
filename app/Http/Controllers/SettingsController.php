@@ -35,6 +35,7 @@ class SettingsController extends Controller
             'afternoon' => FarmSetting::get('feed_time_afternoon', '12:00'),
             'evening'   => FarmSetting::get('feed_time_evening', '17:00'),
         ];
+        $scheduledFeedingEnabled = FarmSetting::get('scheduled_feeding_enabled', '1') === '1';
         
         return view('settings', [
             'currentBreed' => $currentBreed,
@@ -42,6 +43,7 @@ class SettingsController extends Controller
             'breeds' => $breeds,
             'farm' => $farm,
             'feedTimes' => $feedTimes,
+            'scheduledFeedingEnabled' => $scheduledFeedingEnabled,
         ]);
     }
 
@@ -157,6 +159,7 @@ class SettingsController extends Controller
             'feed_time_morning'   => ['required', 'string', TimeFormat::validationRule()],
             'feed_time_afternoon' => ['required', 'string', TimeFormat::validationRule()],
             'feed_time_evening'   => ['required', 'string', TimeFormat::validationRule()],
+            'scheduled_feeding_enabled' => ['sometimes', 'boolean'],
         ]);
 
         $currentTimes = [
@@ -170,8 +173,15 @@ class SettingsController extends Controller
             'Afternoon' => TimeFormat::normalize($request->feed_time_afternoon),
             'Evening' => TimeFormat::normalize($request->feed_time_evening),
         ];
+        $scheduledFeedingEnabled = filter_var(
+            $request->input(
+                'scheduled_feeding_enabled',
+                FarmSetting::get('scheduled_feeding_enabled', '1')
+            ),
+            FILTER_VALIDATE_BOOLEAN
+        );
 
-        DB::transaction(function () use ($currentTimes, $newTimes) {
+        DB::transaction(function () use ($currentTimes, $newTimes, $scheduledFeedingEnabled) {
             $dailySchedules = FeedingSchedule::query()
                 ->where('cage_number', 1)
                 ->where('amount', 300)
@@ -199,6 +209,7 @@ class SettingsController extends Controller
             FarmSetting::set('feed_time_morning', $newTimes['Morning']);
             FarmSetting::set('feed_time_afternoon', $newTimes['Afternoon']);
             FarmSetting::set('feed_time_evening', $newTimes['Evening']);
+            FarmSetting::set('scheduled_feeding_enabled', $scheduledFeedingEnabled ? '1' : '0');
         });
 
         // Clear any cached feeding schedule

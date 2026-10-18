@@ -18,6 +18,13 @@ class FeedHistoryRecordingTest extends TestCase
         config(['app.url' => 'http://localhost']);
         URL::forceRootUrl('http://localhost');
 
+        Schema::create('farm_settings', function (Blueprint $table) {
+            $table->id();
+            $table->string('key')->unique();
+            $table->text('value')->nullable();
+            $table->timestamps();
+        });
+
         Schema::create('manual_feeds', function (Blueprint $table) {
             $table->id();
             $table->integer('duration');
@@ -76,6 +83,7 @@ class FeedHistoryRecordingTest extends TestCase
         Schema::dropIfExists('feeder_commands');
         Schema::dropIfExists('feeding_schedules');
         Schema::dropIfExists('manual_feeds');
+        Schema::dropIfExists('farm_settings');
 
         parent::tearDown();
     }

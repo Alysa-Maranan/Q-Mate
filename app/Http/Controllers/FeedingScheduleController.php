@@ -288,6 +288,15 @@ class FeedingScheduleController extends Controller
             'completed_at' => now()
         ]);
 
+    if (\App\Models\FarmSetting::get('scheduled_feeding_enabled', '1') !== '1') {
+            return response()->json([
+                'status' => 'ok',
+                'triggered' => [],
+                'count' => 0,
+                'scheduled_feeding_enabled' => false,
+            ]);
+    }
+
     // ── Find schedules that are ready to run ─────────────────────────
 
     $schedules = FeedingSchedule::where('enabled', true)

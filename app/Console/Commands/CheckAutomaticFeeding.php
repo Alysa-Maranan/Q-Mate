@@ -14,6 +14,10 @@ class CheckAutomaticFeeding extends Command
 
     public function handle()
     {
+        if (FarmSetting::get('scheduled_feeding_enabled', '1') !== '1') {
+            return 0;
+        }
+
         $now = now();
         $currentTime = $now->format('H:i');
         

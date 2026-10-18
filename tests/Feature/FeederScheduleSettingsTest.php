@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\FarmSetting;
+use App\Models\FeederCommand;
 use App\Models\FeedingSchedule;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -180,6 +181,76 @@ class FeederScheduleSettingsTest extends TestCase
             ->assertSee('7:15 AM')
             ->assertSee('1:30 PM')
             ->assertSee('8:30 PM');
+    }
+
+    public function test_scheduled_feeding_can_be_disabled_and_reenabled_without_changing_saved_times(): void
+    {
+        \Illuminate\Support\Carbon::setTestNow(
+            \Illuminate\Support\Carbon::parse('2026-10-13 08:00:00', config('app.timezone'))
+        );
+
+        $this->get('/settings')
+            ->assertOk()
+            ->assertSee('id="scheduledFeedingToggle" name="scheduled_feeding_enabled" value="1" checked', false);
+
+        $this->post(route('settings.feeder-schedule'), [
+            'feed_time_morning' => '8:00 AM',
+            'feed_time_afternoon' => '12:00 PM',
+            'feed_time_evening' => '5:00 PM',
+            'scheduled_feeding_enabled' => '0',
+        ])->assertRedirect(route('settings'))
+            ->assertSessionHas('schedule_saved', true);
+
+        $this->assertSame('0', FarmSetting::get('scheduled_feeding_enabled'));
+        $this->assertSame('08:00', FarmSetting::get('feed_time_morning'));
+        $this->assertSame('12:00', FarmSetting::get('feed_time_afternoon'));
+        $this->assertSame('17:00', FarmSetting::get('feed_time_evening'));
+
+        $this->get('/settings')
+            ->assertOk()
+            ->assertSee('id="scheduledFeedingToggle" name="scheduled_feeding_enabled" value="1"', false)
+            ->assertDontSee('id="scheduledFeedingToggle" name="scheduled_feeding_enabled" value="1" checked', false);
+
+        $this->getJson('/feeder/schedules/auto-check')
+            ->assertOk()
+            ->assertJsonPath('count', 0)
+            ->assertJsonPath('scheduled_feeding_enabled', false);
+        $this->assertSame('idle', FeedingSchedule::orderBy('id')->first()->status);
+
+        $scheduledCommand = FeederCommand::create([
+            'type' => 'scheduled',
+            'duration' => 300,
+            'status' => 'pending',
+        ]);
+        $manualCommand = FeederCommand::create([
+            'type' => 'manual',
+            'duration' => 5,
+            'status' => 'pending',
+        ]);
+        $this->getJson('/api/feeder/pending-command')
+            ->assertOk()
+            ->assertJsonPath('has_command', true)
+            ->assertJsonPath('command_id', $manualCommand->id)
+            ->assertJsonPath('type', 'manual');
+        $this->assertDatabaseHas('feeder_commands', [
+            'id' => $scheduledCommand->id,
+            'status' => 'failed',
+        ]);
+
+        $this->post(route('settings.feeder-schedule'), [
+            'feed_time_morning' => '8:00 AM',
+            'feed_time_afternoon' => '12:00 PM',
+            'feed_time_evening' => '5:00 PM',
+            'scheduled_feeding_enabled' => '1',
+        ])->assertRedirect(route('settings'))
+            ->assertSessionHas('schedule_saved', true);
+
+        $this->assertSame('1', FarmSetting::get('scheduled_feeding_enabled'));
+        $this->assertSame('08:00', FarmSetting::get('feed_time_morning'));
+        $this->getJson('/feeder/schedules/auto-check')
+            ->assertOk()
+            ->assertJsonPath('count', 1)
+            ->assertJsonPath('triggered.0.time', '08:00:00');
     }
 
     public function test_custom_schedule_accepts_ampm_and_runs_at_normalized_time(): void

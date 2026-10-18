@@ -26,6 +26,12 @@ class FeederCommandController extends Controller
         // Clean up stale commands first (older than 5 minutes) 
         FeederCommand::cleanupStale(); 
 
+        if (\App\Models\FarmSetting::get('scheduled_feeding_enabled', '1') !== '1') {
+            FeederCommand::where('type', 'scheduled')
+                ->where('status', 'pending')
+                ->update(['status' => 'failed']);
+        }
+
         // Get the oldest pending command 
         $command = FeederCommand::getNextPending(); 
 
