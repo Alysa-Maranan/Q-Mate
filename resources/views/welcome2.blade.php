@@ -321,6 +321,30 @@
             .hamburger { display: flex; }
             .footer-grid { grid-template-columns: 1fr; }
         }
+        @media (max-width: 600px) {
+            .nav { padding: 0.75rem 1rem; }
+            .nav-logo { min-width: 0; }
+            .nav-logo img { width: 38px; height: 38px; }
+            .nav-logo span { font-size: clamp(0.9rem, 4vw, 1.15rem); }
+            .hero { padding: 3rem 1rem 2rem; gap: 2rem; }
+            .hero h1 { font-size: clamp(2rem, 9vw, 3rem); }
+            .hero-buttons,
+            .customer-cta-buttons { flex-direction: column; }
+            .hero-buttons .btn,
+            .customer-cta-buttons .btn { width: 100%; }
+            .hero-images { display: grid; justify-items: center; gap: 1rem; }
+            .hero-img-main { width: 100%; max-width: 420px; }
+            .hero-card {
+                position: static;
+                max-width: 100%;
+                margin-top: -1.5rem;
+                transform: none;
+            }
+            .section { padding: 3rem 1rem; }
+            .section-header h2 { font-size: 1.8rem; }
+            .products-grid { grid-template-columns: minmax(0, 1fr); }
+            .customer-cta { padding: 2rem 1rem; }
+        }
     </style>
 </head>
 <body>

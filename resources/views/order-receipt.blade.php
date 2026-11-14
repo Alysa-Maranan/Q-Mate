@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Order Receipt - {{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -341,17 +342,64 @@
             .main-wrapper { padding: 0; }
             .receipt-container { max-width: 100%; box-shadow: none; border: 2px dashed #333; }
         }
+
+        @media (max-width: 1024px) {
+            .header { padding: 1rem 1.25rem; }
+            .header-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                padding: 0 !important;
+            }
+            .header-container > div:first-child {
+                flex: 1 1 100% !important;
+                min-width: 0 !important;
+            }
+            .header-container > div:nth-child(2) {
+                flex: 1 1 55% !important;
+                min-width: 0 !important;
+            }
+            .header-container > div:nth-child(3) {
+                flex: 1 1 35% !important;
+                min-width: 0 !important;
+            }
+            .header-container h2 {
+                white-space: normal !important;
+                overflow-wrap: anywhere;
+            }
+            .footer-inner {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1.5rem;
+            }
+        }
         
         @media (max-width: 768px) {
             .footer-inner {
                 grid-template-columns: 1fr 1fr;
             }
+
+            .main-wrapper { padding: 1rem; }
+            .receipt-container { width: 100%; max-width: 450px; }
+            .header-container > div:nth-child(3) { justify-content: space-between !important; }
+            #headerNotifContainer { margin-right: 0.5rem !important; }
+            #notifDropdown { right: -0.5rem !important; width: min(320px, calc(100vw - 1rem)) !important; }
+            .action-buttons { padding-left: 0.5rem; padding-right: 0.5rem; }
+            .action-buttons .btn { min-height: 44px; }
         }
 
         @media (max-width: 600px) {
             .footer-inner {
                 grid-template-columns: 1fr;
             }
+            .header { padding: 0.75rem 1rem; }
+            .main-wrapper { padding: 0.75rem; }
+            .store-name { font-size: 1.2rem; letter-spacing: 1px; }
+            .receipt-body { padding: 0.75rem; }
+            .receipt-line { gap: 0.5rem; }
+            .receipt-label { width: 42%; }
+            .receipt-value { width: 58%; overflow-wrap: anywhere; }
+            .action-buttons { flex-direction: column; }
+            .action-buttons .btn { width: 100%; }
         }
     </style>
 </head>

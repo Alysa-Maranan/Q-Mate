@@ -242,6 +242,270 @@
             }
         </style>
     @endif
+    <style>
+        #main-content-wrap,
+        .sidebar-content-wrap {
+            box-sizing: border-box;
+            max-width: 100%;
+            min-width: 0;
+        }
+
+        #main-content-wrap img,
+        #main-content-wrap video,
+        #main-content-wrap canvas,
+        .sidebar-content-wrap img,
+        .sidebar-content-wrap video,
+        .sidebar-content-wrap canvas {
+            max-width: 100%;
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            body > .container,
+            body > .bg-white,
+            body > .shadow,
+            body > .rounded-lg {
+                box-sizing: border-box;
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+            }
+
+            #sidebar {
+                width: 250px !important;
+            }
+
+            .sidebar-content-wrap {
+                margin-left: 250px !important;
+            }
+
+            .sidebar-content-wrap.expanded {
+                margin-left: 0 !important;
+            }
+
+            #main-content-wrap .status-cards-grid,
+            #main-content-wrap .quail-stats-grid,
+            #main-content-wrap .breed-cards-grid,
+            #main-content-wrap .feeder-stats-grid,
+            #main-content-wrap .food-level-grid,
+            #main-content-wrap .metrics-grid,
+            #main-content-wrap .chart-grid,
+            #main-content-wrap .charts-grid,
+            #main-content-wrap .stats-grid,
+            #main-content-wrap .info-grid,
+            #main-content-wrap .form-grid,
+            #main-content-wrap .settings-grid,
+            #main-content-wrap .breed-grid,
+            #main-content-wrap .preview-grid,
+            #main-content-wrap [style*="grid-template-columns"],
+            .sidebar-content-wrap .status-cards-grid,
+            .sidebar-content-wrap .quail-stats-grid,
+            .sidebar-content-wrap .breed-cards-grid,
+            .sidebar-content-wrap .feeder-stats-grid,
+            .sidebar-content-wrap .food-level-grid,
+            .sidebar-content-wrap .metrics-grid,
+            .sidebar-content-wrap .chart-grid,
+            .sidebar-content-wrap .charts-grid,
+            .sidebar-content-wrap .stats-grid,
+            .sidebar-content-wrap .info-grid,
+            .sidebar-content-wrap .form-grid,
+            .sidebar-content-wrap .settings-grid,
+            .sidebar-content-wrap .breed-grid,
+            .sidebar-content-wrap .preview-grid,
+            .sidebar-content-wrap [style*="grid-template-columns"] {
+                grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important;
+            }
+
+            #main-content-wrap table,
+            .sidebar-content-wrap table,
+            body table {
+                display: block;
+                width: 100%;
+                max-width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            body .grid,
+            body [class*="grid-cols-"],
+            body [class$="-grid"],
+            body [style*="grid-template-columns"] {
+                grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important;
+                min-width: 0;
+            }
+
+            body canvas,
+            body svg,
+            body img,
+            body video {
+                max-width: 100%;
+            }
+
+            body pre {
+                max-width: 100%;
+                overflow-x: auto;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #sidebar {
+                width: min(300px, calc(100vw - 2rem)) !important;
+                height: calc(100vh - 64px);
+                min-height: 0;
+            }
+
+            #sidebar.collapsed {
+                transform: translateX(-100%) !important;
+            }
+
+            #sidebar.mobile-open {
+                transform: translateX(0) !important;
+            }
+
+            #main-content-wrap,
+            .sidebar-content-wrap,
+            .sidebar-content-wrap.expanded {
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                margin-left: 0 !important;
+            }
+
+            #main-content-wrap .container,
+            #main-content-wrap .inventory-container,
+            .sidebar-content-wrap .container,
+            .sidebar-content-wrap .inventory-container {
+                box-sizing: border-box;
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            #main-content-wrap .status-cards-grid,
+            #main-content-wrap .quail-stats-grid,
+            #main-content-wrap .breed-cards-grid,
+            #main-content-wrap .feeder-stats-grid,
+            #main-content-wrap .food-level-grid,
+            #main-content-wrap .metrics-grid,
+            #main-content-wrap .chart-grid,
+            #main-content-wrap .charts-grid,
+            #main-content-wrap .stats-grid,
+            #main-content-wrap .info-grid,
+            #main-content-wrap .form-grid,
+            #main-content-wrap .settings-grid,
+            #main-content-wrap .breed-grid,
+            #main-content-wrap .preview-grid,
+            #main-content-wrap [style*="grid-template-columns"],
+            .sidebar-content-wrap .status-cards-grid,
+            .sidebar-content-wrap .quail-stats-grid,
+            .sidebar-content-wrap .breed-cards-grid,
+            .sidebar-content-wrap .feeder-stats-grid,
+            .sidebar-content-wrap .food-level-grid,
+            .sidebar-content-wrap .metrics-grid,
+            .sidebar-content-wrap .chart-grid,
+            .sidebar-content-wrap .charts-grid,
+            .sidebar-content-wrap .stats-grid,
+            .sidebar-content-wrap .info-grid,
+            .sidebar-content-wrap .form-grid,
+            .sidebar-content-wrap .settings-grid,
+            .sidebar-content-wrap .breed-grid,
+            .sidebar-content-wrap .preview-grid,
+            .sidebar-content-wrap [style*="grid-template-columns"] {
+                grid-template-columns: minmax(0, 1fr) !important;
+            }
+
+            #main-content-wrap table,
+            .sidebar-content-wrap table,
+            body table {
+                display: block;
+                width: 100%;
+                max-width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            body > .container,
+            body > .bg-white,
+            body > .shadow,
+            body > .rounded-lg {
+                box-sizing: border-box;
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            body .grid,
+            body [class*="grid-cols-"],
+            body [class$="-grid"],
+            body [style*="grid-template-columns"] {
+                grid-template-columns: minmax(0, 1fr) !important;
+                min-width: 0;
+            }
+
+            #main-content-wrap input,
+            #main-content-wrap select,
+            #main-content-wrap textarea,
+            .sidebar-content-wrap input,
+            .sidebar-content-wrap select,
+            .sidebar-content-wrap textarea,
+            body input,
+            body select,
+            body textarea {
+                box-sizing: border-box;
+                max-width: 100%;
+                min-width: 0;
+                font-size: 16px;
+            }
+
+            body canvas,
+            body svg,
+            body img,
+            body video {
+                max-width: 100%;
+            }
+
+            body pre {
+                max-width: 100%;
+                overflow-x: auto;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+            }
+
+            body form .flex {
+                flex-wrap: wrap;
+            }
+
+            #main-content-wrap button,
+            #main-content-wrap .btn,
+            .sidebar-content-wrap button,
+            .sidebar-content-wrap .btn {
+                min-height: 40px;
+                max-width: 100%;
+            }
+
+            #main-content-wrap .modal,
+            #main-content-wrap .modal-content,
+            #main-content-wrap .confirm-modal,
+            .sidebar-content-wrap .modal,
+            .sidebar-content-wrap .modal-content,
+            .sidebar-content-wrap .confirm-modal {
+                box-sizing: border-box;
+                max-width: calc(100vw - 2rem);
+                max-height: calc(100vh - 2rem);
+                overflow-y: auto;
+            }
+
+            #notification-dropdown {
+                right: 0.5rem !important;
+                width: min(320px, calc(100vw - 1rem)) !important;
+            }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     @yield('content')

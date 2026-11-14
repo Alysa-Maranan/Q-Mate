@@ -49,6 +49,13 @@
             padding: 20px;
             margin: 20px 0;
         }
+        @media (max-width: 600px) {
+            body { padding: 1rem; }
+            h1 { font-size: 1.5rem; }
+            .status-box { padding: 1rem; }
+            button { min-height: 44px; max-width: 100%; }
+            .log { overflow-wrap: anywhere; }
+        }
     </style>
 </head>
 <body>

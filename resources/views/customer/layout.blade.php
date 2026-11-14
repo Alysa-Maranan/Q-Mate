@@ -210,6 +210,22 @@
             color: #4e342e;
         }
 
+        .customer-mobile-nav-toggle {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            min-height: 44px;
+            padding: 0.55rem 0.85rem;
+            border: 1px solid #a1887f;
+            border-radius: 10px;
+            background: #fffdfa;
+            color: #6d4c41;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
         .tabs {
             display: flex;
             border-bottom: 2px solid #f5f0eb;
@@ -407,6 +423,163 @@
             }
         }
 
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .header {
+                padding: 1rem 1.25rem;
+            }
+
+            .header-container {
+                flex-wrap: wrap;
+                gap: 1rem;
+                padding: 0 !important;
+                min-width: 0;
+            }
+
+            .header-container > div:first-child {
+                flex: 1 1 100% !important;
+                min-width: 0 !important;
+            }
+
+            .header-container > div:nth-child(2) {
+                flex: 1 1 55% !important;
+                min-width: 0 !important;
+            }
+
+            .header-container > div:nth-child(3) {
+                flex: 1 1 35% !important;
+                min-width: 0 !important;
+            }
+
+            .main-container {
+                grid-template-columns: 230px minmax(0, 1fr);
+                gap: 1.25rem;
+                padding: 1.5rem;
+            }
+
+            .main-content {
+                min-width: 0;
+            }
+
+            .main-container [class*="grid-cols-"] {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 0.75rem 1rem;
+            }
+
+            .header-container {
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                padding: 0 !important;
+            }
+
+            .header-container > div:first-child,
+            .header-container > div:nth-child(2),
+            .header-container > div:nth-child(3) {
+                box-sizing: border-box;
+                flex: 1 1 100% !important;
+                width: 100%;
+                min-width: 0 !important;
+                max-width: 100% !important;
+            }
+
+            .header-container > div:first-child {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
+            }
+
+            .header-container h2 {
+                white-space: normal !important;
+                font-size: 1.1rem !important;
+            }
+
+            .customer-mobile-nav-toggle {
+                display: inline-flex;
+                flex: 0 0 auto;
+            }
+
+            .header-container > div:nth-child(3) {
+                justify-content: space-between !important;
+            }
+
+            #headerNotifContainer {
+                margin-right: 0.5rem !important;
+            }
+
+            #notifDropdown {
+                right: -0.5rem !important;
+                width: min(320px, calc(100vw - 1rem)) !important;
+            }
+
+            .main-container {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .sidebar {
+                display: none;
+                box-sizing: border-box;
+                width: 100%;
+                max-height: min(45vh, 360px);
+                overflow-y: auto;
+            }
+
+            .main-container.mobile-nav-open .sidebar {
+                display: block;
+            }
+
+            .main-content {
+                min-width: 0;
+                max-width: 100%;
+            }
+
+            .main-content > div[style*="padding"] {
+                padding: 1rem !important;
+            }
+
+            .main-container [class*="grid-cols-"] {
+                grid-template-columns: minmax(0, 1fr) !important;
+            }
+
+            .main-container table {
+                display: block;
+                width: 100%;
+                max-width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .main-container > * {
+                min-width: 0;
+            }
+
+            .main-container img,
+            .main-container video,
+            .main-container canvas {
+                max-width: 100%;
+            }
+
+            .main-container .tab-content {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .main-container input,
+            .main-container select,
+            .main-container textarea {
+                box-sizing: border-box;
+                max-width: 100%;
+                min-width: 0;
+                font-size: 16px;
+            }
+        }
+
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.4); }
             70% { box-shadow: 0 0 0 8px rgba(211, 47, 47, 0); }
@@ -422,6 +595,10 @@
             <!-- Welcome Text Section (Left) -->
             <div style="flex: 1; min-width: 250px;">
                 <h2 style="font-size: 1.3rem; font-weight: 800; color: #4e342e; margin: 0; white-space: nowrap;">Welcome back, {{ auth('customer')->user()->name }}!</h2>
+                <button type="button" class="customer-mobile-nav-toggle" aria-controls="customer-sidebar" aria-expanded="false" onclick="toggleCustomerNavigation(this)">
+                    <i class="ph-bold ph-list" aria-hidden="true"></i>
+                    <span>Menu</span>
+                </button>
             </div>
 
             <!-- Search Bar Section (Center) -->
@@ -709,7 +886,7 @@
 
     <div class="main-wrapper">
         <div class="main-container">
-            <aside class="sidebar">
+            <aside class="sidebar" id="customer-sidebar">
                 <div class="sidebar-header" style="justify-content: center;">
                     <h2 style="font-size: 1.5rem; font-weight: 800; color: #4e342e; margin: 0; text-align: center;">Escalona's Farm</h2>
                 </div>
@@ -805,5 +982,15 @@
         </div>
         <div class="footer-bottom">&copy; {{ date('Y') }} Escalona's Farm | Capstone SQUIFM. All rights reserved.</div>
     </footer>
+    <script>
+        function toggleCustomerNavigation(button) {
+            const container = document.querySelector('.main-container');
+            if (!container) return;
+
+            const isOpen = container.classList.toggle('mobile-nav-open');
+            button.setAttribute('aria-expanded', String(isOpen));
+            button.querySelector('span').textContent = isOpen ? 'Close menu' : 'Menu';
+        }
+    </script>
 </body>
 </html>

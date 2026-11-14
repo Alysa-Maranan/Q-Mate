@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Schedule Trigger Timing Test</title>
     <style>
         body {
@@ -112,6 +113,22 @@
         .timing-value {
             font-weight: bold;
             color: #00ff7f;
+        }
+        @media (max-width: 768px) {
+            body { padding: 1.25rem; }
+            .container { padding: 1.5rem; }
+            .event { flex-wrap: wrap; gap: 0.4rem; overflow-wrap: anywhere; }
+            .event span[style*="margin-left"] { margin-left: 0 !important; }
+        }
+        @media (max-width: 480px) {
+            body { padding: 0.75rem; }
+            .container { padding: 1rem; border-radius: 14px; }
+            h1 { font-size: 1.5rem; }
+            .timing-summary,
+            .timeline { padding: 0.75rem; }
+            .timing-item { flex-wrap: wrap; gap: 0.4rem; }
+            .controls { flex-direction: column; }
+            .controls button { width: 100%; min-height: 44px; }
         }
     </style>
 </head>

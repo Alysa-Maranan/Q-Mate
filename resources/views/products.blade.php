@@ -91,6 +91,13 @@
         .footer-contact-line a:hover { color: #fffdfa; }
         .footer-bottom { max-width: 1200px; margin: 1.25rem auto 0; text-align: center; font-size: 0.8rem; color: rgba(255,224,178,0.5); }
 
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .nav { padding: 1rem 1.5rem; gap: 1rem; }
+            .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+            .product-content { padding: 1.5rem; }
+            .footer-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+        }
+
         @media (max-width: 768px) {
             .nav { padding: 1rem 1.5rem; }
             .header { padding: 3rem 1.5rem 2rem; }
@@ -140,9 +147,44 @@
         .review-stars { color: #ffc107; font-size: 0.8rem; display: flex; gap: 1px; }
         .review-text { color: #5d4037; font-size: 0.9rem; line-height: 1.5; margin-top: 0.5rem; }
         .review-variant { font-size: 0.8rem; color: #8d6e63; margin-top: 0.25rem; }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .product-modal-content { max-width: calc(100vw - 2rem); }
+        }
         @media (max-width: 768px) {
+            .nav { flex-wrap: wrap; gap: 0.75rem; padding: 1rem; }
+            .nav-links { flex-wrap: wrap; justify-content: flex-end; }
+            .main { padding: 2rem 1rem; }
+            .products-grid { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
             .product-modal-body { grid-template-columns: 1fr; }
             .product-modal-image { height: 250px; border-radius: 16px 16px 0 0; }
+            .product-modal-content {
+                width: min(95%, 600px);
+                max-height: calc(100dvh - 2rem);
+                overflow-y: auto;
+            }
+            .product-modal-info,
+            .reviews-section { padding: 1.25rem; }
+            .reviews-summary { flex-wrap: wrap; padding: 1rem; }
+            .footer-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+        }
+        @media (max-width: 480px) {
+            .nav { align-items: flex-start; }
+            .nav-logo { min-width: 0; }
+            .nav-logo img { width: 38px; height: 38px; }
+            .nav-logo span { font-size: 1rem; }
+            .nav-links { width: 100%; justify-content: flex-start; }
+            .nav-links a { min-height: 44px; padding: 0.6rem 0.8rem; }
+            .header { padding: 2.5rem 1rem 2rem; }
+            .header h1 { font-size: 1.75rem; }
+            .header p { font-size: 0.95rem; }
+            .main { padding: 1.5rem 1rem; }
+            .product-content { padding: 1.25rem; }
+            .product-title { font-size: 1.25rem; }
+            .product-price { font-size: 1.5rem; }
+            .product-modal-content { width: calc(100% - 1rem); }
+            .product-modal-info,
+            .reviews-section { padding: 1rem; }
+            .footer-inner { grid-template-columns: minmax(0, 1fr); }
         }
     </style>
 </head>
