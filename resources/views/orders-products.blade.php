@@ -261,7 +261,7 @@
                 <h2 class="section-title" style="margin: 0;">Customer Orders</h2>
                 <p style="color: #8d6e63; margin: 0.5rem 0 0 0;">View and manage all active customer orders</p>
             </div>
-            <button type="button" id="selectOrdersBtn" class="bulk-select-btn" onclick="toggleOrderSelectionMode()" @disabled($activeOrders->count() === 0)>Select Orders</button>
+            <button type="button" id="selectOrdersBtn" class="bulk-select-btn" @disabled($activeOrders->count() === 0)>Select Orders</button>
         </div>
         
         @if($activeOrders->count() > 0)
@@ -271,7 +271,7 @@
                 <div style="padding: 0.75rem 1.25rem; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center; background: #fafafa;">
                     <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
                         <div class="order-select-wrap">
-                            <input type="checkbox" class="order-select-checkbox" value="{{ $order->id }}" onchange="updateBulkSelection()" aria-label="Select order #{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}">
+                            <input type="checkbox" class="order-select-checkbox" value="{{ $order->id }}" aria-label="Select order #{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}">
                         </div>
                         <span style="font-weight: 600; color: #333;">Order #{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</span>
                         <span style="color: #ccc;">|</span>
@@ -326,8 +326,8 @@
                 <span id="bulkSelectedCount" style="color: #4e342e; font-weight: 600; font-size: 0.95rem;">0 orders selected</span>
             </div>
             <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                <button type="button" class="bulk-clear-btn" onclick="clearOrderSelection()">Clear Selection</button>
-                <button type="button" class="bulk-delete-btn" id="bulkDeleteBtn" onclick="openBulkDeleteModal()">Delete Selected</button>
+                <button type="button" class="bulk-clear-btn" id="bulkClearBtn">Clear Selection</button>
+                <button type="button" class="bulk-delete-btn" id="bulkDeleteBtn">Delete Selected</button>
             </div>
         </div>
     </div>
@@ -507,13 +507,13 @@
     </div>
 
     <!-- Bulk Delete Confirmation Modal -->
-    <div id="bulkDeleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2200; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+    <div id="bulkDeleteModal" data-url="{{ url('orders/bulk-delete') }}" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2200; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
         <div style="background: white; border-radius: 16px; padding: 2rem; width: 90%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); border: 1px solid #f5f0eb; animation: slideUp 0.3s ease-out;">
             <h3 style="margin: 0 0 0.75rem 0; color: #6d4c41; font-size: 1.2rem; font-weight: 700;">Delete Orders</h3>
             <p id="bulkDeleteMessage" style="margin: 0 0 2rem 0; color: #4e342e; font-size: 1rem;">Delete these orders permanently?</p>
             <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                <button type="button" onclick="closeBulkDeleteModal()" style="padding: 0.55rem 1.2rem; background: #e0e0e0; color: #6d4c41; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
-                <button type="button" id="bulkDeleteConfirmBtn" onclick="confirmBulkDelete()" style="padding: 0.55rem 1.3rem; background: #c62828; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">Delete</button>
+                <button type="button" id="bulkDeleteCancelBtn" style="padding: 0.55rem 1.2rem; background: #e0e0e0; color: #6d4c41; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+                <button type="button" id="bulkDeleteConfirmBtn" style="padding: 0.55rem 1.3rem; background: #c62828; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">Delete</button>
             </div>
         </div>
     </div>
@@ -739,12 +739,17 @@ function confirmBulkDelete() {
         confirmBtn.textContent = 'Deleting...';
     }
 
-    fetch('/orders/bulk-delete', {
+    const modal = document.getElementById('bulkDeleteModal');
+    const deleteUrl = (modal && modal.dataset.url) ? modal.dataset.url : '/orders/bulk-delete';
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+
+    fetch(deleteUrl, {
         method: 'DELETE',
         credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-CSRF-TOKEN': csrfMeta ? csrfMeta.content : '',
+            'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json'
         },
         body: JSON.stringify({ ids: ids })
@@ -754,6 +759,18 @@ function confirmBulkDelete() {
             if (!response.ok || !data.success) {
                 throw new Error(data.message || 'Failed to delete the selected orders.');
             }
+
+            // Refresh the Customer Orders list: drop the deleted cards, then
+            // reload so badges and every other section stay in sync.
+            ids.forEach(id => {
+                const card = document.querySelector('#ordersSection [data-order-id="' + id + '"]');
+                if (card) {
+                    card.remove();
+                }
+            });
+
+            clearOrderSelection();
+            closeBulkDeleteModal();
 
             window.location.reload();
         })
@@ -775,6 +792,43 @@ window.addEventListener('click', function(event) {
         closeBulkDeleteModal();
     }
 });
+
+// --- Bulk delete event wiring ---
+// Bound with addEventListener (not inline onclick/onchange) so the controls keep
+// working even when inline handlers are blocked or the markup is re-rendered.
+function initBulkOrderControls() {
+    const bind = (id, handler) => {
+        const el = document.getElementById(id);
+        if (!el || el.dataset.bulkBound === '1') return;
+        el.dataset.bulkBound = '1';
+        el.addEventListener('click', function(event) {
+            event.preventDefault();
+            handler();
+        });
+    };
+
+    bind('selectOrdersBtn', toggleOrderSelectionMode);
+    bind('bulkClearBtn', clearOrderSelection);
+    bind('bulkDeleteBtn', openBulkDeleteModal);
+    bind('bulkDeleteCancelBtn', closeBulkDeleteModal);
+    bind('bulkDeleteConfirmBtn', confirmBulkDelete);
+
+    const section = document.getElementById('ordersSection');
+    if (section && section.dataset.bulkChangeBound !== '1') {
+        section.dataset.bulkChangeBound = '1';
+        section.addEventListener('change', function(event) {
+            if (event.target && event.target.classList.contains('order-select-checkbox')) {
+                updateBulkSelection();
+            }
+        });
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBulkOrderControls);
+} else {
+    initBulkOrderControls();
+}
 
 // Tab Switching logic
 function switchTab(tab) {
