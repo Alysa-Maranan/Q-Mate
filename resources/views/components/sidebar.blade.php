@@ -321,12 +321,6 @@
     margin: 0.5rem 0.75rem;
 }
 
-/* Sidebar footer */
-.sidebar-footer {
-    padding: 0.75rem;
-    border-top: 2px solid #efebe9;
-}
-
 /* Main content offset */
 .sidebar-content-wrap {
     margin-left: 300px;
@@ -598,10 +592,9 @@
             </svg>
             {{ __('common.settings') }}
         </a>
-    </nav>
 
-    <div class="sidebar-footer">
-        <!-- Logout -->
+        <div class="sidebar-divider"></div>
+
         <form method="POST" action="{{ route('logout') }}" id="logoutForm" style="display:contents;">
             @csrf
             <button type="button" class="sidebar-item" onclick="showLogoutModal()" style="width:100%;">
@@ -609,7 +602,7 @@
                 {{ __('common.logout') }}
             </button>
         </form>
-    </div>
+    </nav>
 </div>
 
 <!-- Logout Modal -->
