@@ -3,6 +3,18 @@
 @section('content')
 @include('components.sidebar')
 
+@php
+    $initialSourceLabel = isset($latest) && $latest
+        ? \App\Http\Controllers\SensorDataController::sourceLabel($latest->source)
+        : 'UNAVAILABLE';
+    $initialSourceColor = $initialSourceLabel === 'HARDWARE'
+        ? '#065f46'
+        : ($initialSourceLabel === 'WEATHER' ? '#1e40af' : '#991b1b');
+    $initialSourceBg = $initialSourceLabel === 'HARDWARE'
+        ? '#d1fae5'
+        : ($initialSourceLabel === 'WEATHER' ? '#dbeafe' : '#fee2e2');
+@endphp
+
 <style>
     body {
         background: linear-gradient(135deg, #f5f0eb 0%, #efe8e4 50%, #e8dcd6 100%);
@@ -433,8 +445,8 @@
     <!-- Page Header -->
     <div class="page-header">
         <h1 class="page-title">Temperature & Humidity</h1>
-        <p class="page-subtitle">Real-time Philippine Weather Monitoring &nbsp;|&nbsp; Refreshing in <span id="refresh-countdown" style="font-weight:700;color:#6d4c41;">60</span>s</p>
-        <p id="weather-location" style="font-size:0.875rem;color:#8d6e63;margin-top:0.5rem;font-weight:600;">Loading weather data...</p>
+        <p class="page-subtitle">Temperature & Humidity Sensor Monitoring &nbsp;|&nbsp; Auto-records every 10s &nbsp;|&nbsp; Refreshing in <span id="refresh-countdown" style="font-weight:700;color:#6d4c41;">10</span>s</p>
+        <p id="weather-location" style="font-size:0.875rem;color:#8d6e63;margin-top:0.5rem;font-weight:600;">Checking hardware and OpenWeather sources...</p>
         @isset($currentBreeds)
         @if(count($currentBreeds) > 0)
         @php
@@ -465,16 +477,19 @@
 
     <!-- Current Readings -->
     <div class="section-card">
-        <h3 class="section-title">Current Reading</h3>
+        <h3 class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <span>Current Reading</span>
+            <span class="status-pill" id="current-source-badge" style="background:{{ $initialSourceBg }};color:{{ $initialSourceColor }};border:1px solid rgba(0,0,0,0.08);">{{ $initialSourceLabel }}</span>
+        </h3>
         <div class="reading-cards">
             <div class="reading-card">
                 <div class="reading-emoji">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#795548" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
                 </div>
                 <div class="reading-label">Temperature</div>
-                <div class="reading-value" id="current-temp">{{ $latest ? round($latest->temperature, 1) . '°C' : ($currentQuailBreed ? $currentQuailBreed->optimal_temperature . '°C' : '—°C') }}</div>
-                <span class="reading-status {{ $latest ? ($latest->temperature < 25 ? 'status-cold' : ($latest->temperature > 35 ? 'status-hot' : 'status-optimal')) : 'status-warning' }}" id="temp-status">
-                    {{ $latest ? ($latest->temperature < 25 ? 'Too Cold' : ($latest->temperature > 35 ? 'Too Hot' : 'Optimal')) : 'Check' }}
+                <div class="reading-value" id="current-temp">{{ isset($latest) && $latest && $latest->temperature !== null ? round($latest->temperature, 1) . '°C' : 'UNAVAILABLE' }}</div>
+                <span class="reading-status {{ isset($latest) && $latest && $latest->temperature !== null ? ($latest->temperature < 25 ? 'status-cold' : ($latest->temperature > 35 ? 'status-hot' : 'status-optimal')) : 'status-warning' }}" id="temp-status">
+                    {{ isset($latest) && $latest && $latest->temperature !== null ? ($latest->temperature < 25 ? 'Too Cold' : ($latest->temperature > 35 ? 'Too Hot' : 'Optimal')) : 'Unavailable' }}
                 </span>
             </div>
             <div class="reading-card">
@@ -482,9 +497,9 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#795548" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
                 </div>
                 <div class="reading-label">Humidity</div>
-                <div class="reading-value" id="current-humidity">{{ $latest ? round($latest->humidity, 1) . '%' : ($currentQuailBreed ? $currentQuailBreed->optimal_humidity . '%' : '—%') }}</div>
-                <span class="reading-status {{ $latest ? ($latest->humidity < 60 ? 'status-cold' : ($latest->humidity > 85 ? 'status-hot' : 'status-optimal')) : 'status-warning' }}" id="humidity-status">
-                    {{ $latest ? ($latest->humidity < 60 ? 'Too Dry' : ($latest->humidity > 85 ? 'Too Humidity' : 'Optimal')) : 'Check' }}
+                <div class="reading-value" id="current-humidity">{{ isset($latest) && $latest && $latest->humidity !== null ? round($latest->humidity, 1) . '%' : 'UNAVAILABLE' }}</div>
+                <span class="reading-status {{ isset($latest) && $latest && $latest->humidity !== null ? ($latest->humidity < 60 ? 'status-cold' : ($latest->humidity > 85 ? 'status-hot' : 'status-optimal')) : 'status-warning' }}" id="humidity-status">
+                    {{ isset($latest) && $latest && $latest->humidity !== null ? ($latest->humidity < 60 ? 'Too Dry' : ($latest->humidity > 85 ? 'Too Humidity' : 'Optimal')) : 'Unavailable' }}
                 </span>
             </div>
             <div class="reading-card" id="feels-like-card" style="display:none;">
@@ -507,14 +522,14 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#795548" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
                 </div>
                 <div class="reading-label">Avg Temperature (24h)</div>
-                <div class="reading-value" id="avg-temp">{{ $avg24h ? round($avg24h->avg_temperature, 1) . '°C' : '—°C' }}</div>
+                <div class="reading-value" id="avg-temp">{{ $avg24h && $avg24h->avg_temperature !== null ? round($avg24h->avg_temperature, 1) . '°C' : '—°C' }}</div>
             </div>
             <div class="reading-card">
                 <div class="reading-emoji">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#795548" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
                 </div>
                 <div class="reading-label">Avg Humidity (24h)</div>
-                <div class="reading-value" id="avg-humidity">{{ $avg24h ? round($avg24h->avg_humidity, 1) . '%' : '—%' }}</div>
+                <div class="reading-value" id="avg-humidity">{{ $avg24h && $avg24h->avg_humidity !== null ? round($avg24h->avg_humidity, 1) . '%' : '—%' }}</div>
             </div>
             <div class="reading-card">
                 <div class="reading-emoji">
@@ -573,11 +588,12 @@
             <table id="readingsTable">
                 <thead>
                     <tr>
-                        <th style="width:25%;">Date & Time</th>
-                        <th style="width:20%;">Temperature</th>
-                        <th style="width:20%;">Humidity</th>
-                        <th style="width:20%;">Status</th>
-                        <th style="width:15%;">Action</th>
+                        <th style="width:22%;">Date & Time</th>
+                        <th style="width:16%;">Temperature</th>
+                        <th style="width:16%;">Humidity</th>
+                        <th style="width:18%;">Source</th>
+                        <th style="width:16%;">Status</th>
+                        <th style="width:12%;">Action</th>
                     </tr>
                 </thead>
                 <tbody id="historyTable">
@@ -586,15 +602,16 @@
                             <td>{{ $reading->recorded_at?->format('M d, Y H:i') }}</td>
                             <td><strong>{{ round($reading->temperature, 1) }}°C</strong></td>
                             <td><strong>{{ round($reading->humidity, 1) }}%</strong></td>
+                            <td>{{ \App\Http\Controllers\SensorDataController::sourceLabel($reading->source) }}</td>
                             <td>
                                 <span class="reading-status {{ $reading->temperature >= 25 && $reading->temperature <= 35 && $reading->humidity >= 60 && $reading->humidity <= 85 ? 'status-optimal' : 'status-warning' }}">
                                                                         {{ $reading->temperature >= 25 && $reading->temperature <= 35 && $reading->humidity >= 60 && $reading->humidity <= 85 ? 'Optimal' : 'Check' }}
                                 </span>
                             </td>
-                            <td><button class="btn btn-danger" onclick="deleteReading({{ $reading->id }})" style="font-size:0.8rem;">Delete</button></td>
+                            <td><button class="btn btn-danger" onclick="monitor.deleteReading({{ $reading->id }})" style="font-size:0.8rem;">Delete</button></td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" style="text-align:center;color:#a1887f;padding:2rem;">No readings yet</td></tr>
+                        <tr><td colspan="6" style="text-align:center;color:#a1887f;padding:2rem;">No readings yet</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -611,9 +628,14 @@ class TempHumidityMonitor {
         this.humCtx = document.getElementById('humidityChart')?.getContext('2d');
         this.tempChart = null;
         this.humChart = null;
+        this.historyReadings = [];
+        this.historyHours = 24;
+        this.refreshInProgress = false;
         this.initCharts();
-        this.updateReadings();
-        this.pollInterval = setInterval(() => this.updateReadings(), 60000); // 1 minute
+        this.refresh();
+        this.updateWeather();
+        this.pollInterval = setInterval(() => this.refresh(), 10000);
+        this.weatherPollInterval = setInterval(() => this.updateWeather(), 300000);
     }
 
     initCharts() {
@@ -671,6 +693,7 @@ class TempHumidityMonitor {
                         displayColors: false,
                         callbacks: {
                             title: (items) => this.formatChartTime(items[0].label),
+                            afterBody: (items) => this.sourceTooltip(items),
                         }
                     }
                 }
@@ -706,6 +729,7 @@ class TempHumidityMonitor {
                         displayColors: false,
                         callbacks: {
                             title: (items) => this.formatChartTime(items[0].label),
+                            afterBody: (items) => this.sourceTooltip(items),
                         }
                     }
                 }
@@ -726,78 +750,82 @@ class TempHumidityMonitor {
         return `${hours}:${minutes} ${ampm}`;
     }
 
+    sourceTooltip(items) {
+        const reading = this.historyReadings[items[0]?.dataIndex];
+        return `Source: ${this.sourceLabel(reading?.source)}`;
+    }
+
+    sourceLabel(source) {
+        switch (String(source || '').toLowerCase()) {
+            case 'hardware':
+            case 'actual':
+                return 'HARDWARE';
+            case 'weather':
+            case 'openweather':
+                return 'WEATHER';
+            default:
+                return 'UNAVAILABLE';
+        }
+    }
+
+    updateSourceBadge(label) {
+        const badge = document.getElementById('current-source-badge');
+        if (!badge) return;
+
+        badge.textContent = label;
+        if (label === 'HARDWARE') {
+            badge.style.background = '#d1fae5';
+            badge.style.color = '#065f46';
+        } else if (label === 'WEATHER') {
+            badge.style.background = '#dbeafe';
+            badge.style.color = '#1e40af';
+        } else {
+            badge.style.background = '#fee2e2';
+            badge.style.color = '#991b1b';
+        }
+    }
+
+    async refresh() {
+        if (this.refreshInProgress) return;
+        this.refreshInProgress = true;
+        try {
+            await this.updateReadings();
+            await this.loadHistory(this.historyHours);
+        } finally {
+            this.refreshInProgress = false;
+        }
+    }
+
     async updateReadings() {
         try {
-            let temp, humidity, recordedAt, description, location, feelsLike;
-            let dataSource = 'sensor';
-
-            // Try physical sensor first
             const response = await fetch('/api/sensor-data/latest', { cache: 'no-store' });
+            if (!response.ok) throw new Error(`Sensor API returned ${response.status}`);
             const data = await response.json();
 
-            if (data.success && data.temperature != null) {
-                temp = parseFloat(data.temperature);
-                humidity = parseFloat(data.humidity);
-                recordedAt = new Date(data.recorded_at);
-                location = 'Sensor reading';
-            } else {
-                // Fallback: Philippine weather API
-                const weatherResp = await fetch('/api/weather/philippines');
-                const weatherData = await weatherResp.json();
-                if (weatherData.success) {
-                    temp = parseFloat(weatherData.temperature);
-                    humidity = parseFloat(weatherData.humidity);
-                    recordedAt = new Date(weatherData.timestamp);
-                    description = weatherData.description;
-                    location = weatherData.location;
-                    feelsLike = weatherData.feels_like;
-                    dataSource = 'weather-api';
-
-                    // Persist weather data to sensor_readings for history
-                    try {
-                        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
-                        await fetch('/api/sensor-data', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrf,
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({ temperature: temp, humidity: humidity })
-                        });
-                    } catch (persistErr) {
-                        console.warn('Could not persist weather data:', persistErr);
-                    }
-                } else {
-                    const locationEl = document.getElementById('weather-location');
-                    if (locationEl) locationEl.textContent = 'Waiting for sensor data...';
-                    return;
-                }
+            if (!data.success || data.temperature == null || data.humidity == null) {
+                this.showUnavailable();
+                return;
             }
+
+            const temp = Number(data.temperature);
+            const humidity = Number(data.humidity);
+            if (!Number.isFinite(temp) || !Number.isFinite(humidity)) {
+                this.showUnavailable();
+                return;
+            }
+
+            const sourceLabel = this.sourceLabel(data.source);
+            this.updateSourceBadge(sourceLabel);
 
             document.getElementById('current-temp').textContent = temp.toFixed(1) + '°C';
             document.getElementById('current-humidity').textContent = humidity.toFixed(1) + '%';
 
-            // Display "Feels Like" if available from weather API
-            const feelsLikeEl = document.getElementById('feels-like');
-            const feelsLikeCard = document.getElementById('feels-like-card');
-            if (feelsLikeEl && feelsLikeCard) {
-                if (feelsLike) {
-                    feelsLikeEl.textContent = feelsLike.toFixed(1) + '°C';
-                    feelsLikeCard.style.display = 'block';
-                } else {
-                    feelsLikeEl.textContent = '—°C';
-                    feelsLikeCard.style.display = 'none';
-                }
-            }
-
             const locationEl = document.getElementById('weather-location');
             if (locationEl) {
-                if (description) {
-                    locationEl.textContent = location + ' — ' + description;
-                } else {
-                    locationEl.textContent = 'Last updated: ' + recordedAt.toLocaleString();
-                }
+                const updated = data.recorded_at
+                    ? new Date(data.recorded_at).toLocaleString()
+                    : 'just now';
+                locationEl.textContent = `${sourceLabel} • Updated ${updated}`;
             }
 
             const s = JSON.parse(localStorage.getItem('tempHumSettings')) || {};
@@ -813,6 +841,53 @@ class TempHumidityMonitor {
             this.checkAlerts(temp, humidity, minTemp, maxTemp, minHum, maxHum);
         } catch (e) {
             console.warn('Sensor fetch error:', e);
+            this.showUnavailable();
+        }
+    }
+
+    showUnavailable() {
+        const tempEl = document.getElementById('current-temp');
+        const humEl = document.getElementById('current-humidity');
+        const tempStatus = document.getElementById('temp-status');
+        const humStatus = document.getElementById('humidity-status');
+
+        if (tempEl) tempEl.textContent = 'UNAVAILABLE';
+        if (humEl) humEl.textContent = 'UNAVAILABLE';
+
+        if (tempStatus) {
+            tempStatus.className = 'reading-status status-warning';
+            tempStatus.textContent = 'Unavailable';
+        }
+        if (humStatus) {
+            humStatus.className = 'reading-status status-warning';
+            humStatus.textContent = 'Unavailable';
+        }
+
+        this.updateSourceBadge('UNAVAILABLE');
+
+        const locationEl = document.getElementById('weather-location');
+        if (locationEl) {
+            locationEl.textContent = 'UNAVAILABLE • No fresh hardware or OpenWeather data';
+        }
+    }
+
+    async updateWeather() {
+        try {
+            const response = await fetch('/api/weather/philippines', { cache: 'no-store' });
+            if (!response.ok) throw new Error(`Weather API returned ${response.status}`);
+            const weather = await response.json();
+            const card = document.getElementById('feels-like-card');
+
+            if (weather.success && weather.feels_like != null) {
+                document.getElementById('feels-like').textContent = `${Number(weather.feels_like).toFixed(1)}°C`;
+                if (card) card.style.display = 'block';
+            } else if (card) {
+                card.style.display = 'none';
+            }
+        } catch (e) {
+            console.warn('Weather API fetch error:', e);
+            const card = document.getElementById('feels-like-card');
+            if (card) card.style.display = 'none';
         }
     }
 
@@ -922,30 +997,39 @@ class TempHumidityMonitor {
     }
 
     async loadHistory(hours) {
+        this.historyHours = Number(hours);
         try {
             const response = await fetch(`/api/sensor-data/history?hours=${hours}`);
+            if (!response.ok) throw new Error(`Sensor history API returned ${response.status}`);
             const data = await response.json();
-            
-            if (data.success && data.data.length) {
-                const settings = JSON.parse(localStorage.getItem('tempHumSettings')) || { minTemp: 25, maxTemp: 35, minHum: 60, maxHum: 85 };
+
+            if (data.success) {
+                this.historyReadings = data.data;
                 const tbody = document.getElementById('historyTable');
-                tbody.innerHTML = data.data.map(reading => `
+                tbody.innerHTML = data.data.length ? data.data.map(reading => {
+                    const temp = reading.temperature != null ? Number(reading.temperature) : null;
+                    const hum = reading.humidity != null ? Number(reading.humidity) : null;
+                    const valid = temp !== null && hum !== null;
+                    const optimal = valid && temp >= 25 && temp <= 35 && hum >= 60 && hum <= 85;
+
+                    return `
                     <tr>
                         <td>${new Date(reading.recorded_at).toLocaleString()}</td>
-                        <td><strong>${reading.temperature?.toFixed(1)}°C</strong></td>
-                        <td><strong>${reading.humidity?.toFixed(1)}%</strong></td>
+                        <td><strong>${valid ? temp.toFixed(1) : '—'}°C</strong></td>
+                        <td><strong>${valid ? hum.toFixed(1) : '—'}%</strong></td>
+                        <td>${this.sourceLabel(reading.source)}</td>
                         <td>
-                            <span class="reading-status ${reading.temperature >= 25 && reading.temperature <= 35 && reading.humidity >= 60 && reading.humidity <= 85 ? 'status-optimal' : 'status-warning'}">
-                                                                ${reading.temperature >= 25 && reading.temperature <= 35 && reading.humidity >= 60 && reading.humidity <= 85 ? 'Optimal' : 'Check'}
+                            <span class="reading-status ${optimal ? 'status-optimal' : 'status-warning'}">
+                                ${optimal ? 'Optimal' : 'Check'}
                             </span>
                         </td>
                         <td><button class="btn btn-danger" onclick="monitor.deleteReading(${reading.id})" style="font-size:0.8rem;">Delete</button></td>
                     </tr>
-                `).join('');
+                `;
+                }).join('') : '<tr><td colspan="6" style="text-align:center;color:#a1887f;padding:2rem;">No readings in this period</td></tr>';
                 
-
                 // Update charts
-                if (this.tempChart && data.data.length) {
+                if (this.tempChart) {
                     this.tempChart.data.labels = data.data.map(r => this.formatChartTime(r.recorded_at));
                     this.tempChart.data.datasets[0].data = data.data.map(r => r.temperature);
                     this.tempChart.update('none');
@@ -991,15 +1075,13 @@ const monitor = new TempHumidityMonitor();
 
 document.addEventListener('DOMContentLoaded', function() {
     loadSettings();
-    monitor.loadHistory('24');
 
-    // Countdown timer (resets every minute, matches sensor poll interval)
-    let countdown = 60;
+    let countdown = 10;
     const countdownEl = document.getElementById('refresh-countdown');
     setInterval(() => {
         countdown--;
         if (countdownEl) countdownEl.textContent = countdown;
-        if (countdown <= 0) countdown = 60;
+        if (countdown <= 0) countdown = 10;
     }, 1000);
 
     // Notify dashboard on initial load (after readings populate)
@@ -1047,9 +1129,12 @@ function filterTable() {
     }
 }
 
+function loadHistory(hours) {
+    monitor.loadHistory(hours);
+}
+
 function refreshReadings() {
-    monitor.updateReadings();
-    monitor.loadHistory('24');
+    monitor.refresh();
 }
 
 function saveSettings() {
@@ -1080,13 +1165,29 @@ function resetSettings() {
 }
 
 function loadSettings() {
-    const s = JSON.parse(localStorage.getItem('tempHumSettings'));
+    const stored = localStorage.getItem('tempHumSettings');
+    if (!stored) return;
+
+    let s;
+    try {
+        s = JSON.parse(stored);
+    } catch (e) {
+        return;
+    }
     if (!s) return;
-    document.getElementById('minTemp').value = s.minTemp;
-    document.getElementById('maxTemp').value = s.maxTemp;
-    document.getElementById('minHum').value  = s.minHum;
-    document.getElementById('maxHum').value  = s.maxHum;
-    document.getElementById('alertNotifications').checked = s.alertEnabled !== false;
+
+    const setValue = (id, value) => {
+        const el = document.getElementById(id);
+        if (el && value !== undefined) el.value = value;
+    };
+
+    setValue('minTemp', s.minTemp);
+    setValue('maxTemp', s.maxTemp);
+    setValue('minHum', s.minHum);
+    setValue('maxHum', s.maxHum);
+
+    const alerts = document.getElementById('alertNotifications');
+    if (alerts) alerts.checked = s.alertEnabled !== false;
 }
 
 function showSettingsFeedback(message, success) {

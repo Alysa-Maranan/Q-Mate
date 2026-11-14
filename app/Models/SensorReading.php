@@ -14,6 +14,7 @@ class SensorReading extends Model
     protected $fillable = [
         'temperature',
         'humidity',
+        'source',
         'recorded_at',
     ];
 
@@ -25,7 +26,7 @@ class SensorReading extends Model
 
     public function scopeLatestReading($query)
     {
-        return $query->orderBy('recorded_at', 'desc')->limit(1);
+        return $query->orderByDesc('recorded_at')->orderByDesc('id')->limit(1);
     }
 
     public function scopeRecent($query, $hours = 24)
@@ -39,4 +40,3 @@ class SensorReading extends Model
                      ->selectRaw('AVG(temperature) as avg_temperature, AVG(humidity) as avg_humidity');
     }
 }
-
