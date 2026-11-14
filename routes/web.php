@@ -159,6 +159,11 @@ Route::get('/orders-products', function () {
     return view('orders-products', compact('customerOrders'));
 })->name('orders-products');
 
+// Permanently delete selected customer orders (admin bulk delete)
+Route::delete('/orders/bulk-delete', [App\Http\Controllers\OrderController::class, 'bulkDestroy'])
+    ->middleware('auth')
+    ->name('orders.bulk-delete');
+
 // Product routes
 Route::get('/api/products', [ProductController::class, 'getProducts']);
 Route::post('/products/{product}/price', [ProductController::class, 'updatePrice'])->middleware('auth');

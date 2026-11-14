@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class OrderController extends Controller
 {
@@ -105,6 +107,77 @@ class OrderController extends Controller
             'success' => true,
             'message' => 'Order status updated successfully.',
             'status' => $order->status,
+        ]);
+    }
+
+    /**
+     * Permanently delete the selected orders only.
+     *
+     * Customer accounts, products, sales, payments, and any other data are
+     * left untouched. Order line items are removed only when they actually
+     * belong to the orders table (in this schema order_items is tied to
+     * contact_messages, so it is intentionally preserved).
+     */
+    public function bulkDestroy(Request $request)
+    {
+        if (! auth()->check()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|distinct',
+        ]);
+
+        $ids = array_values(array_unique(array_map('intval', $validated['ids'])));
+
+        $deleted = 0;
+
+        DB::transaction(function () use ($ids, &$deleted) {
+            $existingIds = Order::whereIn('id', $ids)->pluck('id')->all();
+
+            if (empty($existingIds)) {
+                return;
+            }
+
+            // Only touch order line items if their foreign key really points
+            // to the orders table.
+            if (Schema::hasTable('order_items')) {
+                $referencesOrders = collect(Schema::getForeignKeys('order_items'))
+                    ->contains(fn ($foreignKey) => ($foreignKey['foreign_table'] ?? null) === 'orders');
+
+                if ($referencesOrders) {
+                    DB::table('order_items')->whereIn('order_id', $existingIds)->delete();
+                }
+            }
+
+            $deleted = Order::whereIn('id', $existingIds)->delete();
+
+            // Remove dashboard acknowledgement keys for the deleted orders.
+            if (Schema::hasTable('admin_notification_acks')) {
+                $ackKeys = [];
+                foreach ($existingIds as $existingId) {
+                    $ackKeys[] = 'order_'.$existingId;
+                    $ackKeys[] = 'cancel_'.$existingId;
+                }
+
+                DB::table('admin_notification_acks')->whereIn('ack_key', $ackKeys)->delete();
+            }
+        });
+
+        if ($deleted === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No matching orders were found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'deleted' => $deleted,
+            'message' => $deleted === 1
+                ? 'Order deleted permanently.'
+                : $deleted.' orders deleted permanently.',
         ]);
     }
 }

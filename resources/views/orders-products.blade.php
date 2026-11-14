@@ -103,6 +103,102 @@
         background: white;
         color: #ff424f;
     }
+
+    /* Bulk order selection */
+    .bulk-select-btn {
+        padding: 0.6rem 1.4rem;
+        background: #fffdfa;
+        color: #6d4c41;
+        border: 2px solid #a1887f;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .bulk-select-btn:hover:not(:disabled) {
+        background: #f8ede3;
+    }
+    .bulk-select-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .bulk-select-btn.active {
+        background: #a1887f;
+        color: #fffdfa;
+        border-color: #a1887f;
+    }
+
+    .order-select-wrap {
+        display: none;
+        align-items: center;
+        margin-right: 0.75rem;
+    }
+    #ordersSection.selection-mode .order-select-wrap {
+        display: flex;
+    }
+    .order-select-wrap input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #6d4c41;
+        cursor: pointer;
+    }
+
+    #ordersSection [data-order-id].selected {
+        border-color: #a1887f !important;
+        box-shadow: 0 0 0 2px rgba(161, 136, 127, 0.35) !important;
+    }
+
+    .bulk-action-bar {
+        display: none;
+        position: sticky;
+        bottom: 1rem;
+        z-index: 900;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+        padding: 1rem 1.25rem;
+        background: #fffdfa;
+        border: 1px solid #d7ccc8;
+        border-left: 6px solid #a1887f;
+        border-radius: 12px;
+        box-shadow: 0 12px 28px rgba(121, 85, 72, 0.18);
+    }
+    .bulk-clear-btn {
+        padding: 0.5rem 1rem;
+        background: transparent;
+        color: #6d4c41;
+        border: 1px solid #a1887f;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+    .bulk-clear-btn:hover {
+        background: #f8ede3;
+    }
+    .bulk-delete-btn {
+        padding: 0.55rem 1.3rem;
+        background: #c62828;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+    .bulk-delete-btn:hover:not(:disabled) {
+        background: #a71d1d;
+    }
+    .bulk-delete-btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
 </style>
 
 <div id="main-content-wrap" class="sidebar-content-wrap">
@@ -160,8 +256,13 @@
             $activeOrders = isset($customerOrders) ? $customerOrders->where('status', '!=', 'cancelled') : collect();
             $cancelledOrders = isset($customerOrders) ? $customerOrders->where('status', 'cancelled') : collect();
         @endphp
-        <h2 class="section-title">Customer Orders</h2>
-        <p style="color: #8d6e63; margin-bottom: 1.5rem;">View and manage all active customer orders</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+            <div>
+                <h2 class="section-title" style="margin: 0;">Customer Orders</h2>
+                <p style="color: #8d6e63; margin: 0.5rem 0 0 0;">View and manage all active customer orders</p>
+            </div>
+            <button type="button" id="selectOrdersBtn" class="bulk-select-btn" onclick="toggleOrderSelectionMode()" @disabled($activeOrders->count() === 0)>Select Orders</button>
+        </div>
         
         @if($activeOrders->count() > 0)
             @foreach($activeOrders as $order)
@@ -169,6 +270,9 @@
                 <!-- Header -->
                 <div style="padding: 0.75rem 1.25rem; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center; background: #fafafa;">
                     <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+                        <div class="order-select-wrap">
+                            <input type="checkbox" class="order-select-checkbox" value="{{ $order->id }}" onchange="updateBulkSelection()" aria-label="Select order #{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}">
+                        </div>
                         <span style="font-weight: 600; color: #333;">Order #{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</span>
                         <span style="color: #ccc;">|</span>
                         <span style="color: #888;"><i class="ph-bold ph-clock" style="margin-right: 0.25rem;"></i>{{ $order->created_at->format('M d, Y h:i A') }}</span>
@@ -214,6 +318,18 @@
             <p>Active customer orders will appear here</p>
         </div>
         @endif
+
+        <!-- Bulk delete action bar -->
+        <div id="bulkDeleteBar" class="bulk-action-bar" role="region" aria-live="polite">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0 0.5rem; border-radius: 999px; background: #6d4c41; color: white; font-weight: 700; font-size: 0.85rem;" id="bulkSelectedCountBadge">0</span>
+                <span id="bulkSelectedCount" style="color: #4e342e; font-weight: 600; font-size: 0.95rem;">0 orders selected</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <button type="button" class="bulk-clear-btn" onclick="clearOrderSelection()">Clear Selection</button>
+                <button type="button" class="bulk-delete-btn" id="bulkDeleteBtn" onclick="openBulkDeleteModal()">Delete Selected</button>
+            </div>
+        </div>
     </div>
 
     <!-- Cancelled Orders Section -->
@@ -390,6 +506,18 @@
         </div>
     </div>
 
+    <!-- Bulk Delete Confirmation Modal -->
+    <div id="bulkDeleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2200; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+        <div style="background: white; border-radius: 16px; padding: 2rem; width: 90%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); border: 1px solid #f5f0eb; animation: slideUp 0.3s ease-out;">
+            <h3 style="margin: 0 0 0.75rem 0; color: #6d4c41; font-size: 1.2rem; font-weight: 700;">Delete Orders</h3>
+            <p id="bulkDeleteMessage" style="margin: 0 0 2rem 0; color: #4e342e; font-size: 1rem;">Delete these orders permanently?</p>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button type="button" onclick="closeBulkDeleteModal()" style="padding: 0.55rem 1.2rem; background: #e0e0e0; color: #6d4c41; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+                <button type="button" id="bulkDeleteConfirmBtn" onclick="confirmBulkDelete()" style="padding: 0.55rem 1.3rem; background: #c62828; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">Delete</button>
+            </div>
+        </div>
+    </div>
+
     <style>
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(20px); }
@@ -517,6 +645,134 @@ window.addEventListener('click', function(event) {
     const modal = document.getElementById('orderDetailsModal');
     if (event.target === modal) {
         closeOrderDetailsModal();
+    }
+});
+
+// --- Bulk Order Selection / Delete ---
+function getSelectedOrderIds() {
+    return Array.from(document.querySelectorAll('#ordersSection .order-select-checkbox:checked'))
+        .map(cb => Number(cb.value));
+}
+
+function updateBulkSelection() {
+    const ids = getSelectedOrderIds();
+
+    document.querySelectorAll('#ordersSection [data-order-id]').forEach(card => {
+        const checkbox = card.querySelector('.order-select-checkbox');
+        card.classList.toggle('selected', !!(checkbox && checkbox.checked));
+    });
+
+    const bar = document.getElementById('bulkDeleteBar');
+    const countEl = document.getElementById('bulkSelectedCount');
+    const badgeEl = document.getElementById('bulkSelectedCountBadge');
+
+    if (bar) {
+        bar.style.display = ids.length > 0 ? 'flex' : 'none';
+    }
+    if (countEl) {
+        countEl.textContent = ids.length === 1 ? '1 order selected' : ids.length + ' orders selected';
+    }
+    if (badgeEl) {
+        badgeEl.textContent = ids.length;
+    }
+}
+
+function toggleOrderSelectionMode() {
+    const section = document.getElementById('ordersSection');
+    const btn = document.getElementById('selectOrdersBtn');
+    if (!section || !btn) return;
+
+    const isActive = section.classList.toggle('selection-mode');
+    btn.classList.toggle('active', isActive);
+    btn.textContent = isActive ? 'Cancel Selection' : 'Select Orders';
+
+    if (!isActive) {
+        clearOrderSelection();
+    }
+
+    updateBulkSelection();
+}
+
+function clearOrderSelection() {
+    document.querySelectorAll('#ordersSection .order-select-checkbox').forEach(cb => {
+        cb.checked = false;
+    });
+
+    updateBulkSelection();
+}
+
+function openBulkDeleteModal() {
+    const ids = getSelectedOrderIds();
+    if (ids.length === 0) return;
+
+    const messageEl = document.getElementById('bulkDeleteMessage');
+    if (messageEl) {
+        messageEl.textContent = ids.length === 1
+            ? 'Delete this order permanently?'
+            : 'Delete these orders permanently?';
+    }
+
+    const modal = document.getElementById('bulkDeleteModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeBulkDeleteModal() {
+    // Closing the popup must not clear the current selection.
+    const modal = document.getElementById('bulkDeleteModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function confirmBulkDelete() {
+    const ids = getSelectedOrderIds();
+    if (ids.length === 0) {
+        closeBulkDeleteModal();
+        return;
+    }
+
+    const confirmBtn = document.getElementById('bulkDeleteConfirmBtn');
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Deleting...';
+    }
+
+    fetch('/orders/bulk-delete', {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ ids: ids })
+    })
+        .then(async response => {
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Failed to delete the selected orders.');
+            }
+
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Error deleting orders:', error);
+            alert('Error deleting orders: ' + error.message);
+
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Delete';
+            }
+        });
+}
+
+// Close the bulk delete popup when clicking its backdrop (selection is kept)
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('bulkDeleteModal');
+    if (event.target === modal) {
+        closeBulkDeleteModal();
     }
 });
 
