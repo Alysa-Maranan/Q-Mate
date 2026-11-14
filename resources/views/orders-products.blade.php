@@ -499,6 +499,7 @@
                     </div>
                 </div>
             </div>
+            </div><!-- /order details body grid -->
 
             <div style="margin-top: 2rem; text-align: right;">
                 <button onclick="closeOrderDetailsModal()" style="padding: 0.6rem 1.5rem; background: #6d4c41; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#5d4037'" onmouseout="this.style.background='#6d4c41'">Close</button>
@@ -507,7 +508,7 @@
     </div>
 
     <!-- Bulk Delete Confirmation Modal -->
-    <div id="bulkDeleteModal" data-url="{{ url('orders/bulk-delete') }}" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2200; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+    <div id="bulkDeleteModal" data-url="{{ parse_url(url('orders/bulk-delete'), PHP_URL_PATH) }}" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2200; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
         <div style="background: white; border-radius: 16px; padding: 2rem; width: 90%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); border: 1px solid #f5f0eb; animation: slideUp 0.3s ease-out;">
             <h3 style="margin: 0 0 0.75rem 0; color: #6d4c41; font-size: 1.2rem; font-weight: 700;">Delete Orders</h3>
             <p id="bulkDeleteMessage" style="margin: 0 0 2rem 0; color: #4e342e; font-size: 1rem;">Delete these orders permanently?</p>
@@ -726,18 +727,22 @@ function closeBulkDeleteModal() {
     }
 }
 
+// Guards against a double submit while a delete is already running. The button
+// keeps its "Delete" label and stays clickable so it never looks stuck.
+let bulkDeleteInFlight = false;
+
 function confirmBulkDelete() {
+    if (bulkDeleteInFlight) {
+        return;
+    }
+
     const ids = getSelectedOrderIds();
     if (ids.length === 0) {
         closeBulkDeleteModal();
         return;
     }
 
-    const confirmBtn = document.getElementById('bulkDeleteConfirmBtn');
-    if (confirmBtn) {
-        confirmBtn.disabled = true;
-        confirmBtn.textContent = 'Deleting...';
-    }
+    bulkDeleteInFlight = true;
 
     const modal = document.getElementById('bulkDeleteModal');
     const deleteUrl = (modal && modal.dataset.url) ? modal.dataset.url : '/orders/bulk-delete';
@@ -777,11 +782,9 @@ function confirmBulkDelete() {
         .catch(error => {
             console.error('Error deleting orders:', error);
             alert('Error deleting orders: ' + error.message);
-
-            if (confirmBtn) {
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = 'Delete';
-            }
+        })
+        .finally(() => {
+            bulkDeleteInFlight = false;
         });
 }
 
