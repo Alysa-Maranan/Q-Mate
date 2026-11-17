@@ -64,6 +64,19 @@ class AdminChatController extends Controller
         ]);
     }
 
+    public function destroyConversation($customerId)
+    {
+        Customer::findOrFail($customerId);
+
+        $deletedMessages = Chat::where('customer_id', $customerId)
+            ->delete();
+
+        return response()->json([
+            'success' => true,
+            'deleted_messages' => $deletedMessages,
+        ]);
+    }
+
     public function sendMessage(Request $request)
     {
         $request->validate([

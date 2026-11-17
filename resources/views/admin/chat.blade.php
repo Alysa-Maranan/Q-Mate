@@ -77,13 +77,29 @@
         margin-top: 0.5rem;
         font-weight: 500;
     }
+
+    /* Mobile-only back button (shown by qmate-responsive.css on phones). */
+    .chat-back-btn {
+        display: none;
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: #efebe9;
+        color: #6d4c41;
+        cursor: pointer;
+    }
 </style>
 
 @push('scripts')
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 @endpush
 
-<div id="main-content-wrap" class="sidebar-content-wrap">
+<div id="main-content-wrap" class="sidebar-content-wrap admin-chat-page">
     <div class="container" style="padding: 2rem;">
 
         <!-- Page Header -->
@@ -553,6 +569,105 @@
                 color: #6d4c41;
             }
 
+            .delete-conversation-btn:hover {
+                background: #fee2e2;
+                color: #dc2626;
+            }
+
+            /* Beats the mobile grid rule in qmate-responsive.css. */
+            body #main-content-wrap.admin-chat-page #chatInput.conversation-hidden {
+                display: none !important;
+            }
+
+            .delete-modal-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(62, 39, 35, 0.55);
+                z-index: 2000;
+                display: none;
+            }
+
+            .delete-modal-overlay.show {
+                display: block;
+            }
+
+            .delete-modal {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: min(380px, calc(100% - 2rem));
+                box-sizing: border-box;
+                padding: 1.5rem;
+                border-radius: 18px;
+                background: #fffdfa;
+                border: 1px solid #d7ccc8;
+                box-shadow: 0 18px 48px rgba(62, 39, 35, 0.25);
+                z-index: 2001;
+                display: none;
+                text-align: center;
+            }
+
+            .delete-modal.show {
+                display: block;
+            }
+
+            .delete-modal-icon {
+                width: 52px;
+                height: 52px;
+                margin: 0 auto 0.9rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                background: #fee2e2;
+                color: #dc2626;
+                font-size: 1.5rem;
+            }
+
+            .delete-modal h3 {
+                margin: 0;
+                color: #4e342e;
+                font-size: 1.15rem;
+            }
+
+            .delete-modal p {
+                margin: 0.7rem 0 1.25rem;
+                color: #8d6e63;
+                font-size: 0.9rem;
+                line-height: 1.5;
+            }
+
+            .delete-modal-actions {
+                display: flex;
+                gap: 0.65rem;
+            }
+
+            .delete-modal-actions button {
+                flex: 1;
+                min-height: 42px;
+                border-radius: 10px;
+                border: 1px solid #d7ccc8;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+            .delete-modal-cancel {
+                background: #fffdfa;
+                color: #6d4c41;
+            }
+
+            .delete-modal-confirm {
+                background: #dc2626;
+                border-color: #dc2626;
+                color: white;
+            }
+
+            .delete-modal-confirm:disabled {
+                opacity: 0.65;
+                cursor: wait;
+            }
+
             .customer-profile-panel {
                 position: fixed;
                 right: -350px;
@@ -877,6 +992,29 @@
                         style="display: none;"
                     >
 
+                        <button
+                            type="button"
+                            class="chat-back-btn"
+                            id="chatBackBtn"
+                            aria-label="Back to customers"
+                            onclick="showCustomerListOnMobile()"
+                        >
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="M19 12H5"></path>
+                                <path d="m12 19-7-7 7-7"></path>
+                            </svg>
+                        </button>
+
                         <div class="chat-header-avatar" id="chatHeaderAvatar">
                             C
                         </div>
@@ -897,12 +1035,14 @@
                             </button>
 
                             <button
-                                class="header-action-btn"
-                                onclick="toggleMuteNotifications()"
-                                id="muteBtn"
-                                title="Mute Notifications"
+                                type="button"
+                                class="header-action-btn delete-conversation-btn"
+                                onclick="openDeleteConversationModal()"
+                                id="deleteConversationBtn"
+                                title="Delete conversation"
+                                aria-label="Delete conversation"
                             >
-                                <i class="ph-bold ph-bell"></i>
+                                <i class="ph-bold ph-trash"></i>
                             </button>
 
                         </div>
@@ -1211,6 +1351,53 @@
 
             </div>
 
+
+            <!-- Delete conversation confirmation -->
+            <div
+                class="delete-modal-overlay"
+                id="deleteModalOverlay"
+                onclick="closeDeleteConversationModal()"
+            ></div>
+
+            <div
+                class="delete-modal"
+                id="deleteConversationModal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="deleteConversationTitle"
+            >
+                <div class="delete-modal-icon">
+                    <i class="ph-bold ph-trash"></i>
+                </div>
+
+                <h3 id="deleteConversationTitle">Delete this conversation?</h3>
+
+                <p>
+                    Are you sure you really want to delete the conversation with
+                    <strong id="deleteCustomerName">this customer</strong>?
+                    All messages will be permanently removed and cannot be recovered.
+                </p>
+
+                <div class="delete-modal-actions">
+                    <button
+                        type="button"
+                        class="delete-modal-cancel"
+                        onclick="closeDeleteConversationModal()"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="button"
+                        class="delete-modal-confirm"
+                        id="confirmDeleteBtn"
+                        onclick="confirmDeleteConversation()"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -1222,6 +1409,9 @@
 
     async function selectCustomer(customerId) {
         currentCustomerId = customerId;
+
+        /* Phones show one pane at a time: list -> conversation. */
+        document.body.classList.add('chat-conversation-open');
 
         document.querySelectorAll('.customer-item').forEach(item => {
             item.classList.remove('active');
@@ -1237,6 +1427,7 @@
 
         document.getElementById('chatHeader').style.display = 'flex';
         document.getElementById('chatInput').style.display = 'flex';
+        document.getElementById('chatInput').classList.remove('conversation-hidden');
 
 
         try {
@@ -1285,6 +1476,27 @@
             );
         }
     }
+
+
+    /* Return to the customer list on phones. */
+    function showCustomerListOnMobile() {
+        document.body.classList.remove('chat-conversation-open');
+    }
+
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            const deleteModal =
+                document.getElementById('deleteConversationModal');
+
+            if (deleteModal && deleteModal.classList.contains('show')) {
+                closeDeleteConversationModal();
+                return;
+            }
+
+            showCustomerListOnMobile();
+        }
+    });
 
 
     function renderMessages(chats, customerName) {
@@ -1647,7 +1859,16 @@
 
     setInterval(() => {
 
-        if (currentCustomerId) {
+        /* Do not reopen the conversation after the user taps Back. */
+        if (
+            currentCustomerId &&
+            (
+                window.innerWidth > 767 ||
+                document.body.classList.contains(
+                    'chat-conversation-open'
+                )
+            )
+        ) {
             selectCustomer(
                 currentCustomerId
             );
@@ -1817,36 +2038,120 @@
     }
 
 
-    let notificationsMuted = false;
+    let pendingDeleteCustomerId = null;
+
+    const conversationDeleteUrlTemplate =
+        '{{ route('admin.chat.customer.destroy', ':id') }}';
 
 
-    function toggleMuteNotifications() {
+    function openDeleteConversationModal() {
 
-        notificationsMuted =
-            !notificationsMuted;
+        if (!currentCustomerId) {
+            return;
+        }
+
+        pendingDeleteCustomerId = currentCustomerId;
+
+        document.getElementById('deleteCustomerName').textContent =
+            document.getElementById('chatHeaderName').textContent ||
+            'this customer';
+
+        document.getElementById('deleteModalOverlay').classList.add('show');
+        document.getElementById('deleteConversationModal').classList.add('show');
+
+        document.getElementById('confirmDeleteBtn').disabled = false;
+        document.getElementById('confirmDeleteBtn').textContent = 'Delete';
+        document.getElementById('confirmDeleteBtn').focus();
+    }
 
 
-        const btn =
-            document.getElementById(
-                'muteBtn'
+    function closeDeleteConversationModal() {
+
+        pendingDeleteCustomerId = null;
+
+        document.getElementById('deleteModalOverlay').classList.remove('show');
+        document.getElementById('deleteConversationModal').classList.remove('show');
+    }
+
+
+    async function confirmDeleteConversation() {
+
+        if (!pendingDeleteCustomerId) {
+            return;
+        }
+
+        const customerId = pendingDeleteCustomerId;
+
+        const confirmBtn =
+            document.getElementById('confirmDeleteBtn');
+
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Deleting...';
+
+        try {
+            const deleteUrl =
+                conversationDeleteUrlTemplate.replace(
+                    ':id',
+                    encodeURIComponent(customerId)
+                );
+
+            const response = await fetch(
+                deleteUrl,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN':
+                            document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        'Accept': 'application/json'
+                    }
+                }
             );
 
+            const data = await response.json();
 
-        if (notificationsMuted) {
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.message || 'Failed to delete conversation.'
+                );
+            }
 
-            btn.innerHTML =
-                '<i class="ph-bold ph-bell-slash"></i>';
+            closeDeleteConversationModal();
 
-            btn.style.color =
-                '#ff6b6b';
+            /* Clear the open conversation and return to the customer list. */
+            currentCustomerId = null;
+            document.body.classList.remove('chat-conversation-open');
 
-        } else {
+            const deletedItem = document.querySelector(
+                `[data-customer-id="${customerId}"]`
+            );
 
-            btn.innerHTML =
-                '<i class="ph-bold ph-bell"></i>';
+            if (deletedItem) {
+                deletedItem.remove();
+            }
 
-            btn.style.color =
-                '#8d6e63';
+            document.getElementById('chatHeader').style.display = 'none';
+            document.getElementById('chatInput').classList.add('conversation-hidden');
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="empty-chat">
+                    <i class="ph-fill ph-chat-circle-text"></i>
+                    <h3>Select a Customer</h3>
+                    <p>
+                        Choose a customer from the list to view and reply to their messages
+                    </p>
+                </div>
+            `;
+
+            refreshUnreadBadge();
+
+        } catch (error) {
+            console.error('Error deleting conversation:', error);
+
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Delete';
+
+            window.alert(
+                'Unable to delete this conversation. Please try again.'
+            );
         }
     }
 
@@ -2048,6 +2353,9 @@
     document.addEventListener(
         'DOMContentLoaded',
         function() {
+
+            /* Always start on the customer list on phones. */
+            showCustomerListOnMobile();
 
             refreshUnreadBadge();
 

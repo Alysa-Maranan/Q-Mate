@@ -42,6 +42,7 @@ Route::post('/customer/chat/rating', [App\Http\Controllers\ChatController::class
 // Admin Chat Routes
 Route::get('/admin/chat', [App\Http\Controllers\AdminChatController::class, 'index'])->name('admin.chat')->middleware('auth');
 Route::get('/admin/chat/customer/{id}', [App\Http\Controllers\AdminChatController::class, 'getCustomerChat'])->name('admin.chat.customer')->middleware('auth');
+Route::delete('/admin/chat/customer/{id}', [App\Http\Controllers\AdminChatController::class, 'destroyConversation'])->name('admin.chat.customer.destroy')->middleware('auth');
 Route::post('/admin/chat/send', [App\Http\Controllers\AdminChatController::class, 'sendMessage'])->name('admin.chat.send')->middleware('auth');
 Route::get('/admin/chat/unread', [App\Http\Controllers\AdminChatController::class, 'getUnreadCount'])->name('admin.chat.unread')->middleware('auth');
 
