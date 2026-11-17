@@ -454,8 +454,8 @@
 <!-- Dashboard Top Header -->
 <div id="dashboard-topbar" class="dashboard-topbar">
     <div class="topbar-left">
-        <div id="sidebar-hamburger" style="display: none;">
-            <button class="hb-btn" onclick="toggleSidebar()" title="Open menu">
+        <div id="sidebar-hamburger">
+            <button type="button" class="hb-btn" aria-label="Open menu" onclick="toggleSidebar()" title="Open menu">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#6d4c41" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
@@ -721,6 +721,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+});
+
+// Keep the burger in sync when the viewport is resized in DevTools.
+window.addEventListener('resize', function () {
+    const hamburger = document.getElementById('sidebar-hamburger');
+    if (!hamburger) return;
+    const show = window.innerWidth <= 768 || localStorage.getItem('sidebar_collapsed') === '1';
+    hamburger.style.display = show ? 'flex' : 'none';
 });
 
 // Logout modal functions

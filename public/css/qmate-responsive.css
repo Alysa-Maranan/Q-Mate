@@ -99,6 +99,16 @@
         flex: 0 0 40px !important;
     }
 
+    /* The burger lives in the admin topbar. Force it on phones even if an
+       inline style or the desktop default still says "none". */
+    #sidebar-hamburger {
+        display: flex !important;
+        align-items: center;
+        flex: 0 0 auto;
+        gap: 0.5rem;
+        margin-right: 0.15rem;
+    }
+
     #floating-notification-bell {
         flex: 0 0 auto !important;
     }
@@ -123,6 +133,25 @@
         padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
         overflow-y: auto !important;
         overscroll-behavior: contain;
+        /* Fully off-canvas. The old -300px transform left a visible strip
+           because this phone width is 320px. */
+        transform: translateX(calc(-100% - 1.25rem)) !important;
+        /* Belt-and-suspenders: even a subpixel sliver or an old cached
+           transform cannot leave a sidebar strip visible on the phone. */
+        visibility: hidden !important;
+        pointer-events: none !important;
+        box-shadow: none !important;
+        /* No transition in the closed state: prevents the sidebar from
+           briefly sliding in when this late stylesheet loads. */
+        transition: none !important;
+    }
+
+    #sidebar.mobile-open {
+        transform: translateX(0) !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        box-shadow: 4px 0 20px rgba(121, 85, 72, 0.18) !important;
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease !important;
     }
 
     #sidebar-overlay {
