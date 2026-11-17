@@ -226,6 +226,20 @@
             cursor: pointer;
         }
 
+        .customer-sidebar-close {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            flex: 0 0 36px;
+            border: 2px solid #d7ccc8;
+            border-radius: 8px;
+            background: #fffdfa;
+            color: #6d4c41;
+            cursor: pointer;
+        }
+
         .tabs {
             display: flex;
             border-bottom: 2px solid #f5f0eb;
@@ -595,7 +609,7 @@
             <!-- Welcome Text Section (Left) -->
             <div style="flex: 1; min-width: 250px;">
                 <h2 style="font-size: 1.3rem; font-weight: 800; color: #4e342e; margin: 0; white-space: nowrap;">Welcome back, {{ auth('customer')->user()->name }}!</h2>
-                <button type="button" class="customer-mobile-nav-toggle" aria-controls="customer-sidebar" aria-expanded="false" onclick="toggleCustomerNavigation(this)">
+                <button type="button" class="customer-mobile-nav-toggle" aria-label="Open menu" aria-controls="customer-sidebar" aria-expanded="false" onclick="toggleCustomerNavigation(this)">
                     <i class="ph-bold ph-list" aria-hidden="true"></i>
                     <span>Menu</span>
                 </button>
@@ -889,6 +903,9 @@
             <aside class="sidebar" id="customer-sidebar">
                 <div class="sidebar-header" style="justify-content: center;">
                     <h2 style="font-size: 1.5rem; font-weight: 800; color: #4e342e; margin: 0; text-align: center;">Escalona's Farm</h2>
+                    <button type="button" class="customer-sidebar-close" aria-label="Close menu" onclick="toggleCustomerNavigation(null, false)">
+                        <i class="ph-bold ph-x" aria-hidden="true"></i>
+                    </button>
                 </div>
                 
                 <nav class="sidebar-nav">
@@ -948,6 +965,8 @@
         </div>
     </div>
 
+    <div id="customer-sidebar-overlay" aria-hidden="true" onclick="toggleCustomerNavigation(null, false)"></div>
+
     <footer class="footer">
         <div class="footer-inner">
             <div>
@@ -983,14 +1002,40 @@
         <div class="footer-bottom">&copy; {{ date('Y') }} Escalona's Farm | Capstone SQUIFM. All rights reserved.</div>
     </footer>
     <script>
-        function toggleCustomerNavigation(button) {
+        function toggleCustomerNavigation(button, forceOpen) {
             const container = document.querySelector('.main-container');
             if (!container) return;
 
-            const isOpen = container.classList.toggle('mobile-nav-open');
-            button.setAttribute('aria-expanded', String(isOpen));
-            button.querySelector('span').textContent = isOpen ? 'Close menu' : 'Menu';
+            const isOpen = typeof forceOpen === 'boolean'
+                ? forceOpen
+                : !container.classList.contains('mobile-nav-open');
+
+            container.classList.toggle('mobile-nav-open', isOpen);
+            document.body.classList.toggle('customer-nav-open', isOpen);
+
+            document.querySelectorAll('.customer-mobile-nav-toggle').forEach(function (toggle) {
+                toggle.setAttribute('aria-expanded', String(isOpen));
+                toggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+                const label = toggle.querySelector('span');
+                if (label) label.textContent = isOpen ? 'Close menu' : 'Menu';
+            });
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('#customer-sidebar .nav-item').forEach(function (item) {
+                item.addEventListener('click', function () {
+                    if (window.innerWidth <= 768) toggleCustomerNavigation(null, false);
+                });
+            });
+
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 768) toggleCustomerNavigation(null, false);
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') toggleCustomerNavigation(null, false);
+            });
+        });
     </script>
     <link rel="stylesheet" href="{{ asset('css/qmate-responsive.css') }}">
 </body>
