@@ -486,5 +486,6 @@ function orderProduct(productSlug) {
 document.addEventListener('DOMContentLoaded', loadProducts);
 </script>
 
+<link rel="stylesheet" href="{{ asset('css/qmate-responsive.css') }}">
 </body>
 </html>

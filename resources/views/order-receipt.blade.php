@@ -689,5 +689,6 @@
             100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
         }
     </script>
+<link rel="stylesheet" href="{{ asset('css/qmate-responsive.css') }}">
 </body>
 </html>

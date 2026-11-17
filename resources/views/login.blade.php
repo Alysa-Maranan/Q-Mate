@@ -88,12 +88,56 @@
             .nav { padding: 1rem 1.5rem; }
         }
         @media (max-width: 600px) { 
-            .footer-grid { grid-template-columns: 1fr; }
-            .nav { padding: 0.75rem 1rem; }
-            .nav-logo span { font-size: 1.1rem; }
-            .nav-links a { padding: 0.5rem 1rem; font-size: 0.85rem; }
-            .login-card { padding: 1.75rem; }
-            .main-content { padding: 2rem 1rem; }
+            .nav { padding: 0.6rem 0.9rem; }
+            .nav-logo { gap: 0.5rem; }
+            .nav-logo img { width: 34px; height: 34px; border-radius: 9px; border-width: 1.5px; }
+            .nav-logo span { font-size: clamp(0.95rem, 4vw, 1.1rem); }
+            .nav-links a { padding: 0.45rem 0.65rem; font-size: 0.78rem; border-radius: 8px; }
+            .nav-links a svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+            .main-content { padding: 1.25rem 0.9rem 1.5rem; align-items: flex-start; }
+            .login-container { max-width: 100%; }
+            .login-header { margin-bottom: 1rem; }
+            .login-logo {
+                width: 64px; height: 64px;
+                border-radius: 16px;
+                border-width: 2px;
+                margin-bottom: 0.65rem;
+            }
+            .login-title { font-size: clamp(1.25rem, 5.5vw, 1.55rem); margin-bottom: 0.25rem; }
+            .login-subtitle { font-size: 0.8rem; line-height: 1.4; }
+
+            .login-card { padding: 1.1rem; border-radius: 16px; border-width: 1.5px; }
+            .form-group { margin-bottom: 0.9rem; }
+            .form-label { font-size: 0.8rem; margin-bottom: 0.3rem; }
+            .form-input-wrapper { padding: 0.65rem 0.75rem; gap: 0.5rem; border-radius: 10px; }
+            .form-input-wrapper > svg { width: 18px; height: 18px; flex-shrink: 0; }
+            .form-input { min-width: 0; width: 100%; font-size: 16px; }
+            .password-toggle { padding: 0.35rem; flex-shrink: 0; }
+            .password-toggle svg { width: 18px; height: 18px; }
+            .form-row { flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+            .form-checkbox { font-size: 0.78rem; }
+            .form-checkbox input { width: 15px; height: 15px; margin-right: 0.35rem; }
+            .form-link { font-size: 0.78rem; }
+            .btn-login, .btn-google, .btn-register {
+                padding: 0.75rem 0.8rem;
+                min-height: 44px;
+                font-size: 0.9rem;
+                border-radius: 10px;
+            }
+            .form-divider { margin: 1rem 0; }
+            .form-divider-text { font-size: 0.8rem; margin-bottom: 0.5rem; }
+            .alert { padding: 0.7rem; margin-bottom: 0.75rem; font-size: 0.85rem; }
+            .help-link { margin-top: 1rem; font-size: 0.8rem; }
+
+            .footer { padding: 1.75rem 1rem 1.25rem; margin-top: 1.5rem; }
+            .footer-grid { grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 1.5rem; }
+            .footer-brand h3 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+            .footer-brand p { font-size: 0.85rem; }
+            .footer h4 { font-size: 1rem; margin-bottom: 0.75rem; }
+            .footer-links { gap: 0.5rem; font-size: 0.85rem; }
+            .footer-contact li { margin-bottom: 0.6rem; font-size: 0.85rem; }
+            .footer-bottom { padding-top: 1rem; font-size: 0.8rem; }
         }
     </style>
 </head>
@@ -241,5 +285,6 @@ function togglePassword() {
 }
 </script>
 
+<link rel="stylesheet" href="{{ asset('css/qmate-responsive.css') }}">
 </body>
 </html>

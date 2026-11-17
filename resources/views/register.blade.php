@@ -218,5 +218,6 @@ function togglePassword(id) {
     input.type = input.type === "password" ? "text" : "password";
 }
 </script>
+<link rel="stylesheet" href="{{ asset('css/qmate-responsive.css') }}">
 </body>
 </html>

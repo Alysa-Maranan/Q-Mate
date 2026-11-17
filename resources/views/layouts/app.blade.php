@@ -600,6 +600,7 @@
     <script src="{{ asset('notification-system.js') }}"></script>
     <script src="{{ asset('notification-helpers.js') }}"></script>
     <script src="{{ asset('notification-events.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('css/qmate-responsive.css') }}">
     @stack('scripts')
 </body>
 </html>

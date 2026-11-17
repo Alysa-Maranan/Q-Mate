@@ -58,5 +58,6 @@
             <a href="{{ route('login') }}" class="link">← Back to Login</a>
         </div>
     </div>
+<link rel="stylesheet" href="{{ asset('css/qmate-responsive.css') }}">
 </body>
 </html>

@@ -173,6 +173,40 @@
      .topbar-avatar { width: 36px; height: 36px; font-size: 0.9rem; }
  }
 
+ /* Small phones: let the date and account name wrap instead of clipping
+    or pushing the notification button off-screen. */
+ @media (max-width: 600px) {
+     .dashboard-topbar {
+         padding: 0.45rem 0.75rem;
+         gap: 0.5rem;
+     }
+     .topbar-left { gap: 0.45rem; }
+     .topbar-right { gap: 0.4rem; flex-shrink: 1; min-width: 0; }
+     .topbar-user { gap: 0.4rem; min-width: 0; }
+     .topbar-date {
+         min-width: 0;
+         white-space: normal;
+         overflow-wrap: anywhere;
+         font-size: clamp(0.72rem, 2.8vw, 0.82rem);
+         line-height: 1.2;
+         letter-spacing: 0;
+     }
+     .topbar-name {
+         display: -webkit-box;
+         -webkit-box-orient: vertical;
+         -webkit-line-clamp: 2;
+         white-space: normal;
+         overflow-wrap: anywhere;
+         font-size: clamp(0.75rem, 3vw, 0.85rem);
+         line-height: 1.15;
+         max-width: clamp(72px, 26vw, 110px);
+     }
+     .topbar-avatar { width: 32px; height: 32px; font-size: 0.8rem; }
+     .hb-btn { width: 36px; height: 36px; flex-shrink: 0; }
+     .notification-bell { width: 34px; height: 34px; flex-shrink: 0; }
+     #floating-notification-bell { flex-shrink: 0; }
+ }
+
 
 /* Notification bell in hamburger */
 .notification-bell {

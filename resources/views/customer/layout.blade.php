@@ -992,5 +992,6 @@
             button.querySelector('span').textContent = isOpen ? 'Close menu' : 'Menu';
         }
     </script>
+    <link rel="stylesheet" href="{{ asset('css/qmate-responsive.css') }}">
 </body>
 </html>

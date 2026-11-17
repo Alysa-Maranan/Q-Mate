@@ -651,5 +651,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 </script>
+<link rel="stylesheet" href="{{ asset('css/qmate-responsive.css') }}">
 </body>
 </html>

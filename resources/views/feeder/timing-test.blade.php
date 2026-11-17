@@ -258,5 +258,6 @@
         addEvent('Timing tester ready! Click "Trigger Schedule Now" to test', 'status');
         addEvent('Expected: API returns quickly (< 100ms), animation starts immediately', 'animation');
     </script>
+<link rel="stylesheet" href="{{ asset('css/qmate-responsive.css') }}">
 </body>
 </html>

@@ -121,8 +121,62 @@
         }
     }
 
+    /* Small phones: tighten spacing and type only; colors, borders and
+       shadows stay exactly as they are on larger screens. */
+    @media (max-width: 600px) {
+        .dashboard-page > .container { padding: 0.85rem !important; }
+
+        .dashboard-page h1 { font-size: clamp(1.3rem, 6.4vw, 1.6rem) !important; }
+        .dashboard-page h2 { font-size: clamp(1rem, 5vw, 1.15rem) !important; margin-bottom: 0.9rem !important; }
+        .dashboard-page h3 { font-size: 1rem !important; }
+        .dashboard-page h4 { font-size: 0.92rem !important; }
+
+        .dashboard-page [style*="margin-bottom: 2rem"] { margin-bottom: 1rem !important; }
+        .dashboard-page [style*="margin-bottom: 1.5rem"] { margin-bottom: 0.75rem !important; }
+        .dashboard-page [style*="padding-bottom: 1rem"] { padding-bottom: 0.6rem !important; }
+        .dashboard-page [style*="padding: 2rem"] { padding: 0.9rem 1rem !important; }
+        .dashboard-page [style*="padding: 1.5rem"] { padding: 0.85rem 1rem !important; }
+        .dashboard-page [style*="gap: 1.5rem"] { gap: 0.85rem !important; }
+        .dashboard-page [style*="gap: 1rem"] { gap: 0.6rem !important; }
+
+        .dashboard-page .status-cards-grid,
+        .dashboard-page .quail-stats-grid,
+        .dashboard-page .breed-cards-grid { gap: 0.85rem !important; }
+
+        .dashboard-page p[style*="border-top: 1px solid #efebe9"] {
+            margin-top: 0.7rem !important;
+            padding-top: 0.7rem !important;
+            line-height: 1.5 !important;
+        }
+
+        .dashboard-page [style*="width: 48px; height: 48px"] {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 10px !important;
+        }
+        .dashboard-page svg[width="28"] { width: 22px !important; height: 22px !important; }
+        .dashboard-page [style*="font-size: 3rem"] { font-size: 2rem !important; }
+        .dashboard-page svg[width="60"] { width: 38px !important; height: 38px !important; }
+
+        .dashboard-page [style*="font-size: 1.8rem"] { font-size: clamp(1.2rem, 6vw, 1.5rem) !important; }
+        .dashboard-page [style*="font-size: 1.1rem"] { font-size: 1rem !important; }
+        .dashboard-page [style*="font-size: 1.05rem"] { font-size: 0.95rem !important; }
+        .dashboard-page [style*="font-size: 0.95rem"] { font-size: 0.85rem !important; }
+        .dashboard-page [style*="font-size: 0.9rem"] { font-size: 0.82rem !important; }
+        .dashboard-page [style*="font-size: 0.85rem"] { font-size: 0.78rem !important; }
+
+        .dashboard-page [style*="margin: 0.75rem 0 0"] { margin-top: 0.45rem !important; }
+        .dashboard-page [style*="margin: 0.5rem 0 0"] { margin-top: 0.3rem !important; }
+        .dashboard-page [style*="margin: 0.5rem 0 0.5rem"] { margin: 0 0 0.3rem !important; }
+
+        .dashboard-page .order-notif-item { padding: 0.6rem !important; }
+        .dashboard-page .notification-empty { padding: 1.25rem !important; }
+        .dashboard-page #orderNotificationsContainer,
+        .dashboard-page .order-notif-container { max-height: 420px !important; }
+    }
+
 </style>
-<div id="main-content-wrap" class="sidebar-content-wrap">
+<div id="main-content-wrap" class="sidebar-content-wrap dashboard-page">
 <div class="container" style="padding: 2rem;">
 <!-- Header -->
     <div style="background: white; border-radius: 24px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 20px rgba(109,76,65,0.08); border: 1px solid rgba(161, 136, 127, 0.1); text-align: center;">
