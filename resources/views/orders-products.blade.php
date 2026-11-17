@@ -201,7 +201,7 @@
     }
 </style>
 
-<div id="main-content-wrap" class="sidebar-content-wrap">
+<div id="main-content-wrap" class="sidebar-content-wrap orders-products-page">
 <div class="container" style="padding: 2rem;">
     
     <!-- Header -->

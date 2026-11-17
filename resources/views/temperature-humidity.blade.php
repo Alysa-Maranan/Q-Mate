@@ -440,7 +440,7 @@
     }
 </style>
 
-<div id="main-content-wrap" class="sidebar-content-wrap">
+<div id="main-content-wrap" class="sidebar-content-wrap temperature-humidity-page">
 <div class="container" style="padding: 2rem;">
     <!-- Page Header -->
     <div class="page-header">

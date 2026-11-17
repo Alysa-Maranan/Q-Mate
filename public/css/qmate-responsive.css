@@ -1415,6 +1415,83 @@
     }
 }
 
+/* --------------------- CUSTOMER CHAT: TABLET / LAPTOP / DESKTOP -------- */
+/* Keep the storefront header and sidebar, but lock the page so only the
+   conversation scrolls instead of growing into one long page. */
+@media (min-width: 433px) {
+    body.customer-chat-page {
+        height: 100dvh !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body.customer-chat-page .main-wrapper {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body.customer-chat-page .main-container {
+        height: 100% !important;
+        min-height: 0 !important;
+        grid-template-rows: minmax(0, 1fr) !important;
+        overflow: hidden !important;
+    }
+
+    body.customer-chat-page .main-content {
+        height: 100% !important;
+        min-height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
+    body.customer-chat-page .content-header {
+        flex: 0 0 auto !important;
+    }
+
+    body.customer-chat-page .footer,
+    body.customer-chat-page .site-footer {
+        display: none !important;
+    }
+
+    body.customer-chat-page .container.customer-chat-page {
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* The big hero title is redundant with the content header on chat. */
+    body.customer-chat-page .page-header {
+        display: none !important;
+    }
+
+    body.customer-chat-page .section-card {
+        flex: 1 1 auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body.customer-chat-page .chat-header,
+    body.customer-chat-page .quick-replies,
+    body.customer-chat-page .chat-input-section,
+    body.customer-chat-page .typing-indicator {
+        flex: 0 0 auto !important;
+    }
+
+    body.customer-chat-page .chat-messages {
+        flex: 1 1 auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain !important;
+    }
+}
+
 /* ------------------------------ TABLET -------------------------------- */
 @media (min-width: 768px) and (max-width: 1023px) {
     /* Admin: restore a compact sidebar and two-column content grids. */
@@ -1494,5 +1571,62 @@
     body .footer-inner,
     body .footer-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+/* ------------------ ADMIN MAIN CONTENT WIDTH PARITY --------------------- */
+/* Dashboard is the reference: its page-scoped .container sets
+   max-width:100%; margin:0 auto. The three pages below omitted that base
+   rule, so they could inherit a narrower global .container. These rules are
+   page-scoped only; Dashboard and shared selectors are untouched. */
+@media (min-width: 769px) {
+    #main-content-wrap.orders-products-page > .container,
+    #main-content-wrap.temperature-humidity-page > .container,
+    #main-content-wrap.admin-chat-page > .container {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 auto !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+
+    #main-content-wrap.orders-products-page.expanded > .container,
+    #main-content-wrap.temperature-humidity-page.expanded > .container,
+    #main-content-wrap.admin-chat-page.expanded > .container {
+        max-width: 1600px !important;
+        margin: 0 auto !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+
+    /* Card padding was making the actual content ~64px narrower than the
+       Dashboard content area. Pull only the direct card children back out. */
+    #main-content-wrap.orders-products-page .section-card > *,
+    #main-content-wrap.temperature-humidity-page .section-card > *,
+    #main-content-wrap.temperature-humidity-page .page-header > div[style*="grid-template-columns"] {
+        margin-left: -2rem !important;
+        margin-right: -2rem !important;
+        width: auto !important;
+    }
+
+    /* Chat: align the two panes with the container edges, then split the
+       available width proportionally instead of using a fixed 320px list. */
+    #main-content-wrap.admin-chat-page .chat-container {
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    #main-content-wrap.admin-chat-page .customer-list {
+        flex: 0 0 34% !important;
+        width: auto !important;
+        min-width: 260px !important;
+        max-width: 420px !important;
+    }
+
+    #main-content-wrap.admin-chat-page .chat-area {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
     }
 }
