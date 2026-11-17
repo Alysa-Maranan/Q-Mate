@@ -1600,16 +1600,6 @@
         padding-right: 2rem !important;
     }
 
-    /* Card padding was making the actual content ~64px narrower than the
-       Dashboard content area. Pull only the direct card children back out. */
-    #main-content-wrap.orders-products-page .section-card > *,
-    #main-content-wrap.temperature-humidity-page .section-card > *,
-    #main-content-wrap.temperature-humidity-page .page-header > div[style*="grid-template-columns"] {
-        margin-left: -2rem !important;
-        margin-right: -2rem !important;
-        width: auto !important;
-    }
-
     /* Chat: align the two panes with the container edges, then split the
        available width proportionally instead of using a fixed 320px list. */
     #main-content-wrap.admin-chat-page .chat-container {
@@ -1629,4 +1619,17 @@
         flex: 1 1 auto !important;
         min-width: 0 !important;
     }
+}
+
+/* ---------- ADMIN ORDERS & PRODUCTS: TAB ROW SIDE SPACING ---------------- */
+/* The main tab bar is a direct child of the container (not wrapped in a
+   card), so without padding its first/last buttons sit flush against the
+   container edge while every card's text is inset by 2rem. Pad the row by
+   the same 2rem so the tab buttons line up with the section card contents
+   on every tab (Orders, Cancellations, Products, Reviews) and on every
+   screen size. The nested review filter tabs are already inside a padded
+   card, so only the top-level tab row is targeted. */
+body #main-content-wrap.orders-products-page > .container > .category-tabs {
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
 }
