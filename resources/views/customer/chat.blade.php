@@ -133,7 +133,7 @@
 @endsection
 
 @section('customer-content')
-<div class="container">
+<div class="container customer-chat-page">
     @php
         $customerId = auth('customer')->id();
         $totalOrders = \App\Models\Order::where('customer_id', $customerId)->count();
@@ -229,6 +229,8 @@
 </div>
 
 <script>
+document.body.classList.add('customer-chat-page');
+
 const chatMessages = document.getElementById('chatMessages');
 const messageInput = document.getElementById('messageInput');
 const sendBtn = document.getElementById('sendBtn');

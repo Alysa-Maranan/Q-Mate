@@ -162,7 +162,7 @@
 
             .unread-badge {
                 background: #ff6b6b;
-                color: white;
+                color: #000000;
                 padding: 0.25rem 0.6rem;
                 border-radius: 12px;
                 font-size: 0.8rem;
@@ -227,7 +227,7 @@
 
             .customer-item.active .customer-name,
             .customer-item.active .customer-preview {
-                color: white;
+                color: #000000;
             }
 
             .customer-item.unread {
@@ -282,7 +282,7 @@
 
             .customer-name {
                 font-weight: 600;
-                color: #4e342e;
+                color: #000000;
                 margin-bottom: 0.25rem;
                 display: flex;
                 justify-content: space-between;
@@ -291,13 +291,13 @@
 
             .customer-time {
                 font-size: 0.75rem;
-                color: #8d6e63;
+                color: #000000;
                 font-weight: 400;
             }
 
             .customer-preview {
                 font-size: 0.85rem;
-                color: #8d6e63;
+                color: #000000;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -1404,6 +1404,8 @@
 
 
 <script>
+    document.body.classList.add('admin-chat-page');
+
     let currentCustomerId = null;
 
 
