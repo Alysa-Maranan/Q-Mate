@@ -1923,7 +1923,7 @@
                 <svg class="icon icon-robot" width="18" height="18" aria-hidden="true">
                     <use xlink:href="#icon-robot"/>
                 </svg>
-                COCO-SSD detects bird presence; the trained MobileNetV2 model classifies the breed
+                Quail is detected from the camera image; the breed is identified by plumage color (brown or gray/dark gray)
             </div>
 
             <div class="tutorial-section" style="margin-top: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #fff8e1 0%, #fff3e0 100%); border-radius: 12px; border: 1px solid #ffe0b2;">
@@ -1938,7 +1938,7 @@
                     <li><strong>Click "Start Camera"</strong> to enable your webcam, or <strong>Upload Image</strong> to use a saved photo</li>
                     <li><strong>Point the camera</strong> at your quails in good lighting</li>
                     <li><strong>Hold steady</strong> - the system auto-detects every 2 seconds</li>
-                    <li><strong>Bird detected?</strong> The complete result appears automatically, including the actual breed classification when available</li>
+                    <li><strong>Bird detected?</strong> The complete result appears automatically, including the breed identified from plumage color</li>
                     <li><strong>Human detected?</strong> You'll see an alert (for security)</li>
                 </ol>
             </div>
@@ -2214,6 +2214,7 @@
                 ['Lifespan', '2–3 years'],
                 ['Daily Feed', '~20–25 g per bird per day'],
                 ['Temperament', 'Active but easy to manage'],
+                ['Color', 'Brown with speckles'],
                 ['Climate', 'Adapts to hot, tropical climates']
             ],
             care: [
@@ -2257,7 +2258,7 @@
         },
         pharaoh_quail: {
             title: 'Pharaoh Quail Care Guide',
-            overview: 'A brown, streaked domestic Japanese quail raised for both eggs and meat. It is larger than many other Japanese quail lines and adapts well to tropical climates.',
+            overview: 'A gray to dark gray domestic Japanese quail raised for both eggs and meat. It adapts well to tropical climates.',
             facts: [
                 ['Scientific Name', 'Coturnix japonica'],
                 ['Primary Purpose', 'Eggs and meat (dual purpose)'],
@@ -2266,7 +2267,7 @@
                 ['Adult Weight', '150–200 g'],
                 ['Lifespan', '2–3 years'],
                 ['Daily Feed', '~20–30 g per bird per day'],
-                ['Color', 'Dark brown with a pattern'],
+                ['Color', 'Gray / dark gray'],
                 ['Climate', 'Suitable for tropical climates']
             ],
             care: [
@@ -4042,9 +4043,9 @@
 
             /*
              * BIRD:
-             * COCO-SSD only reports bird presence. The trained classifier
-             * runs while the dialog already shows an honest processing state
-             * with no invented breed values.
+             * The detector only reports bird presence. The color-rule
+             * classifier runs while the dialog already shows an honest
+             * processing state with no invented breed values.
              */
             if (isBird) {
                 lastClassification = null;
@@ -4256,7 +4257,7 @@
 
             const classifyResponse =
                 await fetch(
-                    '/quail-detection/classify',
+                    '{{ route("quail-detection.classify") }}',
                     {
                         method: 'POST',
 
@@ -4957,6 +4958,30 @@
                         ? 'Breed Not Identified'
                         : 'Not applicable');
 
+        const breedConfidenceDisplay =
+            finiteNumber(result.breedConfidence) !== null
+                ? Math.round(
+                    Math.min(
+                        100,
+                        Math.max(
+                            0,
+                            finiteNumber(result.breedConfidence) * 100
+                        )
+                    )
+                ) + '%'
+                : '100%';
+
+        const breedConfidenceHtml =
+            status === 'identified' &&
+            identifiedBreed !== 'Breed Not Identified'
+                ? `
+                    <div class="result-confidence-summary">
+                        <span>Breed Confidence</span>
+                        <strong>${breedConfidenceDisplay}</strong>
+                    </div>
+                `
+                : '';
+
         const imageHtml = result.imageData
             ? `<img src="${escapeHtml(result.imageData)}" alt="Captured detection result">`
             : `<div class="result-image-empty">No image recorded</div>`;
@@ -5018,22 +5043,6 @@
             `;
         }
 
-        const objectConfidenceText =
-            finiteNumber(result.objectConfidence) !== null
-                ? formatPercent(result.objectConfidence)
-                : 'Not available';
-
-        const objectConfidenceWidth =
-            finiteNumber(result.objectConfidence) === null
-                ? 0
-                : Math.min(
-                    100,
-                    Math.max(
-                        0,
-                        finiteNumber(result.objectConfidence) * 100
-                    )
-                );
-
         const html = `
             <div class="result-details">
                 <div>
@@ -5046,22 +5055,7 @@
                     <span class="result-breed-line-value${identifiedBreed === 'Breed Not Identified' || identifiedBreed === 'Processing…' ? ' muted' : ''}">${escapeHtml(identifiedBreed)}</span>
                 </div>
 
-                <div>
-                    <div class="result-confidence-summary">
-                        <span>Detection Confidence</span>
-                        <strong>${objectConfidenceText}</strong>
-                    </div>
-                    <div
-                        class="modal-confidence-bar"
-                        role="progressbar"
-                        aria-label="Detection confidence"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                        aria-valuenow="${objectConfidenceWidth.toFixed(0)}"
-                    >
-                        <div class="modal-confidence-fill" style="width:${objectConfidenceWidth.toFixed(1)}%"></div>
-                    </div>
-                </div>
+                ${breedConfidenceHtml}
 
                 <div class="result-facts result-mini-facts">
                     <div class="result-fact">

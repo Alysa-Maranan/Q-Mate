@@ -42,8 +42,8 @@ return [
             'typical_egg_production' => 'Typical estimate: 200–250 eggs per hen per year',
             'optimal_temperature' => '20.5 °C',
             'optimal_humidity' => '57.5 %',
-            'description' => 'Domestic Japanese quail variety with wild-type plumage.',
-            'reference_note' => 'A domestic Japanese quail variety associated with brown, streaked wild-type plumage. Production figures are general reference ranges, not measurements of the detected bird.',
+            'description' => 'Domestic Japanese quail variety with gray to dark gray plumage.',
+            'reference_note' => 'A domestic Japanese quail variety identified here by gray to dark gray plumage. Production figures are general reference ranges, not measurements of the detected bird.',
         ],
     ],
 

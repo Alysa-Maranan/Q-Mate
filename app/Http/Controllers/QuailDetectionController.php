@@ -536,7 +536,7 @@ class QuailDetectionController extends Controller
              */
 
             $pythonScript = base_path(
-                'classify_quail_breed.py'
+                'classify_quail_color.py'
             );
 
             $modelPath = base_path(
@@ -677,7 +677,7 @@ class QuailDetectionController extends Controller
 
             /*
              * ==========================================================
-             * 5. RUN THE ACTUAL TRAINED PYTHON CLASSIFIER
+             * 5. RUN THE DETERMINISTIC COLOR-RULE CLASSIFIER
              * ==========================================================
              */
 
@@ -691,7 +691,7 @@ class QuailDetectionController extends Controller
             );
 
             \Log::info(
-                'Executing trained quail breed classifier.'
+                'Executing quail color-rule classifier.'
             );
 
             $output = shell_exec(
@@ -815,11 +815,12 @@ class QuailDetectionController extends Controller
 
             /*
              * ==========================================================
-             * 10. MAP MODEL CLASS TO THE SAVED LABEL AND DATABASE BREED
+             * 10. MAP COLOR-RULE CLASS TO THE SAVED LABEL
              * ==========================================================
              *
-             * The label order is read from model_metadata.json; the model
-             * class index is never assumed to imply a particular breed.
+             * The label order is read from model_metadata.json; the returned
+             * class index is matched to the metadata label before mapping it
+             * to the configured breed reference.
              */
 
             $metadata = [];
