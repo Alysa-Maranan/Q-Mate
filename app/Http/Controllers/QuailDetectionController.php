@@ -947,6 +947,9 @@ class QuailDetectionController extends Controller
                 'typical_adult_weight' => (string) $breedReference['typical_adult_weight'],
                 'typical_maturity_age' => (string) $breedReference['typical_maturity_age'],
                 'typical_egg_production' => (string) $breedReference['typical_egg_production'],
+                'optimal_temperature' => (string) ($breedReference['optimal_temperature'] ?? ''),
+                'optimal_humidity' => (string) ($breedReference['optimal_humidity'] ?? ''),
+                'description' => (string) ($breedReference['description'] ?? ''),
                 'reference_note' => (string) $breedReference['reference_note'],
             ];
 

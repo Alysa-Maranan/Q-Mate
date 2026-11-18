@@ -928,6 +928,55 @@
         flex: 0 0 auto;
     }
 
+    .result-compact-body {
+        margin-bottom: 1.25rem;
+    }
+
+    .result-breed-line {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .result-breed-line-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #8d6e63;
+    }
+
+    .result-breed-line-value {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #4e342e;
+        word-break: break-word;
+    }
+
+    .result-breed-line-value.muted {
+        color: #9e8b82;
+        font-weight: 600;
+    }
+
+    .result-confidence-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #6d4c41;
+    }
+
+    .result-breed-info-block {
+        margin-bottom: 1.25rem;
+    }
+
+    .result-breed-info-block .result-section-title {
+        margin-bottom: 0.75rem;
+    }
+
     .result-image-wrap {
         display: grid;
         grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
@@ -1095,6 +1144,18 @@
         }
 
         .result-facts {
+            grid-template-columns: 1fr;
+        }
+
+        .result-breed-line {
+            align-items: flex-start;
+        }
+
+        .result-confidence-summary {
+            flex-wrap: wrap;
+        }
+
+        .modal-breed-grid {
             grid-template-columns: 1fr;
         }
 
@@ -2099,6 +2160,13 @@
      */
     const DETECTION_COOLDOWN_MS = 3000;
 
+    /*
+     * Canonical reference data from config/quail.php. Old history records may
+     * contain an older display name; the saved class key is still used to show
+     * the current breed-information label without running a new prediction.
+     */
+    const QUAIL_BREED_REFERENCES = @json(config('quail.breed_references'));
+
     const BREED_INFO = {
         japanese_quail_group: {
             breedName: "Japanese Coturnix Quail (Taiwan Crossbreed)",
@@ -2311,6 +2379,84 @@
         return value === null || value === undefined || value === ''
             ? fallback
             : value;
+    }
+
+    function isGenericBreedLabel(value) {
+        if (value === null || value === undefined) {
+            return true;
+        }
+
+        const label = String(value).trim().toLowerCase();
+
+        return [
+            '',
+            'quail',
+            'bird',
+            'unknown',
+            'uncertain detection',
+            'not identified',
+            'breed not identified',
+            'n/a',
+            'none'
+        ].indexOf(label) !== -1;
+    }
+
+    /*
+     * Replay the saved class reference, but use the current canonical label
+     * for that trained class. No new prediction is made here.
+     */
+    function resolveBreedReference(record) {
+        const source = record && typeof record === 'object'
+            ? record
+            : {};
+
+        const recorded =
+            source.breedReference &&
+            typeof source.breedReference === 'object'
+                ? source.breedReference
+                : null;
+
+        const key =
+            source.breedReferenceKey ||
+            (recorded ? recorded.reference_key : null) ||
+            null;
+
+        const canonical =
+            key && QUAIL_BREED_REFERENCES[key]
+                ? QUAIL_BREED_REFERENCES[key]
+                : null;
+
+        if (!canonical) {
+            return recorded;
+        }
+
+        return Object.assign(
+            {},
+            recorded || {},
+            canonical,
+            { reference_key: key }
+        );
+    }
+
+    function resolveRecordedBreedName(record) {
+        const source = record && typeof record === 'object'
+            ? record
+            : {};
+        const reference = resolveBreedReference(source);
+        const candidates = [
+            source.breedName,
+            reference ? reference.common_name : null
+        ];
+
+        for (const candidate of candidates) {
+            if (
+                !isGenericBreedLabel(candidate)
+            ) {
+                return String(candidate).trim();
+            }
+        }
+
+        return null;
     }
 
     /*
@@ -2676,13 +2822,17 @@
         historyList.innerHTML = filtered.map(rawDetection => {
             const detection = normalizeStoredDetection(rawDetection);
             const recordedId = escapeHtml(detection.id);
+            const recordedBreedName =
+                resolveRecordedBreedName(detection);
             const displayName =
-                detection.breedName ||
+                recordedBreedName ||
                 detection.objectClass ||
                 'Detection';
             const statusLabel =
                 detection.classificationStatus === 'identified'
-                    ? 'Breed identified'
+                    ? (recordedBreedName
+                        ? 'Breed identified'
+                        : 'Breed Not Identified')
                     : detection.classificationStatus === 'uncertain'
                         ? 'Uncertain classification'
                         : detection.classificationStatus === 'unavailable'
@@ -4675,17 +4825,17 @@
             },
             identified: {
                 className: 'success',
-                title: 'Quail Detected — Breed Identified',
+                title: 'Quail Detected!',
                 message: result.classificationMessage
             },
             uncertain: {
                 className: 'uncertain',
-                title: 'Bird Detected — Breed Not Identified',
+                title: 'Bird Detected',
                 message: result.classificationMessage
             },
             unavailable: {
                 className: 'uncertain',
-                title: 'Bird Detected — Breed Not Identified',
+                title: 'Bird Detected',
                 message: result.classificationMessage
             },
             legacy: {
@@ -4719,12 +4869,17 @@
         const classificationLabel =
             classificationLabelMap[status] || 'Not recorded';
 
+        const recordedBreedName =
+            resolveRecordedBreedName(result);
+
         const identifiedBreed =
-            status === 'identified' && result.breedName
-                ? result.breedName
-                : (isQuail
-                    ? 'Breed Not Identified'
-                    : 'Not applicable');
+            status === 'processing'
+                ? 'Processing…'
+                : status === 'identified'
+                    ? (recordedBreedName || 'Breed Not Identified')
+                    : (isQuail
+                        ? 'Breed Not Identified'
+                        : 'Not applicable');
 
         let breedConfidenceText = 'Not applicable';
 
@@ -4752,7 +4907,7 @@
             ? `<img src="${escapeHtml(result.imageData)}" alt="Captured detection result">`
             : `<div style="padding:2.5rem 1rem;color:#9e8b82;font-size:0.85rem;">No image recorded</div>`;
 
-        const reference = result.breedReference;
+        const reference = resolveBreedReference(result);
 
         let breedInformationHtml = `
             <div class="result-note">
@@ -4761,43 +4916,52 @@
         `;
 
         if (isQuail && reference && typeof reference === 'object') {
+            const breedInfoTitle =
+                recordedBreedName ||
+                unavailableValue(
+                    reference.common_name,
+                    'Breed Not Identified'
+                );
+
             breedInformationHtml = `
-                <div class="result-facts">
-                    <div class="result-fact">
-                        <span class="result-fact-label">Common Name</span>
-                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.common_name))}</span>
+                <div class="modal-breed-info result-breed-card">
+                    <div class="modal-breed-title">${escapeHtml(breedInfoTitle)}</div>
+
+                    <div class="modal-breed-grid">
+                        <div class="modal-breed-item">
+                            <span class="modal-breed-label">Scientific Name</span>
+                            <span class="modal-breed-value">${escapeHtml(unavailableValue(reference.scientific_name, 'Data Unavailable'))}</span>
+                        </div>
+                        <div class="modal-breed-item">
+                            <span class="modal-breed-label">Egg Production</span>
+                            <span class="modal-breed-value">${escapeHtml(unavailableValue(reference.typical_egg_production, 'Data Unavailable'))}</span>
+                        </div>
+                        <div class="modal-breed-item">
+                            <span class="modal-breed-label">Mature Weight</span>
+                            <span class="modal-breed-value">${escapeHtml(unavailableValue(reference.typical_adult_weight, 'Data Unavailable'))}</span>
+                        </div>
+                        <div class="modal-breed-item">
+                            <span class="modal-breed-label">Maturity Age</span>
+                            <span class="modal-breed-value">${escapeHtml(unavailableValue(reference.typical_maturity_age, 'Data Unavailable'))}</span>
+                        </div>
+                        <div class="modal-breed-item">
+                            <span class="modal-breed-label">Temperature</span>
+                            <span class="modal-breed-value">${escapeHtml(unavailableValue(reference.optimal_temperature, 'Data Unavailable'))}</span>
+                        </div>
+                        <div class="modal-breed-item">
+                            <span class="modal-breed-label">Humidity</span>
+                            <span class="modal-breed-value">${escapeHtml(unavailableValue(reference.optimal_humidity, 'Data Unavailable'))}</span>
+                        </div>
                     </div>
-                    <div class="result-fact">
-                        <span class="result-fact-label">Scientific Name</span>
-                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.scientific_name))}</span>
-                    </div>
-                    <div class="result-fact">
-                        <span class="result-fact-label">Species</span>
-                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.species))}</span>
-                    </div>
-                    <div class="result-fact">
-                        <span class="result-fact-label">Breed or Variety</span>
-                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.breed_or_variety))}</span>
-                    </div>
-                    <div class="result-fact">
-                        <span class="result-fact-label">Typical Adult Weight</span>
-                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.typical_adult_weight))}</span>
-                    </div>
-                    <div class="result-fact">
-                        <span class="result-fact-label">Typical Age at Sexual Maturity</span>
-                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.typical_maturity_age))}</span>
-                    </div>
-                    <div class="result-fact wide">
-                        <span class="result-fact-label">Typical Egg Production</span>
-                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.typical_egg_production))}</span>
-                    </div>
+
+                    <div class="modal-breed-description">${escapeHtml(unavailableValue(reference.description, reference.reference_note))}</div>
+                    <p class="result-note">
+                        These are general breed reference values. They are not
+                        measurements of the detected bird, and the temperature
+                        and humidity above are breed housing references, not
+                        DHT22 readings.
+                    </p>
                 </div>
-                <p class="result-description">${escapeHtml(unavailableValue(reference.reference_note))}</p>
-                <p class="result-note">
-                    These are general reference ranges for the breed or variety.
-                    They are not measurements of the individual bird, and egg
-                    production or maturity cannot be determined from an image.
-                </p>
             `;
         } else if (isQuail) {
             breedInformationHtml = `
@@ -4843,39 +5007,47 @@
                 );
 
         const html = `
-            <div class="result-status-banner ${escapeHtml(statusView.className)}">
-                <span class="result-status-dot"></span>
-                <div>
-                    <strong>${escapeHtml(statusView.title)}</strong>
-                    <p>${escapeHtml(statusView.message)}</p>
+            <div class="modal-body result-compact-body">
+                <div class="modal-left">
+                    <div class="modal-thumb">${imageHtml}</div>
+                    <div class="result-image-caption">Captured image</div>
                 </div>
-            </div>
 
-            <section class="result-section">
-                <h3 class="result-section-title">
-                    <svg class="icon" width="18" height="18" aria-hidden="true">
-                        <use xlink:href="#icon-eye"/>
-                    </svg>
-                    Detection Information
-                </h3>
-
-                <div class="result-image-wrap">
+                <div class="modal-right">
                     <div>
-                        <div class="result-image-frame">${imageHtml}</div>
-                        <div class="result-image-caption">Captured image</div>
+                        <div class="modal-status-text">${escapeHtml(statusView.title)}</div>
+                        <div class="modal-status-details">${escapeHtml(statusView.message)}</div>
                     </div>
 
-                    <div class="result-facts">
-                        <div class="result-fact">
-                            <span class="result-fact-label">Detection ID</span>
-                            <span class="result-fact-value">${escapeHtml(result.id)}</span>
+                    <div class="result-breed-line">
+                        <span class="result-breed-line-label">Breed:</span>
+                        <span class="result-breed-line-value${identifiedBreed === 'Breed Not Identified' || identifiedBreed === 'Processing…' ? ' muted' : ''}">${escapeHtml(identifiedBreed)}</span>
+                    </div>
+
+                    <div>
+                        <div class="result-confidence-summary">
+                            <span>Detection Confidence</span>
+                            <strong>${objectConfidenceText}</strong>
                         </div>
+                        <div
+                            class="modal-confidence-bar"
+                            role="progressbar"
+                            aria-label="Object detection confidence"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="${objectConfidenceWidth.toFixed(0)}"
+                        >
+                            <div class="modal-confidence-fill" style="width:${objectConfidenceWidth.toFixed(1)}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="result-facts result-mini-facts">
                         <div class="result-fact">
                             <span class="result-fact-label">Detection Date &amp; Time</span>
                             <span class="result-fact-value">${escapeHtml(formatDateTime(result.detectedAt))}</span>
                         </div>
                         <div class="result-fact">
-                            <span class="result-fact-label">Object Detection Result</span>
+                            <span class="result-fact-label">Object Detected</span>
                             <span class="result-fact-value">${escapeHtml(unavailableValue(result.objectDetectionResult))}</span>
                         </div>
                         <div class="result-fact">
@@ -4883,46 +5055,31 @@
                             <span class="result-fact-value">${escapeHtml(classificationLabel)}</span>
                         </div>
                         <div class="result-fact">
-                            <span class="result-fact-label">Identified Breed</span>
-                            <span class="result-fact-value${identifiedBreed === 'Breed Not Identified' ? ' muted' : ''}">${escapeHtml(identifiedBreed)}</span>
-                        </div>
-                        <div class="result-fact">
                             <span class="result-fact-label">Model Class</span>
                             <span class="result-fact-value">${escapeHtml(unavailableValue(result.modelClassName, 'Not recorded'))}</span>
                         </div>
                     </div>
+
+                    <div class="result-confidence-block">
+                        <div class="result-confidence-row">
+                            <span>Object Detection Confidence (COCO-SSD)</span>
+                            <strong>${objectConfidenceText}</strong>
+                        </div>
+                        <div class="result-confidence-row" style="margin-top:0.6rem;">
+                            <span>Breed Classification Confidence (MobileNetV2)</span>
+                            <strong>${escapeHtml(breedConfidenceText)}</strong>
+                        </div>
+                    </div>
+
+                    <p class="result-note">
+                        COCO-SSD only detects that a bird-like object is present.
+                        It cannot identify a quail breed. Breed identification,
+                        when shown, comes only from the trained MobileNetV2 classifier.
+                    </p>
                 </div>
+            </div>
 
-                <div class="result-confidence-block">
-                    <div class="result-confidence-row">
-                        <span>Object Detection Confidence (COCO-SSD)</span>
-                        <strong>${objectConfidenceText}</strong>
-                    </div>
-                    <div
-                        class="result-confidence-bar"
-                        role="progressbar"
-                        aria-label="Object detection confidence"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                        aria-valuenow="${objectConfidenceWidth.toFixed(0)}"
-                    >
-                        <div class="result-confidence-fill" style="width:${objectConfidenceWidth.toFixed(1)}%"></div>
-                    </div>
-
-                    <div class="result-confidence-row" style="margin-top:0.85rem;">
-                        <span>Breed Classification Confidence (MobileNetV2)</span>
-                        <strong>${escapeHtml(breedConfidenceText)}</strong>
-                    </div>
-                </div>
-
-                <p class="result-note">
-                    COCO-SSD only detects that a bird-like object is present.
-                    It cannot identify a quail breed. Breed identification,
-                    when shown, comes only from the trained MobileNetV2 classifier.
-                </p>
-            </section>
-
-            <section class="result-section">
+            <div class="result-breed-info-block">
                 <h3 class="result-section-title">
                     <svg class="icon" width="18" height="18" aria-hidden="true">
                         <use xlink:href="#icon-quail"/>
@@ -4930,14 +5087,14 @@
                     Quail Breed Information
                 </h3>
                 ${breedInformationHtml}
-            </section>
+            </div>
 
             <section class="result-section">
                 <h3 class="result-section-title">
                     <svg class="icon" width="18" height="18" aria-hidden="true">
                         <use xlink:href="#icon-robot"/>
                     </svg>
-                    Environmental Conditions
+                    Actual DHT22 Readings
                 </h3>
 
                 <div class="result-facts">

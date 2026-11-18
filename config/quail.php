@@ -16,15 +16,20 @@ return [
      */
     'breed_references' => [
         'japanese_quail_group' => [
-            'breed_id' => 2,
-            'common_name' => 'Japanese Coturnix Quail (Taiwan Crossbreed)',
+            // The trained Japanese group maps to the common Japanese quail
+            // breed shown in the app's breed info (quail_breeds ID 1).
+            'breed_id' => 1,
+            'common_name' => 'Japanese Quail / Coturnix Quail',
             'scientific_name' => 'Coturnix japonica',
             'species' => 'Japanese quail',
-            'breed_or_variety' => 'Taiwan crossbreed / breeding line',
-            'typical_adult_weight' => 'Typical estimate: 100–135 g per adult',
-            'typical_maturity_age' => 'Typical estimate: 42–56 days (6–8 weeks)',
-            'typical_egg_production' => 'Typical estimate: 250–300 eggs per hen per year',
-            'reference_note' => 'A crossbreed or breeding line identified by its breeding background. Weight, maturity, and egg production vary with genetics, sex, age, diet, lighting, and management.',
+            'breed_or_variety' => 'Common domestic Japanese quail / Coturnix quail',
+            'typical_adult_weight' => '120.00 g mature weight (typical)',
+            'typical_maturity_age' => '42 days (typical)',
+            'typical_egg_production' => '280 eggs per hen per year (typical)',
+            'optimal_temperature' => '20.5 °C',
+            'optimal_humidity' => '57.5 %',
+            'description' => 'Most common Japanese quail breed.',
+            'reference_note' => 'Most common Japanese quail breed. Weight, maturity, egg production, temperature, and humidity are general breed reference values, not measurements of the individual bird or a DHT22 reading.',
         ],
         'pharaoh_quail' => [
             'breed_id' => 3,
@@ -35,6 +40,9 @@ return [
             'typical_adult_weight' => 'Typical estimate: 100–130 g per adult',
             'typical_maturity_age' => 'Typical estimate: 42–56 days (6–8 weeks)',
             'typical_egg_production' => 'Typical estimate: 200–250 eggs per hen per year',
+            'optimal_temperature' => '20.5 °C',
+            'optimal_humidity' => '57.5 %',
+            'description' => 'Domestic Japanese quail variety with wild-type plumage.',
             'reference_note' => 'A domestic Japanese quail variety associated with brown, streaked wild-type plumage. Production figures are general reference ranges, not measurements of the detected bird.',
         ],
     ],
@@ -45,7 +53,7 @@ return [
      */
     'breeds' => [
         'japanese' => [
-            'name' => 'Japanese Quail (Coturnix Japonica)',
+            'name' => 'Japanese Quail / Coturnix Quail',
             'scientific_name' => 'Coturnix japonica',
             'description' => 'Japanese quail species information; not a breed prediction.'
         ],
