@@ -62,19 +62,37 @@ class QuailDetectionController extends Controller
         }
 
         $validated = $request->validate([
-            'detection_type' => 'required|in:quail,human,unknown',
+            'detection_type' => 'required|in:quail,human,object,unknown',
             'quail_breed_id' => 'nullable|exists:quail_breeds,id',
             'confidence' => 'nullable|numeric|min:0|max:1',
-            'location' => 'nullable|string',
+            'location' => 'nullable|string|max:255',
             'detection_notes' => 'nullable|string',
             'image_data' => 'nullable|string',
+
+            // Full normalized detection result shown in the modal.
+            'client_detection_id' => 'nullable|string|max:100',
+            'detected_at' => 'nullable|date',
+            'object_class' => 'nullable|string|max:100',
+            'object_detection_result' => 'nullable|string|max:100',
+            'object_confidence' => 'nullable|numeric|min:0|max:1',
+            'classification_status' => 'nullable|string|max:50',
+            'breed_name' => 'nullable|string|max:255',
+            'model_class_name' => 'nullable|string|max:100',
+            'breed_reference_key' => 'nullable|string|max:100',
+            'breed_confidence' => 'nullable|numeric|min:0|max:1',
+            'breed_reference' => 'nullable|array',
+            'temperature' => 'nullable|numeric|min:-40|max:80',
+            'humidity' => 'nullable|numeric|min:0|max:100',
+            'sensor_source' => 'nullable|string|max:50',
+            'sensor_status' => 'nullable|string|max:50',
+            'recorded_at' => 'nullable|date',
         ]);
 
         try {
             $imagePath = null;
 
-            if ($request->has('image_data')) {
-                $imageData = $request->input('image_data');
+            if (!empty($request->input('image_data'))) {
+                $imageData = (string) $request->input('image_data');
 
                 if (strpos($imageData, 'base64') !== false) {
                     $image = str_replace(
@@ -126,6 +144,53 @@ class QuailDetectionController extends Controller
                 }
             }
 
+            /*
+             * Keep the complete modal payload in the existing JSON column so
+             * history can reproduce the exact recorded values without a
+             * new prediction or a breed default. The legacy confidence
+             * column keeps storing the object-detection score for reports.
+             */
+
+            $resultData = [
+                'detection_id' =>
+                    $validated['client_detection_id'] ?? null,
+                'detected_at' =>
+                    $validated['detected_at'] ?? null,
+                'detection_type' =>
+                    $validated['detection_type'],
+                'object_class' =>
+                    $validated['object_class']
+                    ?? ($validated['object_detection_result'] ?? null),
+                'object_detection_result' =>
+                    $validated['object_detection_result'] ?? null,
+                'object_confidence' =>
+                    $validated['object_confidence']
+                    ?? ($validated['confidence'] ?? null),
+                'classification_status' =>
+                    $validated['classification_status'] ?? 'not_applicable',
+                'breed_name' =>
+                    $validated['breed_name'] ?? null,
+                'model_class_name' =>
+                    $validated['model_class_name'] ?? null,
+                'breed_reference_key' =>
+                    $validated['breed_reference_key'] ?? null,
+                'breed_confidence' =>
+                    $validated['breed_confidence'] ?? null,
+                'breed_reference' =>
+                    $validated['breed_reference'] ?? null,
+                'temperature' =>
+                    $validated['temperature'] ?? null,
+                'humidity' =>
+                    $validated['humidity'] ?? null,
+                'sensor_source' =>
+                    $validated['sensor_source'] ?? null,
+                'sensor_status' =>
+                    $validated['sensor_status'] ?? 'unavailable',
+                'sensor_recorded_at' =>
+                    $validated['recorded_at'] ?? null,
+                'image_path' => $imagePath,
+            ];
+
             $detection = DetectionHistory::create([
                 'user_id' => auth()->id(),
                 'quail_breed_id' =>
@@ -139,6 +204,7 @@ class QuailDetectionController extends Controller
                 'detection_notes' =>
                     $validated['detection_notes'] ?? null,
                 'image_path' => $imagePath,
+                'raw_detection_data' => $resultData,
             ]);
 
             return response()->json([
@@ -804,25 +870,40 @@ class QuailDetectionController extends Controller
             }
 
             /*
-             * Map the saved label (not the class index) to the existing
-             * database breed. Legacy labels are kept for older models.
+             * Map the saved label (not the class index) to the configured
+             * reference data. Legacy labels are accepted only when they
+             * resolve to one of the two supported trained classes.
              */
 
-            $labelToBreedId = [
-                'japanese_quail_group' => 2,
-                'japanese_quail' => 1,
-                'japanese_coturnix_crossbreed_taiwan' => 2,
-                'pharaoh_quail' => 3,
+            $referenceKeyByLabel = [
+                'japanese_quail_group' => 'japanese_quail_group',
+                'japanese_quail' => 'japanese_quail_group',
+                'japanese_coturnix_crossbreed_taiwan' => 'japanese_quail_group',
+                'pharaoh_quail' => 'pharaoh_quail',
             ];
 
-            if (!array_key_exists($classLabel, $labelToBreedId)) {
+            $referenceKey =
+                $referenceKeyByLabel[$classLabel] ?? null;
+
+            if ($referenceKey === null) {
                 throw new \RuntimeException(
-                    'No database breed mapping for model class label: ' .
+                    'No breed reference mapping for model class label: ' .
                     $classLabel
                 );
             }
 
-            $breedId = $labelToBreedId[$classLabel];
+            $breedReference = config(
+                'quail.breed_references.' . $referenceKey
+            );
+
+            if (!is_array($breedReference)) {
+                throw new \RuntimeException(
+                    'Breed reference configuration is missing for: ' .
+                    $referenceKey
+                );
+            }
+
+            $breedId = (int) $breedReference['breed_id'];
 
             /*
              * ==========================================================
@@ -842,18 +923,32 @@ class QuailDetectionController extends Controller
             }
 
             /*
-             * The display breed name comes from the saved metadata so the
-             * two names stay separate even though both are Coturnix japonica.
+             * The display name and reference values come from the saved
+             * configuration for this trained class. The database breed is
+             * still required so existing breed relations keep working.
              */
 
-            $breedName = $metadataDisplayNames[$classLabel]
-                ?? (isset($result['breed_name'])
-                    ? trim((string) $result['breed_name'])
-                    : '');
+            $breedName = (string) $breedReference['common_name'];
 
             if ($breedName === '') {
-                $breedName = $breed->name;
+                $breedName = (string) (
+                    $metadataDisplayNames[$classLabel]
+                    ?? ($result['breed_name'] ?? $breed->name)
+                );
             }
+
+            $normalizedReference = [
+                'reference_key' => $referenceKey,
+                'breed_id' => $breedId,
+                'common_name' => $breedName,
+                'scientific_name' => (string) $breedReference['scientific_name'],
+                'species' => (string) $breedReference['species'],
+                'breed_or_variety' => (string) $breedReference['breed_or_variety'],
+                'typical_adult_weight' => (string) $breedReference['typical_adult_weight'],
+                'typical_maturity_age' => (string) $breedReference['typical_maturity_age'],
+                'typical_egg_production' => (string) $breedReference['typical_egg_production'],
+                'reference_note' => (string) $breedReference['reference_note'],
+            ];
 
             /*
              * ==========================================================
@@ -936,6 +1031,12 @@ class QuailDetectionController extends Controller
 
                 'breed_name' =>
                     $uncertain ? null : $breedName,
+
+                'breed_reference_key' =>
+                    $uncertain ? null : $referenceKey,
+
+                'breed_reference' =>
+                    $uncertain ? null : $normalizedReference,
 
                 'model_class_name' =>
                     $modelClassName,

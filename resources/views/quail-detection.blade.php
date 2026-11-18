@@ -797,6 +797,316 @@
         line-height: 1.5;
     }
 
+    /* Unified detection result modal (live + saved history) */
+    #detectionModal .modal-content.result-modal-content {
+        max-width: 940px;
+        max-height: min(94vh, 960px);
+        padding: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        border-radius: 20px;
+    }
+
+    .result-modal-hero {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.35rem 1.6rem;
+        color: #fff;
+        background:
+            radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.18), transparent 42%),
+            linear-gradient(135deg, #4e342e 0%, #6d4c41 58%, #a1887f 100%);
+        flex: 0 0 auto;
+    }
+
+    .result-modal-eyebrow {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.85;
+        margin-bottom: 0.35rem;
+    }
+
+    .result-modal-hero h2 {
+        margin: 0;
+        font-size: 1.55rem;
+        line-height: 1.25;
+        font-weight: 700;
+    }
+
+    .result-modal-subtitle {
+        margin: 0.4rem 0 0;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        opacity: 0.9;
+    }
+
+    #detectionModal .result-modal-hero .modal-close {
+        color: #fff;
+        flex: 0 0 auto;
+    }
+
+    .result-modal-scroll {
+        padding: 1.35rem 1.6rem 0.5rem;
+        overflow-y: auto;
+        min-height: 0;
+        background: #fffdfa;
+    }
+
+    .result-status-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.8rem;
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+        margin-bottom: 1.25rem;
+        border-left: 4px solid #a1887f;
+        background: #f7f1ed;
+    }
+
+    .result-status-banner.success {
+        border-left-color: #43a047;
+        background: #eaf5ea;
+    }
+
+    .result-status-banner.uncertain {
+        border-left-color: #ff9800;
+        background: #fff8e1;
+    }
+
+    .result-status-banner.processing {
+        border-left-color: #6d4c41;
+        background: #efebe9;
+    }
+
+    .result-status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: currentColor;
+        margin-top: 0.35rem;
+        flex: 0 0 auto;
+        opacity: 0.75;
+    }
+
+    .result-status-banner strong {
+        display: block;
+        color: #4e342e;
+        font-size: 0.95rem;
+        margin-bottom: 0.2rem;
+    }
+
+    .result-status-banner p {
+        margin: 0;
+        color: #6d5c52;
+        font-size: 0.84rem;
+        line-height: 1.5;
+    }
+
+    .result-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .result-section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #6d4c41;
+        margin: 0 0 0.85rem;
+        padding-bottom: 0.45rem;
+        border-bottom: 2px solid #f0e5df;
+    }
+
+    .result-section-title .icon {
+        color: #a1887f;
+        flex: 0 0 auto;
+    }
+
+    .result-image-wrap {
+        display: grid;
+        grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+        gap: 1rem;
+        align-items: start;
+        margin-bottom: 1rem;
+    }
+
+    .result-image-frame {
+        border-radius: 14px;
+        overflow: hidden;
+        border: 2px solid #e0d6d2;
+        background: #efebe9;
+        min-height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .result-image-frame img {
+        width: 100%;
+        height: 100%;
+        max-height: 240px;
+        object-fit: contain;
+        display: block;
+        background: #efebe9;
+    }
+
+    .result-image-caption {
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #8d6e63;
+        margin-top: 0.4rem;
+    }
+
+    .result-facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.7rem;
+    }
+
+    .result-fact {
+        background: #fff;
+        border: 1px solid #e0d6d2;
+        border-left: 3px solid #a1887f;
+        border-radius: 10px;
+        padding: 0.7rem 0.8rem;
+        min-width: 0;
+    }
+
+    .result-fact.wide {
+        grid-column: 1 / -1;
+    }
+
+    .result-fact-label {
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #8d6e63;
+        margin-bottom: 0.3rem;
+    }
+
+    .result-fact-value {
+        display: block;
+        font-size: 0.88rem;
+        font-weight: 700;
+        line-height: 1.45;
+        color: #4e342e;
+        word-break: break-word;
+    }
+
+    .result-fact-value.muted {
+        color: #9e8b82;
+        font-weight: 600;
+    }
+
+    .result-confidence-block {
+        background: #fff;
+        border: 1px solid #e0d6d2;
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+    }
+
+    .result-confidence-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .result-confidence-row span {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #8d6e63;
+    }
+
+    .result-confidence-row strong {
+        font-size: 0.95rem;
+        color: #4e342e;
+    }
+
+    .result-confidence-bar {
+        height: 8px;
+        border-radius: 999px;
+        background: #e8ded9;
+        overflow: hidden;
+    }
+
+    .result-confidence-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #a5d6a7 0%, #43a047 100%);
+    }
+
+    .result-note {
+        margin: 0.85rem 0 0;
+        padding: 0.7rem 0.85rem;
+        border-radius: 10px;
+        background: #fff8e1;
+        border: 1px solid #ffe0b2;
+        color: #7a5b2e;
+        font-size: 0.78rem;
+        line-height: 1.55;
+    }
+
+    .result-description {
+        margin: 0.9rem 0 0;
+        color: #5d4037;
+        font-size: 0.86rem;
+        line-height: 1.65;
+    }
+
+    .result-modal-actions {
+        flex: 0 0 auto;
+        margin: 0;
+        padding: 1rem 1.6rem 1.2rem;
+        border-top: 1px solid #efebe9;
+        background: #fff;
+    }
+
+    @media (max-width: 768px) {
+        .result-modal-hero {
+            padding: 1.1rem;
+        }
+
+        .result-modal-hero h2 {
+            font-size: 1.3rem;
+        }
+
+        .result-modal-scroll {
+            padding: 1rem 1.1rem 0.5rem;
+        }
+
+        .result-image-wrap {
+            grid-template-columns: 1fr;
+        }
+
+        .result-image-frame img {
+            max-height: 210px;
+        }
+
+        .result-facts {
+            grid-template-columns: 1fr;
+        }
+
+        .result-modal-actions {
+            padding: 0.85rem 1.1rem 1rem;
+        }
+
+        .result-modal-actions .modal-btn {
+            flex: 1 1 140px;
+        }
+    }
+
     .modal-buttons {
         display: flex;
         gap: 1rem;
@@ -1516,7 +1826,7 @@
                 <svg class="icon icon-robot" width="18" height="18" aria-hidden="true">
                     <use xlink:href="#icon-robot"/>
                 </svg>
-                Using TensorFlow.js with COCO-SSD model for real-time object detection
+                COCO-SSD detects bird presence; the trained MobileNetV2 model classifies the breed
             </div>
 
             <div class="tutorial-section" style="margin-top: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #fff8e1 0%, #fff3e0 100%); border-radius: 12px; border: 1px solid #ffe0b2;">
@@ -1531,7 +1841,7 @@
                     <li><strong>Click "Start Camera"</strong> to enable your webcam, or <strong>Upload Image</strong> to use a saved photo</li>
                     <li><strong>Point the camera</strong> at your quails in good lighting</li>
                     <li><strong>Hold steady</strong> - the system auto-detects every 2 seconds</li>
-                    <li><strong>Quail detected?</strong> Breed info will appear automatically</li>
+                    <li><strong>Bird detected?</strong> The complete result appears automatically, including the actual breed classification when available</li>
                     <li><strong>Human detected?</strong> You'll see an alert (for security)</li>
                 </ol>
             </div>
@@ -1569,12 +1879,17 @@
     </div>
 </div>
 
-<!-- Detection Result Modal -->
+<!-- Detection Result Modal (shared by live detection and saved history) -->
 <div id="detectionModal" class="modal" aria-hidden="true">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="detection-modal-title">
-
-        <div class="modal-header">
-            <h2 class="modal-title" id="detection-modal-title">Detection Result</h2>
+    <div class="modal-content result-modal-content" role="dialog" aria-modal="true" aria-labelledby="detection-modal-title">
+        <div class="result-modal-hero">
+            <div>
+                <span class="result-modal-eyebrow">Detection Result</span>
+                <h2 id="detection-modal-title">Detection Result</h2>
+                <p class="result-modal-subtitle" id="detection-modal-subtitle">
+                    Live and saved detections use this same result view.
+                </p>
+            </div>
 
             <button
                 type="button"
@@ -1589,108 +1904,23 @@
             </button>
         </div>
 
-        <div class="modal-result">
-            <div class="modal-body" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; align-items: start;">
+        <div class="result-modal-scroll" id="detectionResultContent"></div>
 
-                <div class="modal-left">
-                    <div class="modal-thumb">
-                        <img
-                            id="modal-thumb-img"
-                            alt="Detection thumbnail"
-                            src=""
-                            style="display:none; width:100%; height:auto; border-radius:12px; object-fit:cover;"
-                        />
-                    </div>
-                </div>
-
-                <div class="modal-right">
-                    <div
-                        class="modal-status-text"
-                        id="modal-status-text"
-                        style="font-size: 1.3rem; font-weight: 700; color: #6d4c41; margin-bottom: 0.5rem;"
-                    >
-                        Analyzing...
-                    </div>
-
-                    <div
-                        class="modal-status-details"
-                        id="modal-status-details"
-                        style="font-size: 1rem; color: #8d6e63; margin-bottom: 1rem;"
-                    ></div>
-
-                    <div
-                        id="modal-confidence-container"
-                        style="display: none; padding: 1rem 0; border-top: 1px solid #d7ccc8; border-bottom: 1px solid #d7ccc8;"
-                    >
-                        <div
-                            class="modal-confidence"
-                            style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem; font-weight: 500;"
-                        >
-                            Detection Confidence
-                        </div>
-
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div class="modal-confidence-bar" style="flex: 1;">
-                                <div class="modal-confidence-fill" id="modal-confidence-fill"></div>
-                            </div>
-
-                            <span
-                                id="modal-confidence-value"
-                                style="font-weight: 700; color: #6d4c41; min-width: 40px; text-align: right;"
-                            >
-                                0%
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="modal-breed-info" class="modal-breed-info" style="display: none;">
-            <h3 class="modal-breed-title" id="modal-breed-name">Breed Information</h3>
-
-            <div class="modal-breed-grid">
-                <div class="modal-breed-item">
-                    <div class="modal-breed-label">Scientific Name</div>
-                    <div class="modal-breed-value" id="modal-breed-scientific">N/A</div>
-                </div>
-
-                <div class="modal-breed-item">
-                    <div class="modal-breed-label">Egg Production</div>
-                    <div class="modal-breed-value" id="modal-breed-eggs">N/A</div>
-                </div>
-
-                <div class="modal-breed-item">
-                    <div class="modal-breed-label">Mature Weight</div>
-                    <div class="modal-breed-value" id="modal-breed-weight">N/A</div>
-                </div>
-
-                <div class="modal-breed-item">
-                    <div class="modal-breed-label">Maturity Age</div>
-                    <div class="modal-breed-value" id="modal-breed-age">N/A</div>
-                </div>
-
-                <div class="modal-breed-item">
-                    <div class="modal-breed-label">Temperature</div>
-                    <div class="modal-breed-value" id="modal-breed-temp">N/A</div>
-                </div>
-
-                <div class="modal-breed-item">
-                    <div class="modal-breed-label">Humidity</div>
-                    <div class="modal-breed-value" id="modal-breed-humidity">N/A</div>
-                </div>
-            </div>
-
-            <p id="modal-breed-description" class="modal-breed-description"></p>
-        </div>
-
-        <div class="modal-buttons">
+        <div class="modal-buttons result-modal-actions">
             <button
                 type="button"
                 class="modal-btn modal-btn-secondary"
                 id="detectionModalCloseBottomButton"
             >
                 Close
+            </button>
+
+            <button
+                type="button"
+                class="modal-btn modal-btn-primary"
+                id="detectionModalScanAgainButton"
+            >
+                Scan Again
             </button>
         </div>
     </div>
@@ -1858,6 +2088,16 @@
     let deleteMode = 'single';
     let lastClassification = null;
     let modalCooldownUntil = 0;
+    let classificationInProgress = false;
+    let lastDetectionCompletedAt = 0;
+    let lastDetectionRecord = null;
+    let detectionDialogToken = 0;
+
+    /*
+     * Consecutive camera frames contain the same bird. This cooldown
+     * suppresses repeat dialogs; it is not an artificial loading delay.
+     */
+    const DETECTION_COOLDOWN_MS = 3000;
 
     const BREED_INFO = {
         japanese_quail_group: {
@@ -2022,6 +2262,293 @@
         }
     };
 
+    function escapeHtml(value) {
+        return String(
+            value === null || value === undefined ? '' : value
+        )
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function finiteNumber(value) {
+        const number = Number(value);
+        return Number.isFinite(number) ? number : null;
+    }
+
+    function formatPercent(value) {
+        const number = finiteNumber(value);
+
+        if (number === null) {
+            return 'Not available';
+        }
+
+        return (
+            Math.min(1, Math.max(0, number)) * 100
+        ).toFixed(1) + '%';
+    }
+
+    function formatDateTime(value) {
+        const date = value ? new Date(value) : null;
+
+        if (!date || Number.isNaN(date.getTime())) {
+            return 'Not recorded';
+        }
+
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+
+    function unavailableValue(value, fallback = 'Not recorded') {
+        return value === null || value === undefined || value === ''
+            ? fallback
+            : value;
+    }
+
+    /*
+     * Fetch the latest real DHT22 reading. Weather fallback values are
+     * deliberately rejected: this modal must show sensor data or state
+     * that the data is unavailable.
+     */
+    async function fetchLatestSensorReading() {
+        const unavailable = {
+            temperature: null,
+            humidity: null,
+            sensorStatus: 'unavailable',
+            sensorSource: null,
+            sensorRecordedAt: null
+        };
+
+        try {
+            const response = await fetch(
+                '/api/sensor-data/latest',
+                { cache: 'no-store' }
+            );
+
+            if (!response.ok) {
+                return unavailable;
+            }
+
+            const data = await response.json();
+            const source = String(data.source || '')
+                .trim()
+                .toLowerCase();
+
+            const isDht22 =
+                data.success === true &&
+                (source === 'hardware' || source === 'actual') &&
+                finiteNumber(data.temperature) !== null &&
+                finiteNumber(data.humidity) !== null;
+
+            if (!isDht22) {
+                return unavailable;
+            }
+
+            return {
+                temperature: finiteNumber(data.temperature),
+                humidity: finiteNumber(data.humidity),
+                sensorStatus: 'available',
+                sensorSource: source,
+                sensorRecordedAt: data.recorded_at || null
+            };
+        } catch (error) {
+            console.warn('DHT22 reading unavailable:', error);
+            return unavailable;
+        }
+    }
+
+    function createDetectionRecord(options) {
+        const optionsObject = options || {};
+        const detectionType =
+            optionsObject.detectionType || 'unknown';
+        const classification =
+            optionsObject.classification || null;
+        const sensor = optionsObject.sensor || {
+            temperature: null,
+            humidity: null,
+            sensorStatus: 'unavailable',
+            sensorSource: null,
+            sensorRecordedAt: null
+        };
+
+        let classificationStatus = 'not_applicable';
+        let breedName = null;
+        let breedReference = null;
+        let breedReferenceKey = null;
+        let modelClassName = null;
+        let breedConfidence = null;
+        let classificationMessage =
+            'Object detected by COCO-SSD. Breed classification is not applicable.';
+
+        if (detectionType === 'quail') {
+            if (optionsObject.processing) {
+                classificationStatus = 'processing';
+                classificationMessage =
+                    'COCO-SSD found a bird. Waiting for the trained breed classifier and DHT22 reading.';
+            } else if (
+                classification &&
+                classification.success === true &&
+                classification.uncertain !== true &&
+                classification.breed_reference
+            ) {
+                classificationStatus = 'identified';
+                breedName = classification.breed_name || null;
+                breedReference = classification.breed_reference;
+                breedReferenceKey =
+                    classification.breed_reference_key ||
+                    classification.breed_reference.reference_key ||
+                    null;
+                modelClassName =
+                    classification.model_class_name || null;
+                breedConfidence =
+                    finiteNumber(classification.confidence);
+                classificationMessage =
+                    'COCO-SSD detected a bird; MobileNetV2 identified the breed.';
+            } else if (
+                classification &&
+                classification.success === true &&
+                classification.uncertain === true
+            ) {
+                classificationStatus = 'uncertain';
+                modelClassName =
+                    classification.model_class_name || null;
+                breedConfidence =
+                    finiteNumber(classification.confidence);
+                classificationMessage =
+                    'The trained model was not confident enough. No breed was assigned.';
+            } else {
+                classificationStatus = 'unavailable';
+                classificationMessage =
+                    'Breed classification failed or the trained model is unavailable.';
+            }
+        }
+
+        return {
+            id: optionsObject.id || (
+                'det_' +
+                Date.now() +
+                '_' +
+                Math.random().toString(36).slice(2, 8)
+            ),
+            detectionType: detectionType,
+            source: optionsObject.source || 'camera',
+            objectClass:
+                optionsObject.objectClass || detectionType,
+            objectDetectionResult:
+                optionsObject.objectClass || detectionType,
+            objectConfidence:
+                finiteNumber(optionsObject.objectConfidence),
+            detectedAt:
+                optionsObject.detectedAt ||
+                new Date().toISOString(),
+            classificationStatus: classificationStatus,
+            classificationMessage: classificationMessage,
+            breedName: breedName,
+            breedReference: breedReference,
+            breedReferenceKey: breedReferenceKey,
+            modelClassName: modelClassName,
+            breedConfidence: breedConfidence,
+            temperature: finiteNumber(sensor.temperature),
+            humidity: finiteNumber(sensor.humidity),
+            sensorStatus:
+                sensor.sensorStatus || 'unavailable',
+            sensorSource: sensor.sensorSource || null,
+            sensorRecordedAt: sensor.sensorRecordedAt || null,
+            imageData: optionsObject.imageData || null,
+            saved: false,
+            legacyRecord: false
+        };
+    }
+
+    /*
+     * Older localStorage entries do not contain structured classification
+     * data. Show only what was actually recorded; never add a default breed.
+     */
+    function normalizeStoredDetection(raw) {
+        const record = raw || {};
+        const detectionType =
+            record.detectionType || record.type || 'unknown';
+        const recordedBreed =
+            typeof record.breedName === 'string' &&
+            record.breedName.trim() !== '' &&
+            record.breedName !== 'Quail' &&
+            record.breedName !== 'Uncertain Detection'
+                ? record.breedName.trim()
+                : null;
+
+        const isStructured =
+            Object.prototype.hasOwnProperty.call(
+                record,
+                'classificationStatus'
+            );
+
+        return {
+            id: record.id || 'legacy_' + Date.now(),
+            detectionType: detectionType,
+            source: record.source || 'history',
+            objectClass:
+                record.objectClass ||
+                record.objectDetectionResult ||
+                recordedBreed ||
+                detectionType,
+            objectDetectionResult:
+                record.objectDetectionResult ||
+                record.objectClass ||
+                detectionType,
+            objectConfidence: finiteNumber(
+                record.objectConfidence !== undefined
+                    ? record.objectConfidence
+                    : record.confidence
+            ),
+            detectedAt:
+                record.detectedAt || record.timestamp || null,
+            classificationStatus: isStructured
+                ? (record.classificationStatus || 'unavailable')
+                : (detectionType === 'quail'
+                    ? 'legacy'
+                    : 'not_applicable'),
+            classificationMessage: isStructured
+                ? (record.classificationMessage ||
+                    'Saved detection result.')
+                : (detectionType === 'quail'
+                    ? 'This record was saved before structured classification data was available. Only the recorded values are shown.'
+                    : 'Object detection record.'),
+            breedName: isStructured
+                ? (record.breedName || null)
+                : recordedBreed,
+            breedReference: isStructured
+                ? (record.breedReference || null)
+                : null,
+            breedReferenceKey: isStructured
+                ? (record.breedReferenceKey || null)
+                : null,
+            modelClassName: isStructured
+                ? (record.modelClassName || null)
+                : null,
+            breedConfidence: finiteNumber(
+                record.breedConfidence
+            ),
+            temperature: finiteNumber(record.temperature),
+            humidity: finiteNumber(record.humidity),
+            sensorStatus:
+                record.sensorStatus || 'unavailable',
+            sensorSource: record.sensorSource || null,
+            sensorRecordedAt:
+                record.sensorRecordedAt || null,
+            imageData: record.imageData || null,
+            saved: true,
+            legacyRecord: !isStructured
+        };
+    }
+
     function loadHistory() {
         const saved = localStorage.getItem('quail_detection_history');
 
@@ -2064,24 +2591,20 @@
         }
     }
 
-    function addToHistory(type, breedName, confidence, imageData) {
-        const detection = {
-            id: Date.now(),
-            type: type,
-            breedName: breedName || 'Unknown',
-            confidence: confidence,
-            imageData: imageData,
-            timestamp: new Date().toISOString(),
-            date: new Date().toLocaleString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            })
-        };
+    function addDetectionToHistory(record) {
+        if (!record) {
+            return;
+        }
 
-        detectionHistory.unshift(detection);
+        const storedRecord = Object.assign({}, record, {
+            saved: true
+        });
+
+        detectionHistory = detectionHistory.filter(
+            item => String(item.id) !== String(storedRecord.id)
+        );
+
+        detectionHistory.unshift(storedRecord);
 
         if (detectionHistory.length > 50) {
             detectionHistory = detectionHistory.slice(0, 50);
@@ -2125,8 +2648,12 @@
 
         if (currentFilter !== 'all') {
             filtered = detectionHistory.filter(
-                d => d.type === currentFilter
+                d => (d.detectionType || d.type) === currentFilter
             );
+        }
+
+        if (!historyList) {
+            return;
         }
 
         if (filtered.length === 0) {
@@ -2146,12 +2673,29 @@
             return;
         }
 
-        historyList.innerHTML = filtered.map(detection => `
-            <div class="history-item">
+        historyList.innerHTML = filtered.map(rawDetection => {
+            const detection = normalizeStoredDetection(rawDetection);
+            const recordedId = escapeHtml(detection.id);
+            const displayName =
+                detection.breedName ||
+                detection.objectClass ||
+                'Detection';
+            const statusLabel =
+                detection.classificationStatus === 'identified'
+                    ? 'Breed identified'
+                    : detection.classificationStatus === 'uncertain'
+                        ? 'Uncertain classification'
+                        : detection.classificationStatus === 'unavailable'
+                            ? 'Breed Not Identified'
+                            : detection.classificationStatus === 'legacy'
+                                ? 'Legacy record'
+                                : 'Object detection';
 
+            return `
+            <div class="history-item">
                 <button
                     class="history-delete-btn"
-                    onclick="deleteHistoryItem(${detection.id}, event)"
+                    onclick="deleteHistoryItem('${recordedId}', event)"
                     title="Delete"
                     type="button"
                 >
@@ -2161,16 +2705,16 @@
                 </button>
 
                 <div
-                    onclick="viewHistoryDetail(${detection.id})"
+                    onclick="viewHistoryDetail('${recordedId}')"
                     style="display: flex; gap: 1rem; flex: 1; cursor: pointer;"
                 >
                     ${
                         detection.imageData
                             ? `
                                 <img
-                                    src="${detection.imageData}"
+                                    src="${escapeHtml(detection.imageData)}"
                                     class="history-image"
-                                    alt="Detection"
+                                    alt="Saved detection"
                                 >
                             `
                             : `
@@ -2178,98 +2722,59 @@
                                     class="history-image"
                                     style="display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 2rem;"
                                 >
-                                    ${
-                                        detection.type === 'quail'
-                                            ? '<svg class="icon" width="28" height="28" aria-hidden="true"><use xlink:href="#icon-quail"/></svg>'
-                                            : '<svg class="icon" width="28" height="28" aria-hidden="true"><use xlink:href="#icon-person"/></svg>'
-                                    }
+                                    <svg class="icon" width="28" height="28" aria-hidden="true">
+                                        <use xlink:href="#icon-quail"/>
+                                    </svg>
                                 </div>
                             `
                     }
 
                     <div class="history-content">
                         <div class="history-breed">
-                            ${detection.breedName}
+                            ${escapeHtml(displayName)}
                         </div>
 
                         <div class="history-type">
-                            ${
-                                detection.type === 'quail'
-                                    ? `
-                                        <span style="display:inline-flex;align-items:center;gap:6px;">
-                                            <svg class="icon" width="16" height="16" aria-hidden="true">
-                                                <use xlink:href="#icon-check"/>
-                                            </svg>
-                                            Quail Detected
-                                        </span>
-                                    `
-                                    : `
-                                        <span style="display:inline-flex;align-items:center;gap:6px;">
-                                            <svg class="icon" width="16" height="16" aria-hidden="true">
-                                                <use xlink:href="#icon-person"/>
-                                            </svg>
-                                            Human Detected
-                                        </span>
-                                    `
-                            }
+                            ${escapeHtml(statusLabel)}
                         </div>
 
                         ${
-                            detection.confidence > 0
+                            finiteNumber(detection.objectConfidence) !== null
                                 ? `
                                     <div class="history-confidence">
-                                        Confidence: ${(detection.confidence * 100).toFixed(1)}%
+                                        Detection: ${formatPercent(detection.objectConfidence)}
                                     </div>
                                 `
                                 : ''
                         }
 
                         <div class="history-date">
-                            ${detection.date}
+                            ${escapeHtml(formatDateTime(detection.detectedAt))}
                         </div>
                     </div>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     function viewHistoryDetail(id) {
-        const detection = detectionHistory.find(
-            d => d.id === id
+        const stored = detectionHistory.find(
+            d => String(d.id) === String(id)
         );
 
-        if (!detection) return;
-
-        showDetectionResult(
-            detection.type,
-            detection.type === 'quail'
-                ? 'Quail Detected!'
-                : 'Human Detected!',
-            `Breed: ${detection.breedName}`,
-            detection.confidence,
-            null,
-            detection.imageData
-        );
-
-        if (detection.type === 'quail') {
-            const breedMapping = {
-                'Japanese Quail': 1,
-                'Japanese Quail (Coturnix Japonica)': 1,
-                'Japanese Quail Group': 2,
-                'Japanese Coturnix Quail (Taiwan Crossbreed)': 2,
-                'Japanese Coturnix Crossbreed (Taiwan)': 2,
-                'Japanese Coturnix Crossbreed (Taiwan Brown Line)': 2,
-                'Pharaoh Quail': 3
-            };
-
-            const breedId =
-                breedMapping[detection.breedName] || 1;
-
-            fetchAndShowBreedInfo(
-                breedId,
-                true
-            );
+        if (!stored) {
+            return;
         }
+
+        /*
+         * History is replayed from the saved record only. No new
+         * prediction and no default breed substitution.
+         */
+        openDetectionResult(
+            normalizeStoredDetection(stored),
+            { save: false }
+        );
     }
 
     function deleteHistoryItem(id, event) {
@@ -2348,7 +2853,9 @@
 
             detectionHistory =
                 detectionHistory.filter(
-                    d => d.id !== deleteTargetId
+                    d =>
+                        String(d.id) !==
+                        String(deleteTargetId)
                 );
 
             saveHistory();
@@ -3224,7 +3731,11 @@
                         'show'
                     )
                 ) ||
-                nowMs < modalCooldownUntil;
+                classificationInProgress ||
+                nowMs < modalCooldownUntil ||
+                nowMs <
+                    lastDetectionCompletedAt +
+                        DETECTION_COOLDOWN_MS;
 
             if (suppressed) {
                 return;
@@ -3236,11 +3747,8 @@
                     0.7
                 );
 
-            const thumbData =
-                captureFrame(
-                    160,
-                    0.5
-                );
+            const detectedAt =
+                new Date().toISOString();
 
             // Always use the highest-confidence detected object.
             // This makes ANY COCO-SSD object trigger the modal immediately.
@@ -3282,98 +3790,190 @@
                 detectedClassLower.includes('human');
 
             /*
-             * QUAIL/BIRD:
-             * Show the detection modal FIRST, then classify the breed.
-             * This prevents the modal from waiting for the Laravel
-             * breed-classifier request.
+             * BIRD:
+             * COCO-SSD only reports bird presence. The trained MobileNetV2
+             * classifier and DHT22 read run in parallel while the dialog
+             * already shows an honest processing state with no invented
+             * breed or sensor values.
              */
             if (isBird) {
                 lastClassification = null;
+                classificationInProgress = true;
 
-                showDetectionResult(
-                    'quail',
-                    `${detectedClass} Detected!`,
-                    'Detecting quail breed...',
-                    detectorConfidence,
-                    null,
-                    imageData,
-                    false
+                const processingRecord =
+                    createDetectionRecord({
+                        detectionType: 'quail',
+                        objectClass: detectedClass,
+                        objectConfidence:
+                            detectorConfidence,
+                        imageData: imageData,
+                        detectedAt: detectedAt,
+                        source: 'camera',
+                        processing: true
+                    });
+
+                const dialogToken =
+                    detectionDialogToken;
+
+                openDetectionResult(
+                    processingRecord,
+                    { save: false }
                 );
 
                 modalCooldownUntil =
-                    Date.now() + 1000;
+                    Date.now() + 10000;
 
-                const classificationResult =
-                    await classifyBreedFromImage(
-                        imageData
+                try {
+                    const [
+                        classificationResult,
+                        sensor
+                    ] = await Promise.all([
+                        classifyBreedFromImage(
+                            imageData
+                        ),
+                        fetchLatestSensorReading()
+                    ]);
+
+                    const finalRecord =
+                        createDetectionRecord({
+                            detectionType: 'quail',
+                            objectClass:
+                                detectedClass,
+                            objectConfidence:
+                                detectorConfidence,
+                            classification:
+                                classificationResult,
+                            sensor: sensor,
+                            imageData: imageData,
+                            detectedAt: detectedAt,
+                            source: 'camera'
+                        });
+
+                    if (
+                        dialogToken ===
+                        detectionDialogToken
+                    ) {
+                        openDetectionResult(
+                            finalRecord,
+                            { save: true }
+                        );
+                    } else {
+                        persistDetectionResult(
+                            finalRecord
+                        );
+                    }
+
+                } catch (error) {
+                    console.error(
+                        'Detection finalization failed:',
+                        error
                     );
 
-                await handleBreedClassification(
-                    classificationResult,
-                    imageData,
-                    thumbData,
-                    detectorConfidence
-                );
+                    const fallbackRecord =
+                        createDetectionRecord({
+                            detectionType: 'quail',
+                            objectClass:
+                                detectedClass,
+                            objectConfidence:
+                                detectorConfidence,
+                            classification: {
+                                success: false
+                            },
+                            imageData: imageData,
+                            detectedAt: detectedAt,
+                            source: 'camera'
+                        });
+
+                    if (
+                        dialogToken ===
+                        detectionDialogToken
+                    ) {
+                        openDetectionResult(
+                            fallbackRecord,
+                            { save: true }
+                        );
+                    } else {
+                        persistDetectionResult(
+                            fallbackRecord
+                        );
+                    }
+
+                } finally {
+                    classificationInProgress =
+                        false;
+
+                    lastDetectionCompletedAt =
+                        Date.now();
+
+                    modalCooldownUntil =
+                        lastDetectionCompletedAt +
+                        DETECTION_COOLDOWN_MS;
+                }
 
                 return;
             }
 
             /*
              * HUMAN:
-             * Show immediately using the actual detected class.
+             * No breed classification is attempted for a person.
              */
             if (isHuman) {
                 lastClassification = null;
 
-                showDetectionResult(
-                    'human',
-                    `${detectedClass} Detected!`,
-                    `${detectedClass} detected by COCO-SSD.`,
-                    detectorConfidence,
-                    null,
-                    imageData,
-                    true
+                const record =
+                    createDetectionRecord({
+                        detectionType: 'human',
+                        objectClass: detectedClass,
+                        objectConfidence:
+                            detectorConfidence,
+                        imageData: imageData,
+                        detectedAt: detectedAt,
+                        source: 'camera'
+                    });
+
+                openDetectionResult(
+                    record,
+                    { save: true }
                 );
 
-                addToHistory(
-                    'human',
-                    detectedClass,
-                    detectorConfidence,
-                    thumbData
-                );
+                lastDetectionCompletedAt =
+                    Date.now();
 
                 modalCooldownUntil =
-                    Date.now() + 1000;
+                    lastDetectionCompletedAt +
+                    DETECTION_COOLDOWN_MS;
 
                 return;
             }
 
             /*
              * ANY OTHER OBJECT:
-             * No special whitelist. Whatever COCO-SSD detects is shown
-             * immediately in the modal.
+             * No breed classification is attempted.
              */
             lastClassification = null;
 
-            showDetectionResult(
-                'object',
-                `${detectedClass} Detected!`,
-                `${detectedClass} detected by COCO-SSD.`,
-                detectorConfidence,
-                null,
-                imageData,
-                true
+            const objectRecord =
+                createDetectionRecord({
+                    detectionType: 'object',
+                    objectClass: detectedClass,
+                    objectConfidence:
+                        detectorConfidence,
+                    imageData: imageData,
+                    detectedAt: detectedAt,
+                    source: 'camera'
+                });
+
+            openDetectionResult(
+                objectRecord,
+                { save: true }
             );
 
-            addToHistory(
-                'object',
-                detectedClass,
-                detectorConfidence,
-                thumbData
-            );
+            lastDetectionCompletedAt =
+                Date.now();
 
             modalCooldownUntil =
-                Date.now() + 1000;
+                lastDetectionCompletedAt +
+                DETECTION_COOLDOWN_MS;
 
         } catch (err) {
 
@@ -3466,130 +4066,6 @@
                     err.message
             };
         }
-    }
-
-    async function handleBreedClassification(
-        classificationResult,
-        imageData,
-        thumbData,
-        detectionConfidence = 0
-    ) {
-        if (
-            !classificationResult ||
-            classificationResult.success !== true
-        ) {
-            console.error(
-                'Quail classification failed:',
-                classificationResult
-            );
-
-            lastClassification = null;
-
-            showDetectionResult(
-                'quail',
-                'Quail Detected!',
-                'Quail detected. Breed classification is currently unavailable.',
-                detectionConfidence,
-                null,
-                imageData,
-                true
-            );
-
-            addToHistory(
-                'quail',
-                'Quail',
-                detectionConfidence,
-                thumbData
-            );
-
-            return;
-        }
-
-        const breedName =
-            typeof classificationResult.breed_name === 'string'
-                ? classificationResult.breed_name.trim()
-                : '';
-
-        const breedId =
-            classificationResult.breed_id !== null &&
-            classificationResult.breed_id !== undefined
-                ? Number(classificationResult.breed_id)
-                : null;
-
-        const modelConfidence =
-            Number(classificationResult.confidence);
-
-        const modelClassName =
-            typeof classificationResult.model_class_name === 'string'
-                ? classificationResult.model_class_name.trim()
-                : '';
-
-        const uncertain =
-            classificationResult.uncertain === true;
-
-        if (
-            uncertain ||
-            !breedName ||
-            !breedId ||
-            !Number.isFinite(modelConfidence)
-        ) {
-            lastClassification = null;
-
-            showDetectionResult(
-                'quail',
-                'Uncertain Detection',
-                'The model is not confident enough to identify a breed. Please try another image.',
-                detectionConfidence,
-                null,
-                imageData,
-                true
-            );
-
-            addToHistory(
-                'quail',
-                'Uncertain Detection',
-                detectionConfidence,
-                thumbData
-            );
-
-            return;
-        }
-
-        lastClassification = {
-            breedName: breedName,
-            confidence: modelConfidence
-        };
-
-        showDetectionResult(
-            'quail',
-            'Quail Detected!',
-            `Breed: ${breedName}`,
-            detectionConfidence,
-            breedId,
-            imageData,
-            true
-        );
-
-        addToHistory(
-            'quail',
-            breedName,
-            detectionConfidence,
-            thumbData
-        );
-
-        /*
-         * Replace the short result dialog with the detailed breed
-         * information modal after a confident classification.
-         */
-        closeDetectionModalAndRefresh(false);
-        modalCooldownUntil = Date.now() + 2000;
-
-        openBreedInfoModal(
-            modelClassName,
-            breedName,
-            modelConfidence,
-            imageData
-        );
     }
 
     function openBreedInfoModal(
@@ -4041,39 +4517,129 @@
         const reader = new FileReader();
 
         reader.onload = async function(event) {
-            const imageData =
+            const originalData =
                 String(event.target.result);
 
-            const thumbData =
-                await makeThumbnail(imageData);
+            const imageData =
+                await makeThumbnail(
+                    originalData,
+                    480,
+                    0.72
+                );
 
             stopAutoDetection();
             lastClassification = null;
+            classificationInProgress = true;
 
-            showDetectionResult(
-                'quail',
-                'Image Uploaded',
-                'Classifying quail breed...',
-                0,
-                null,
-                imageData,
-                false
+            const detectedAt =
+                new Date().toISOString();
+
+            const processingRecord =
+                createDetectionRecord({
+                    detectionType: 'quail',
+                    objectClass: 'uploaded quail image',
+                    objectConfidence: null,
+                    imageData: imageData,
+                    detectedAt: detectedAt,
+                    source: 'upload',
+                    processing: true
+                });
+
+            const dialogToken =
+                detectionDialogToken;
+
+            openDetectionResult(
+                processingRecord,
+                { save: false }
             );
 
             modalCooldownUntil =
-                Date.now() + 1000;
+                Date.now() + 10000;
 
-            const classificationResult =
-                await classifyBreedFromImage(
-                    imageData
+            try {
+                const [
+                    classificationResult,
+                    sensor
+                ] = await Promise.all([
+                    classifyBreedFromImage(
+                        imageData
+                    ),
+                    fetchLatestSensorReading()
+                ]);
+
+                const finalRecord =
+                    createDetectionRecord({
+                        detectionType: 'quail',
+                        objectClass:
+                            'uploaded quail image',
+                        objectConfidence: null,
+                        classification:
+                            classificationResult,
+                        sensor: sensor,
+                        imageData: imageData,
+                        detectedAt: detectedAt,
+                        source: 'upload'
+                    });
+
+                if (
+                    dialogToken ===
+                    detectionDialogToken
+                ) {
+                    openDetectionResult(
+                        finalRecord,
+                        { save: true }
+                    );
+                } else {
+                    persistDetectionResult(
+                        finalRecord
+                    );
+                }
+
+            } catch (error) {
+                console.error(
+                    'Upload classification failed:',
+                    error
                 );
 
-            await handleBreedClassification(
-                classificationResult,
-                imageData,
-                thumbData,
-                0
-            );
+                const fallbackRecord =
+                    createDetectionRecord({
+                        detectionType: 'quail',
+                        objectClass:
+                            'uploaded quail image',
+                        objectConfidence: null,
+                        classification: {
+                            success: false
+                        },
+                        imageData: imageData,
+                        detectedAt: detectedAt,
+                        source: 'upload'
+                    });
+
+                if (
+                    dialogToken ===
+                    detectionDialogToken
+                ) {
+                    openDetectionResult(
+                        fallbackRecord,
+                        { save: true }
+                    );
+                } else {
+                    persistDetectionResult(
+                        fallbackRecord
+                    );
+                }
+
+            } finally {
+                classificationInProgress =
+                    false;
+
+                lastDetectionCompletedAt =
+                    Date.now();
+
+                modalCooldownUntil =
+                    lastDetectionCompletedAt +
+                    DETECTION_COOLDOWN_MS;
+            }
         };
 
         reader.onerror = function() {
@@ -4081,155 +4647,6 @@
         };
 
         reader.readAsDataURL(file);
-    }
-
-    function determineBreed(
-        detectedClass,
-        confidence
-    ) {
-        return null;
-    }
-
-    async function fetchAndShowBreedInfo(
-        breedId,
-        showInModal = false
-    ) {
-        try {
-
-            const response =
-                await fetch(
-                    `/quail-detection/breed/${breedId}`,
-                    {
-                        headers: {
-                            'X-CSRF-TOKEN':
-                                document.querySelector(
-                                    'meta[name="csrf-token"]'
-                                ).content
-                        }
-                    }
-                );
-
-            if (response.ok) {
-
-                const data =
-                    await response.json();
-
-                const breed =
-                    data.breed;
-
-                if (showInModal) {
-
-                    document.getElementById(
-                        'modal-breed-name'
-                    ).textContent =
-                        breed.name;
-
-                    document.getElementById(
-                        'modal-breed-scientific'
-                    ).textContent =
-                        breed.scientific_name;
-
-                    document.getElementById(
-                        'modal-breed-eggs'
-                    ).textContent =
-                        breed.egg_production_rate;
-
-                    document.getElementById(
-                        'modal-breed-weight'
-                    ).textContent =
-                        breed.mature_weight;
-
-                    document.getElementById(
-                        'modal-breed-age'
-                    ).textContent =
-                        breed.maturity_age;
-
-                    document.getElementById(
-                        'modal-breed-temp'
-                    ).textContent =
-                        breed.optimal_temperature +
-                        '°C';
-
-                    document.getElementById(
-                        'modal-breed-humidity'
-                    ).textContent =
-                        breed.optimal_humidity +
-                        '%';
-
-                    document.getElementById(
-                        'modal-breed-description'
-                    ).textContent =
-                        breed.description;
-
-                    document.getElementById(
-                        'modal-breed-info'
-                    ).style.display =
-                        'block';
-
-                } else {
-
-                    document.getElementById(
-                        'breed-name'
-                    ).textContent =
-                        breed.name;
-
-                    document.getElementById(
-                        'breed-scientific'
-                    ).textContent =
-                        breed.scientific_name;
-
-                    document.getElementById(
-                        'breed-eggs'
-                    ).textContent =
-                        breed.egg_production_rate;
-
-                    document.getElementById(
-                        'breed-weight'
-                    ).textContent =
-                        breed.mature_weight;
-
-                    document.getElementById(
-                        'breed-age'
-                    ).textContent =
-                        breed.maturity_age;
-
-                    document.getElementById(
-                        'breed-temp'
-                    ).textContent =
-                        breed.optimal_temperature +
-                        '°C';
-
-                    document.getElementById(
-                        'breed-humidity'
-                    ).textContent =
-                        breed.optimal_humidity +
-                        '%';
-
-                    document.getElementById(
-                        'breed-description'
-                    ).textContent =
-                        breed.description;
-
-                    document.getElementById(
-                        'breed-info'
-                    ).classList.add(
-                        'show'
-                    );
-                }
-            }
-
-        } catch (err) {
-
-            console.error(
-                'Error fetching breed info:',
-                err
-            );
-
-            demoShowBreedInfo(
-                breedId,
-                showInModal
-            );
-        }
     }
 
     /*
@@ -4241,275 +4658,522 @@
      * - Places the modal above the page.
      * - Explicitly enables both close buttons.
      */
-    function showDetectionResult(
-        type,
-        title,
-        details,
-        confidence = 0,
-        breedId = null,
-        imageData = null,
-        saveRecord = true
-    ) {
-        const modal =
-            document.getElementById(
-                'detectionModal'
-            );
+    function renderDetectionResultModal(record) {
+        const result = record && record.detectionType
+            ? record
+            : normalizeStoredDetection(record);
 
-        if (!modal) {
-            return;
+        const isQuail =
+            result.detectionType === 'quail';
+        const status = result.classificationStatus;
+
+        const statusMap = {
+            processing: {
+                className: 'processing',
+                title: 'Processing Detection',
+                message: result.classificationMessage
+            },
+            identified: {
+                className: 'success',
+                title: 'Quail Detected — Breed Identified',
+                message: result.classificationMessage
+            },
+            uncertain: {
+                className: 'uncertain',
+                title: 'Bird Detected — Breed Not Identified',
+                message: result.classificationMessage
+            },
+            unavailable: {
+                className: 'uncertain',
+                title: 'Bird Detected — Breed Not Identified',
+                message: result.classificationMessage
+            },
+            legacy: {
+                className: '',
+                title: 'Saved Quail Detection',
+                message: result.classificationMessage
+            },
+            not_applicable: {
+                className: '',
+                title:
+                    unavailableValue(
+                        result.objectClass,
+                        'Object'
+                    ) + ' Detected',
+                message: result.classificationMessage
+            }
+        };
+
+        const statusView = statusMap[status] ||
+            statusMap.not_applicable;
+
+        const classificationLabelMap = {
+            processing: 'Processing',
+            identified: 'Identified',
+            uncertain: 'Uncertain',
+            unavailable: 'Unavailable',
+            legacy: 'Not recorded',
+            not_applicable: 'Not applicable'
+        };
+
+        const classificationLabel =
+            classificationLabelMap[status] || 'Not recorded';
+
+        const identifiedBreed =
+            status === 'identified' && result.breedName
+                ? result.breedName
+                : (isQuail
+                    ? 'Breed Not Identified'
+                    : 'Not applicable');
+
+        let breedConfidenceText = 'Not applicable';
+
+        if (isQuail) {
+            if (
+                status === 'identified' &&
+                finiteNumber(result.breedConfidence) !== null
+            ) {
+                breedConfidenceText = formatPercent(
+                    result.breedConfidence
+                );
+            } else if (
+                status === 'uncertain' &&
+                finiteNumber(result.breedConfidence) !== null
+            ) {
+                breedConfidenceText =
+                    formatPercent(result.breedConfidence) +
+                    ' (below threshold)';
+            } else {
+                breedConfidenceText = 'Not available';
+            }
         }
 
-        modal.style.display =
-            'flex';
+        const imageHtml = result.imageData
+            ? `<img src="${escapeHtml(result.imageData)}" alt="Captured detection result">`
+            : `<div style="padding:2.5rem 1rem;color:#9e8b82;font-size:0.85rem;">No image recorded</div>`;
 
-        modal.style.pointerEvents =
-            'auto';
+        const reference = result.breedReference;
 
-        modal.style.zIndex =
-            '99999';
+        let breedInformationHtml = `
+            <div class="result-note">
+                Breed classification is not applicable to this detection.
+            </div>
+        `;
 
-        modal.setAttribute(
-            'aria-hidden',
-            'false'
+        if (isQuail && reference && typeof reference === 'object') {
+            breedInformationHtml = `
+                <div class="result-facts">
+                    <div class="result-fact">
+                        <span class="result-fact-label">Common Name</span>
+                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.common_name))}</span>
+                    </div>
+                    <div class="result-fact">
+                        <span class="result-fact-label">Scientific Name</span>
+                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.scientific_name))}</span>
+                    </div>
+                    <div class="result-fact">
+                        <span class="result-fact-label">Species</span>
+                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.species))}</span>
+                    </div>
+                    <div class="result-fact">
+                        <span class="result-fact-label">Breed or Variety</span>
+                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.breed_or_variety))}</span>
+                    </div>
+                    <div class="result-fact">
+                        <span class="result-fact-label">Typical Adult Weight</span>
+                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.typical_adult_weight))}</span>
+                    </div>
+                    <div class="result-fact">
+                        <span class="result-fact-label">Typical Age at Sexual Maturity</span>
+                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.typical_maturity_age))}</span>
+                    </div>
+                    <div class="result-fact wide">
+                        <span class="result-fact-label">Typical Egg Production</span>
+                        <span class="result-fact-value">${escapeHtml(unavailableValue(reference.typical_egg_production))}</span>
+                    </div>
+                </div>
+                <p class="result-description">${escapeHtml(unavailableValue(reference.reference_note))}</p>
+                <p class="result-note">
+                    These are general reference ranges for the breed or variety.
+                    They are not measurements of the individual bird, and egg
+                    production or maturity cannot be determined from an image.
+                </p>
+            `;
+        } else if (isQuail) {
+            breedInformationHtml = `
+                <div class="result-note">
+                    Breed reference data was not recorded for this detection.
+                    No default breed information is shown.
+                </div>
+            `;
+        }
+
+        const temperatureAvailable =
+            result.sensorStatus === 'available' &&
+            finiteNumber(result.temperature) !== null;
+        const humidityAvailable =
+            result.sensorStatus === 'available' &&
+            finiteNumber(result.humidity) !== null;
+
+        const temperatureText = temperatureAvailable
+            ? finiteNumber(result.temperature).toFixed(1) + ' °C'
+            : 'Data Unavailable';
+        const humidityText = humidityAvailable
+            ? finiteNumber(result.humidity).toFixed(1) + ' %'
+            : 'Data Unavailable';
+
+        const sensorNote = temperatureAvailable || humidityAvailable
+            ? `Recorded from the DHT22 sensor${result.sensorSource ? ' (' + escapeHtml(result.sensorSource) + ')' : ''} at detection time.`
+            : 'No fresh DHT22 sensor reading was available at detection time. Weather data is not presented as a quail-house reading.';
+
+        const objectConfidenceText =
+            finiteNumber(result.objectConfidence) !== null
+                ? formatPercent(result.objectConfidence)
+                : 'Not available';
+
+        const objectConfidenceWidth =
+            finiteNumber(result.objectConfidence) === null
+                ? 0
+                : Math.min(
+                    100,
+                    Math.max(
+                        0,
+                        finiteNumber(result.objectConfidence) * 100
+                    )
+                );
+
+        const html = `
+            <div class="result-status-banner ${escapeHtml(statusView.className)}">
+                <span class="result-status-dot"></span>
+                <div>
+                    <strong>${escapeHtml(statusView.title)}</strong>
+                    <p>${escapeHtml(statusView.message)}</p>
+                </div>
+            </div>
+
+            <section class="result-section">
+                <h3 class="result-section-title">
+                    <svg class="icon" width="18" height="18" aria-hidden="true">
+                        <use xlink:href="#icon-eye"/>
+                    </svg>
+                    Detection Information
+                </h3>
+
+                <div class="result-image-wrap">
+                    <div>
+                        <div class="result-image-frame">${imageHtml}</div>
+                        <div class="result-image-caption">Captured image</div>
+                    </div>
+
+                    <div class="result-facts">
+                        <div class="result-fact">
+                            <span class="result-fact-label">Detection ID</span>
+                            <span class="result-fact-value">${escapeHtml(result.id)}</span>
+                        </div>
+                        <div class="result-fact">
+                            <span class="result-fact-label">Detection Date &amp; Time</span>
+                            <span class="result-fact-value">${escapeHtml(formatDateTime(result.detectedAt))}</span>
+                        </div>
+                        <div class="result-fact">
+                            <span class="result-fact-label">Object Detection Result</span>
+                            <span class="result-fact-value">${escapeHtml(unavailableValue(result.objectDetectionResult))}</span>
+                        </div>
+                        <div class="result-fact">
+                            <span class="result-fact-label">Classification Status</span>
+                            <span class="result-fact-value">${escapeHtml(classificationLabel)}</span>
+                        </div>
+                        <div class="result-fact">
+                            <span class="result-fact-label">Identified Breed</span>
+                            <span class="result-fact-value${identifiedBreed === 'Breed Not Identified' ? ' muted' : ''}">${escapeHtml(identifiedBreed)}</span>
+                        </div>
+                        <div class="result-fact">
+                            <span class="result-fact-label">Model Class</span>
+                            <span class="result-fact-value">${escapeHtml(unavailableValue(result.modelClassName, 'Not recorded'))}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-confidence-block">
+                    <div class="result-confidence-row">
+                        <span>Object Detection Confidence (COCO-SSD)</span>
+                        <strong>${objectConfidenceText}</strong>
+                    </div>
+                    <div
+                        class="result-confidence-bar"
+                        role="progressbar"
+                        aria-label="Object detection confidence"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow="${objectConfidenceWidth.toFixed(0)}"
+                    >
+                        <div class="result-confidence-fill" style="width:${objectConfidenceWidth.toFixed(1)}%"></div>
+                    </div>
+
+                    <div class="result-confidence-row" style="margin-top:0.85rem;">
+                        <span>Breed Classification Confidence (MobileNetV2)</span>
+                        <strong>${escapeHtml(breedConfidenceText)}</strong>
+                    </div>
+                </div>
+
+                <p class="result-note">
+                    COCO-SSD only detects that a bird-like object is present.
+                    It cannot identify a quail breed. Breed identification,
+                    when shown, comes only from the trained MobileNetV2 classifier.
+                </p>
+            </section>
+
+            <section class="result-section">
+                <h3 class="result-section-title">
+                    <svg class="icon" width="18" height="18" aria-hidden="true">
+                        <use xlink:href="#icon-quail"/>
+                    </svg>
+                    Quail Breed Information
+                </h3>
+                ${breedInformationHtml}
+            </section>
+
+            <section class="result-section">
+                <h3 class="result-section-title">
+                    <svg class="icon" width="18" height="18" aria-hidden="true">
+                        <use xlink:href="#icon-robot"/>
+                    </svg>
+                    Environmental Conditions
+                </h3>
+
+                <div class="result-facts">
+                    <div class="result-fact">
+                        <span class="result-fact-label">Temperature at Detection (°C)</span>
+                        <span class="result-fact-value${temperatureAvailable ? '' : ' muted'}">${temperatureText}</span>
+                    </div>
+                    <div class="result-fact">
+                        <span class="result-fact-label">Humidity at Detection (%)</span>
+                        <span class="result-fact-value${humidityAvailable ? '' : ' muted'}">${humidityText}</span>
+                    </div>
+                </div>
+
+                <p class="result-note">${sensorNote}</p>
+            </section>
+        `;
+
+        const content = document.getElementById(
+            'detectionResultContent'
         );
 
-        const thumbImg =
-            document.getElementById(
-                'modal-thumb-img'
-            );
-
-        if (thumbImg) {
-
-            if (imageData) {
-
-                thumbImg.src =
-                    imageData;
-
-                thumbImg.style.display =
-                    'block';
-
-            } else {
-
-                thumbImg.src =
-                    '';
-
-                thumbImg.style.display =
-                    'none';
-            }
+        if (content) {
+            content.innerHTML = html;
         }
 
-        const statusTextEl =
-            document.getElementById(
-                'modal-status-text'
-            );
+        const titleEl = document.getElementById(
+            'detection-modal-title'
+        );
 
-        const breedInfo =
-            document.getElementById(
-                'modal-breed-info'
-            );
-
-        if (statusTextEl) {
-
-            if (type === 'human') {
-
-                statusTextEl.textContent =
-                    title;
-
-                statusTextEl.style.color =
-                    '#c0392b';
-
-                if (breedInfo) {
-                    breedInfo.style.display =
-                        'none';
-                }
-
-            } else if (
-                type === 'quail'
-            ) {
-
-                statusTextEl.textContent =
-                    title;
-
-                statusTextEl.style.color =
-                    '#27ae60';
-
-            } else {
-
-                statusTextEl.textContent =
-                    title;
-
-                statusTextEl.style.color =
-                    '#7f8c8d';
-            }
+        if (titleEl) {
+            titleEl.textContent = statusView.title;
         }
 
-        const detailsEl =
-            document.getElementById(
-                'modal-status-details'
-            );
+        const subtitleEl = document.getElementById(
+            'detection-modal-subtitle'
+        );
 
-        if (detailsEl) {
-            detailsEl.textContent =
-                details;
+        if (subtitleEl) {
+            subtitleEl.textContent =
+                result.source === 'history'
+                    ? 'Saved detection — showing the exact recorded values.'
+                    : 'Live detection — COCO-SSD plus the trained breed classifier.';
+        }
+    }
+
+    function openDetectionResult(record, options = {}) {
+        const result = record && record.detectionType
+            ? record
+            : normalizeStoredDetection(record);
+
+        renderDetectionResultModal(result);
+
+        const modal = document.getElementById(
+            'detectionModal'
+        );
+
+        if (!modal) {
+            return result;
         }
 
-        const confidenceContainer =
-            document.getElementById(
-                'modal-confidence-container'
-            );
+        detectionDialogToken += 1;
 
-        const confidenceValue =
-            document.getElementById(
-                'modal-confidence-value'
-            );
+        modal.classList.add('show');
+        modal.style.display = 'flex';
+        modal.style.pointerEvents = 'auto';
+        modal.style.zIndex = '99999';
+        modal.setAttribute('aria-hidden', 'false');
 
-        const confidenceFill =
-            document.getElementById(
-                'modal-confidence-fill'
-            );
-
-        if (confidence > 0) {
-
-            if (confidenceContainer) {
-                confidenceContainer.style.display =
-                    'block';
+        const closeHandler = event => {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
             }
 
-            if (confidenceValue) {
-                confidenceValue.textContent =
-                    (confidence * 100)
-                        .toFixed(0) +
-                    '%';
-            }
+            closeDetectionModalAndRefresh(false);
+        };
 
-            if (confidenceFill) {
-                confidenceFill.style.width =
-                    (confidence * 100) +
-                    '%';
-            }
+        const closeTop = document.getElementById(
+            'detectionModalCloseButton'
+        );
 
-        } else {
+        const closeBottom = document.getElementById(
+            'detectionModalCloseBottomButton'
+        );
 
-            if (confidenceContainer) {
-                confidenceContainer.style.display =
-                    'none';
-            }
+        const scanAgain = document.getElementById(
+            'detectionModalScanAgainButton'
+        );
 
-            if (confidenceFill) {
-                confidenceFill.style.width =
-                    '0%';
-            }
+        if (closeTop) {
+            closeTop.disabled = false;
+            closeTop.onclick = closeHandler;
+        }
+
+        if (closeBottom) {
+            closeBottom.disabled = false;
+            closeBottom.onclick = closeHandler;
+        }
+
+        if (scanAgain) {
+            scanAgain.disabled = false;
+            scanAgain.onclick = event => {
+                closeHandler(event);
+                startAutoDetection();
+            };
         }
 
         if (
-            typeof updateModalOverlayButtonState ===
-            'function'
+            typeof updateModalOverlayButtonState === 'function'
         ) {
             updateModalOverlayButtonState();
         }
 
-        /*
-         * Enable the modal BEFORE showing it.
-         */
-        modal.classList.add(
-            'show'
-        );
-
-        /*
-         * Explicitly restore button clickability.
-         */
-        const closeButton =
-            document.getElementById(
-                'detectionModalCloseButton'
-            );
-
-        const bottomCloseButton =
-            document.getElementById(
-                'detectionModalCloseBottomButton'
-            );
-
-        if (closeButton) {
-
-            closeButton.disabled =
-                false;
-
-            closeButton.style.display =
-                'flex';
-
-            closeButton.style.visibility =
-                'visible';
-
-            closeButton.style.opacity =
-                '1';
-
-            closeButton.style.pointerEvents =
-                'auto';
-
-            closeButton.style.zIndex =
-                '100002';
-        }
-
-        if (bottomCloseButton) {
-
-            bottomCloseButton.disabled =
-                false;
-
-            bottomCloseButton.style.display =
-                'inline-flex';
-
-            bottomCloseButton.style.visibility =
-                'visible';
-
-            bottomCloseButton.style.opacity =
-                '1';
-
-            bottomCloseButton.style.pointerEvents =
-                'auto';
-
-            bottomCloseButton.style.zIndex =
-                '100002';
-
-            // Direct handler: works even if the modal was reopened
-            // many times and avoids duplicate event listeners.
-            bottomCloseButton.onclick =
-                function(event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    closeDetectionModalAndRefresh(
-                        false
-                    );
-                };
-        }
-
-        if (closeButton) {
-            // Direct handler for the X button.
-            closeButton.onclick =
-                function(event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    closeDetectionModalAndRefresh(
-                        false
-                    );
-                };
-        }
-
         if (
-            type === 'quail' &&
-            breedId
+            result.classificationStatus === 'identified' &&
+            result.breedReference &&
+            result.breedReference.breed_id
         ) {
             setCurrentBreedFromDetection(
-                breedId
+                result.breedReference.breed_id
             );
         }
 
-        if (saveRecord) {
-            saveDetectionRecord(
-                type,
-                confidence,
-                breedId,
-                imageData
-            );
+        if (options.save === true) {
+            persistDetectionResult(result);
         }
+
+        lastDetectionRecord = result;
+
+        return result;
+    }
+
+    function persistDetectionResult(record) {
+        if (!record || record.saved) {
+            return;
+        }
+
+        record.saved = true;
+        addDetectionToHistory(record);
+        postDetectionResult(record);
+    }
+
+    function postDetectionResult(record) {
+        const allowedTypes = [
+            'quail',
+            'human',
+            'object',
+            'unknown'
+        ];
+
+        const detectionType =
+            allowedTypes.indexOf(record.detectionType) !== -1
+                ? record.detectionType
+                : 'unknown';
+
+        const identified =
+            record.classificationStatus === 'identified' &&
+            record.breedName;
+
+        const payload = {
+            client_detection_id: String(record.id),
+            detected_at: record.detectedAt,
+            detection_type: detectionType,
+            quail_breed_id: identified &&
+                record.breedReference &&
+                record.breedReference.breed_id
+                ? record.breedReference.breed_id
+                : null,
+            confidence: finiteNumber(record.objectConfidence),
+            object_class: record.objectDetectionResult,
+            object_detection_result:
+                record.objectDetectionResult,
+            object_confidence:
+                finiteNumber(record.objectConfidence),
+            classification_status:
+                record.classificationStatus,
+            breed_name: identified ? record.breedName : null,
+            model_class_name: record.modelClassName,
+            breed_reference_key:
+                record.breedReferenceKey,
+            breed_confidence:
+                finiteNumber(record.breedConfidence),
+            breed_reference:
+                identified ? record.breedReference : null,
+            temperature: finiteNumber(record.temperature),
+            humidity: finiteNumber(record.humidity),
+            sensor_source: record.sensorSource,
+            sensor_status: record.sensorStatus,
+            recorded_at: record.sensorRecordedAt,
+            location:
+                record.source === 'upload'
+                    ? 'Uploaded Image'
+                    : 'Camera Feed',
+            detection_notes:
+                record.classificationMessage || '',
+            image_data: record.imageData
+        };
+
+        fetch(
+            '{{ route("quail-detection.save") }}',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN':
+                        document.querySelector(
+                            'meta[name="csrf-token"]'
+                        )?.content || ''
+                },
+                body: JSON.stringify(payload)
+            }
+        )
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(
+                        'Save failed with status ' +
+                        response.status
+                    );
+                }
+
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    console.log(
+                        'Detection saved with recorded result:',
+                        data.detection_id
+                    );
+                }
+            })
+            .catch(error => {
+                console.warn(
+                    'Detection history save failed:',
+                    error
+                );
+            });
     }
 
     /*
@@ -4517,6 +5181,8 @@
  */
 function closeDetectionModalAndRefresh(refresh = false) {
     const modal = document.getElementById('detectionModal');
+
+    detectionDialogToken += 1;
 
     if (!modal) {
         return;
@@ -4530,13 +5196,15 @@ function closeDetectionModalAndRefresh(refresh = false) {
     modal.style.display = 'none';
     modal.style.pointerEvents = 'none';
 
-    // Short cooldown only prevents the same frame from
-    // reopening the modal immediately.
-    modalCooldownUntil = Date.now() + 500;
+    // Prevent consecutive frames of the same bird from reopening
+    // the dialog immediately.
+    modalCooldownUntil =
+        Date.now() + DETECTION_COOLDOWN_MS;
 
-    // IMPORTANT: closing the modal must NOT stop detection.
-    // Restart the interval if it was stopped for any reason.
-    startAutoDetection();
+    // IMPORTANT: closing the modal must NOT stop a live camera session.
+    if (stream) {
+        startAutoDetection();
+    }
 
     if (refresh) {
         console.log('Modal closed with refresh requested');
@@ -4789,260 +5457,6 @@ function closeDetectionModalAndRefresh(refresh = false) {
                 err
             );
         }
-    }
-
-    function demoShowBreedInfo(
-        breedId,
-        showInModal = false
-    ) {
-        const breedData = {
-
-            1: {
-                name:
-                    'Japanese Quail (Coturnix Japonica)',
-
-                scientific_name:
-                    'Coturnix japonica',
-
-                description:
-                    'A popular quail breed known for its good egg and meat production.',
-
-                egg_production_rate:
-                    '280-300 eggs/year',
-
-                mature_weight:
-                    '100-120g',
-
-                maturity_age:
-                    '42-49 days',
-
-                optimal_temperature:
-                    '20-23°C',
-
-                optimal_humidity:
-                    '55-60%'
-            },
-
-            2: {
-                name:
-                    'Japanese Coturnix Crossbreed (Taiwan)',
-
-                scientific_name:
-                    'Coturnix japonica crossbreed',
-
-                description:
-                    'A Japanese Coturnix crossbreed associated with Taiwan, known for its hardy characteristics and suitability for quail production.',
-
-                egg_production_rate:
-                    '250-300 eggs/year',
-
-                mature_weight:
-                    '110-130g',
-
-                maturity_age:
-                    '42-49 days',
-
-                optimal_temperature:
-                    '20-23°C',
-
-                optimal_humidity:
-                    '55-60%'
-            },
-
-            3: {
-                name:
-                    'Pharaoh Quail',
-
-                scientific_name:
-                    'Coturnix japonica (Pharaoh strain)',
-
-                description:
-                    'A larger Coturnix quail strain commonly raised for meat production and general quail farming.',
-
-                egg_production_rate:
-                    '200-250 eggs/year',
-
-                mature_weight:
-                    '200-300g',
-
-                maturity_age:
-                    '42-49 days',
-
-                optimal_temperature:
-                    '20-23°C',
-
-                optimal_humidity:
-                    '55-60%'
-            }
-        };
-
-        const breed =
-            breedData[breedId] ||
-            breedData[1];
-
-        if (showInModal) {
-
-            document.getElementById(
-                'modal-breed-name'
-            ).textContent =
-                breed.name;
-
-            document.getElementById(
-                'modal-breed-scientific'
-            ).textContent =
-                breed.scientific_name;
-
-            document.getElementById(
-                'modal-breed-eggs'
-            ).textContent =
-                breed.egg_production_rate;
-
-            document.getElementById(
-                'modal-breed-weight'
-            ).textContent =
-                breed.mature_weight;
-
-            document.getElementById(
-                'modal-breed-age'
-            ).textContent =
-                breed.maturity_age;
-
-            document.getElementById(
-                'modal-breed-temp'
-            ).textContent =
-                breed.optimal_temperature;
-
-            document.getElementById(
-                'modal-breed-humidity'
-            ).textContent =
-                breed.optimal_humidity;
-
-            document.getElementById(
-                'modal-breed-description'
-            ).textContent =
-                breed.description;
-
-            document.getElementById(
-                'modal-breed-info'
-            ).style.display =
-                'block';
-
-        } else {
-
-            document.getElementById(
-                'breed-name'
-            ).textContent =
-                breed.name;
-
-            document.getElementById(
-                'breed-scientific'
-            ).textContent =
-                breed.scientific_name;
-
-            document.getElementById(
-                'breed-eggs'
-            ).textContent =
-                breed.egg_production_rate;
-
-            document.getElementById(
-                'breed-weight'
-            ).textContent =
-                breed.mature_weight;
-
-            document.getElementById(
-                'breed-age'
-            ).textContent =
-                breed.maturity_age;
-
-            document.getElementById(
-                'breed-temp'
-            ).textContent =
-                breed.optimal_temperature;
-
-            document.getElementById(
-                'breed-humidity'
-            ).textContent =
-                breed.optimal_humidity;
-
-            document.getElementById(
-                'breed-description'
-            ).textContent =
-                breed.description;
-
-            document.getElementById(
-                'breed-info'
-            ).classList.add(
-                'show'
-            );
-        }
-    }
-
-    function saveDetectionRecord(
-        detectionType,
-        confidence,
-        breedId = null,
-        imageData = null
-    ) {
-        const payload = {
-            detection_type:
-                detectionType,
-
-            confidence:
-                confidence,
-
-            quail_breed_id:
-                breedId,
-
-            location:
-                'Camera Feed',
-
-            detection_notes:
-                '',
-
-            image_data:
-                imageData
-        };
-
-        fetch(
-            '{{ route("quail-detection.save") }}',
-            {
-                method: 'POST',
-
-                headers: {
-                    'Content-Type':
-                        'application/json',
-
-                    'X-CSRF-TOKEN':
-                        document.querySelector(
-                            'meta[name="csrf-token"]'
-                        ).content
-                },
-
-                body:
-                    JSON.stringify(
-                        payload
-                    )
-            }
-        )
-        .then(
-            response =>
-                response.json()
-        )
-        .then(
-            data => {
-                console.log(
-                    'Detection saved:',
-                    data
-                );
-            }
-        )
-        .catch(
-            err =>
-                console.error(
-                    'Detection save error:',
-                    err
-                )
-        );
     }
 
     /*
