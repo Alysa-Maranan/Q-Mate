@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\Process;
 
 use App\Helpers\QuailBreedHelper;
@@ -526,8 +527,8 @@ class QuailDetectionController extends Controller
                     'local'
                 );
 
-            $fullPath = storage_path(
-                'app/' . $imagePath
+            $fullPath = Storage::disk('local')->path(
+                $imagePath
             );
 
             /*
