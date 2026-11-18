@@ -4063,13 +4063,18 @@
                         processing: true
                     });
 
-                const dialogToken =
-                    detectionDialogToken;
-
                 openDetectionResult(
                     processingRecord,
                     { save: false }
                 );
+
+                /*
+                 * Capture the token AFTER opening the processing modal
+                 * because openDetectionResult() increments the token.
+                 * Otherwise the final result would never replace the modal.
+                 */
+                const dialogToken =
+                    detectionDialogToken;
 
                 modalCooldownUntil =
                     Date.now() + 10000;
@@ -4237,6 +4242,11 @@
     async function classifyBreedFromImage(
         imageDataUrl
     ) {
+        const abortController =
+            new AbortController();
+
+        let classifyTimeoutId = null;
+
         try {
             const response =
                 await fetch(
@@ -4255,6 +4265,15 @@
                 'detection.jpg'
             );
 
+            /*
+             * The color rule is fast. Never leave the modal stuck on
+             * "Processing..." if the server or network stalls.
+             */
+            classifyTimeoutId = setTimeout(
+                () => abortController.abort(),
+                8000
+            );
+
             const classifyResponse =
                 await fetch(
                     '{{ route("quail-detection.classify") }}',
@@ -4269,9 +4288,15 @@
                         },
 
                         body:
-                            formData
+                            formData,
+
+                        signal:
+                            abortController.signal
                     }
                 );
+
+            clearTimeout(classifyTimeoutId);
+            classifyTimeoutId = null;
 
             if (
                 classifyResponse.ok
@@ -4299,6 +4324,9 @@
             };
 
         } catch (err) {
+            if (classifyTimeoutId !== null) {
+                clearTimeout(classifyTimeoutId);
+            }
 
             console.error(
                 'Classification error:',
@@ -4308,7 +4336,9 @@
             return {
                 success: false,
                 error:
-                    err.message
+                    err.name === 'AbortError'
+                        ? 'Classification timed out.'
+                        : err.message
             };
         }
     }
@@ -4790,13 +4820,18 @@
                     processing: true
                 });
 
-            const dialogToken =
-                detectionDialogToken;
-
             openDetectionResult(
                 processingRecord,
                 { save: false }
             );
+
+            /*
+             * Capture the token AFTER opening the processing modal because
+             * openDetectionResult() increments detectionDialogToken.
+             * Otherwise the final result would never replace the modal.
+             */
+            const dialogToken =
+                detectionDialogToken;
 
             modalCooldownUntil =
                 Date.now() + 10000;
