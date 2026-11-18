@@ -502,14 +502,6 @@
                     {{ isset($latest) && $latest && $latest->humidity !== null ? ($latest->humidity < 60 ? 'Too Dry' : ($latest->humidity > 85 ? 'Too Humidity' : 'Optimal')) : 'Unavailable' }}
                 </span>
             </div>
-            <div class="reading-card" id="feels-like-card" style="display:none;">
-                <div class="reading-emoji">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#795548" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
-                </div>
-                <div class="reading-label">Feels Like</div>
-                <div class="reading-value" id="feels-like">—°C</div>
-                <span class="reading-status status-optimal">Weather API</span>
-            </div>
         </div>
     </div>
 
@@ -633,9 +625,7 @@ class TempHumidityMonitor {
         this.refreshInProgress = false;
         this.initCharts();
         this.refresh();
-        this.updateWeather();
         this.pollInterval = setInterval(() => this.refresh(), 10000);
-        this.weatherPollInterval = setInterval(() => this.updateWeather(), 300000);
     }
 
     initCharts() {
@@ -868,26 +858,6 @@ class TempHumidityMonitor {
         const locationEl = document.getElementById('weather-location');
         if (locationEl) {
             locationEl.textContent = 'UNAVAILABLE • No fresh hardware or OpenWeather data';
-        }
-    }
-
-    async updateWeather() {
-        try {
-            const response = await fetch('/api/weather/philippines', { cache: 'no-store' });
-            if (!response.ok) throw new Error(`Weather API returned ${response.status}`);
-            const weather = await response.json();
-            const card = document.getElementById('feels-like-card');
-
-            if (weather.success && weather.feels_like != null) {
-                document.getElementById('feels-like').textContent = `${Number(weather.feels_like).toFixed(1)}°C`;
-                if (card) card.style.display = 'block';
-            } else if (card) {
-                card.style.display = 'none';
-            }
-        } catch (e) {
-            console.warn('Weather API fetch error:', e);
-            const card = document.getElementById('feels-like-card');
-            if (card) card.style.display = 'none';
         }
     }
 
