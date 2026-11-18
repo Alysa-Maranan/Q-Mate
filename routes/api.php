@@ -32,7 +32,7 @@ Route::get('/analytics', [AnalyticsController::class, 'getAnalytics']);
 Route::get('/breeds/current', [QuailBreedController::class, 'getCurrentBreed']);
 Route::get('/breeds', [QuailBreedController::class, 'getAllBreeds']);
 Route::post('/breeds/set-current', [QuailBreedController::class, 'setCurrentBreed'])->middleware('auth');
-Route::post('/breeds/set-from-detection', [QuailBreedController::class, 'setFromDetection']);
+Route::post('/breeds/set-from-detection', [QuailBreedController::class, 'setFromDetection'])->name('api.breeds.set-from-detection');
 
 // ── Egg Collection API Routes ──
 Route::get('/egg-collections', [EggCollectionController::class, 'index']);

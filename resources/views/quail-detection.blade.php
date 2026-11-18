@@ -2183,6 +2183,7 @@
     let lastDetectionCompletedAt = 0;
     let lastDetectionRecord = null;
     let detectionDialogToken = 0;
+    let pendingBreedAdoptionPromise = null;
 
     /*
      * Consecutive camera frames contain the same bird. This cooldown
@@ -4105,7 +4106,7 @@
                     ) {
                         openDetectionResult(
                             finalRecord,
-                            { save: true }
+                            { save: true, adoptBreed: true }
                         );
                     } else {
                         persistDetectionResult(
@@ -4861,7 +4862,7 @@
                 ) {
                     openDetectionResult(
                         finalRecord,
-                        { save: true }
+                        { save: true, adoptBreed: true }
                     );
                 } else {
                     persistDetectionResult(
@@ -5135,13 +5136,13 @@
         modal.style.zIndex = '99999';
         modal.setAttribute('aria-hidden', 'false');
 
-        const closeHandler = event => {
+        const closeHandler = (event, allowReload = true) => {
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
             }
 
-            closeDetectionModalAndRefresh(false);
+            closeDetectionModalAndRefresh(false, allowReload);
         };
 
         const closeTop = document.getElementById(
@@ -5169,7 +5170,7 @@
         if (scanAgain) {
             scanAgain.disabled = false;
             scanAgain.onclick = event => {
-                closeHandler(event);
+                closeHandler(event, false);
                 startAutoDetection();
             };
         }
@@ -5181,13 +5182,15 @@
         }
 
         if (
+            options.adoptBreed === true &&
             result.classificationStatus === 'identified' &&
             result.breedReference &&
             result.breedReference.breed_id
         ) {
-            setCurrentBreedFromDetection(
-                result.breedReference.breed_id
-            );
+            pendingBreedAdoptionPromise =
+                setCurrentBreedFromDetection(
+                    result.breedReference.breed_id
+                );
         }
 
         if (options.save === true) {
@@ -5308,7 +5311,7 @@
     /*
  * FIXED CLOSE FUNCTION
  */
-function closeDetectionModalAndRefresh(refresh = false) {
+function closeDetectionModalAndRefresh(refresh = false, allowReload = true) {
     const modal = document.getElementById('detectionModal');
 
     detectionDialogToken += 1;
@@ -5337,6 +5340,24 @@ function closeDetectionModalAndRefresh(refresh = false) {
 
     if (refresh) {
         console.log('Modal closed with refresh requested');
+    }
+
+    /*
+     * A detected breed is saved to the system settings when the result
+     * modal opens. Reload after the close so server-rendered breed labels
+     * (sidebar/header/farm settings) adopt the detected breed.
+     */
+    if (allowReload && pendingBreedAdoptionPromise) {
+        const adoptionPromise = pendingBreedAdoptionPromise;
+        pendingBreedAdoptionPromise = null;
+
+        adoptionPromise
+            .then(adopted => {
+                if (adopted) {
+                    window.location.reload();
+                }
+            })
+            .catch(() => {});
     }
 }
 
@@ -5546,7 +5567,7 @@ function closeDetectionModalAndRefresh(refresh = false) {
 
             const response =
                 await fetch(
-                    '/api/breeds/set-from-detection',
+                    '{{ route("api.breeds.set-from-detection") }}',
                     {
                         method: 'POST',
 
@@ -5577,7 +5598,11 @@ function closeDetectionModalAndRefresh(refresh = false) {
                     'Current breed updated from detection:',
                     data.breed.name
                 );
+
+                return true;
             }
+
+            return false;
 
         } catch (err) {
 
@@ -5585,6 +5610,8 @@ function closeDetectionModalAndRefresh(refresh = false) {
                 'Error setting breed from detection:',
                 err
             );
+
+            return false;
         }
     }
 
