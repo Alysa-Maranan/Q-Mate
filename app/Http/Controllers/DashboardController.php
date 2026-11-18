@@ -20,22 +20,23 @@ class DashboardController extends Controller
         $currentBreeds = QuailBreedHelper::getCurrentBreeds();
         $allBreeds = QuailBreed::getActive();
         
-        // Egg collection metrics for Today's Summary
+        // Egg collection metrics for Today's Summary.
+        // These are cumulative: every collection recorded in Inventory & Sales
+        // adds to the totals, regardless of the day it was recorded.
         $todayTotalEggs = 0;
         $todayGoodEggs = 0;
         $todayCrackedEggs = 0;
 
         $today = now()->toDateString();
 
-        $todayRow = \App\Models\EggCollection::query()
-            ->whereDate('created_at', $today)
+        $eggTotals = \App\Models\EggCollection::query()
             ->selectRaw('COALESCE(SUM(total_eggs),0) as total_eggs, COALESCE(SUM(good_eggs),0) as good_eggs, COALESCE(SUM(cracked_eggs),0) as cracked_eggs')
             ->first();
 
-        if ($todayRow) {
-            $todayTotalEggs = (int) ($todayRow->total_eggs ?? 0);
-            $todayGoodEggs = (int) ($todayRow->good_eggs ?? 0);
-            $todayCrackedEggs = (int) ($todayRow->cracked_eggs ?? 0);
+        if ($eggTotals) {
+            $todayTotalEggs = (int) ($eggTotals->total_eggs ?? 0);
+            $todayGoodEggs = (int) ($eggTotals->good_eggs ?? 0);
+            $todayCrackedEggs = (int) ($eggTotals->cracked_eggs ?? 0);
         }
 
         $farm = [
@@ -92,8 +93,9 @@ class DashboardController extends Controller
     {
         $today = now()->toDateString();
 
-        $todayRow = \App\Models\EggCollection::query()
-            ->whereDate('created_at', $today)
+        // Same cumulative egg totals as the page render so the polled cards
+        // stay in sync with every collection recorded in Inventory & Sales.
+        $eggTotals = \App\Models\EggCollection::query()
             ->selectRaw('COALESCE(SUM(total_eggs),0) as total_eggs, COALESCE(SUM(good_eggs),0) as good_eggs, COALESCE(SUM(cracked_eggs),0) as cracked_eggs')
             ->first();
 
@@ -104,9 +106,9 @@ class DashboardController extends Controller
 
         return response()->json([
             'eggs' => [
-                'total' => (int) ($todayRow->total_eggs ?? 0),
-                'good' => (int) ($todayRow->good_eggs ?? 0),
-                'cracked' => (int) ($todayRow->cracked_eggs ?? 0),
+                'total' => (int) ($eggTotals->total_eggs ?? 0),
+                'good' => (int) ($eggTotals->good_eggs ?? 0),
+                'cracked' => (int) ($eggTotals->cracked_eggs ?? 0),
             ],
             'sales' => $this->getSalesSummary($today),
             'orders' => $this->getOrdersSummary($today),

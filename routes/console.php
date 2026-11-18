@@ -80,4 +80,5 @@ Schedule::command('feeder:check')
 
 // Six samples per minute = one new database row every ten seconds.
 Schedule::command('sensor:record --samples=6 --interval=10')
-    ->everyMinute();
+    ->everyMinute()
+    ->withoutOverlapping();

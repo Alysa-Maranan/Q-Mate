@@ -1771,7 +1771,12 @@ function updateDashboardSummary(data) {
 }
 
 function loadDashboardSummary() {
-    fetch('/api/dashboard/summary', { headers: { 'Accept': 'application/json' } })
+    // Use the named route so polling also works when the app is served from a
+    // subdirectory (e.g. /CAPSTONE_SQUIFM/public), and never reuse a cached response.
+    fetch("{{ route('api.dashboard.summary') }}", {
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store'
+    })
         .then(r => r.json())
         .then(updateDashboardSummary)
         .catch(() => {});

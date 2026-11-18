@@ -1633,3 +1633,25 @@ body #main-content-wrap.orders-products-page > .container > .category-tabs {
     padding-left: 2rem !important;
     padding-right: 2rem !important;
 }
+
+/* ---------- ADMIN LEARN BOOK: FULL-WIDTH READING COLUMN ------------------ */
+/* The Learn Book's own <style> caps .book-content at 900px (85% under
+   1200px, 95% when the sidebar is collapsed), leaving a large empty gutter
+   on both sides. This stylesheet loads after that inline <style>, so these
+   page-scoped overrides let the guide fill the available width with the
+   same 2rem side padding used by the other admin pages. The book wrapper,
+   header and typography are untouched. */
+#main-content-wrap .book-content {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+}
+
+@media (max-width: 767px) {
+    #main-content-wrap .book-content {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+}
