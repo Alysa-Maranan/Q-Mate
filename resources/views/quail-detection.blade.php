@@ -846,22 +846,44 @@
     }
 
     #breedInfoModal .modal-content {
-        max-width: 860px;
-        max-height: min(92vh, 900px);
+        max-width: 920px;
+        max-height: min(94vh, 940px);
         padding: 0;
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        border-radius: 20px;
     }
 
     .breed-modal-top {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 190px;
-        gap: 1.25rem;
-        align-items: center;
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: 1.5rem;
+        align-items: stretch;
         padding: 1.5rem;
-        background: linear-gradient(135deg, #6d4c41 0%, #a1887f 100%);
+        background:
+            radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.18), transparent 42%),
+            linear-gradient(135deg, #4e342e 0%, #6d4c41 52%, #a1887f 100%);
         color: #fff;
+    }
+
+    .breed-modal-image {
+        width: 100%;
+        height: 100%;
+        min-height: 210px;
+        object-fit: cover;
+        border-radius: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.55);
+        background: #efebe9;
+        display: block;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+    }
+
+    .breed-modal-heading {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
     }
 
     .breed-modal-heading-row {
@@ -873,11 +895,28 @@
     }
 
     .breed-modal-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
         font-size: 0.72rem;
         font-weight: 700;
         letter-spacing: 0.14em;
         text-transform: uppercase;
-        opacity: 0.85;
+        opacity: 0.88;
+    }
+
+    .breed-modal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-left: 0.5rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
     }
 
     #breedInfoModal .modal-close {
@@ -886,17 +925,31 @@
     }
 
     .breed-modal-title {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
         font-weight: 700;
-        line-height: 1.25;
+        line-height: 1.22;
         margin: 0 0 0.35rem 0;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
     }
 
     .breed-modal-scientific {
-        font-size: 0.95rem;
+        font-size: 0.98rem;
         font-style: italic;
-        opacity: 0.9;
-        margin-bottom: 0.75rem;
+        opacity: 0.92;
+        margin-bottom: 0.6rem;
+    }
+
+    .breed-modal-class {
+        display: inline-block;
+        font-size: 0.74rem;
+        font-weight: 600;
+        opacity: 0.82;
+        margin-bottom: 0.35rem;
+        word-break: break-word;
+    }
+
+    .breed-modal-confidence-wrap {
+        margin-top: 0.65rem;
     }
 
     .breed-modal-confidence {
@@ -907,46 +960,122 @@
         padding: 0.4rem 0.85rem;
         font-size: 0.85rem;
         font-weight: 600;
+        margin-bottom: 0.5rem;
     }
 
-    .breed-modal-image {
+    .breed-confidence-bar {
         width: 100%;
-        max-height: 170px;
-        object-fit: cover;
-        border-radius: 12px;
-        border: 2px solid rgba(255, 255, 255, 0.55);
-        background: #efebe9;
-        display: block;
+        max-width: 360px;
+        height: 7px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.25);
+        overflow: hidden;
+    }
+
+    .breed-confidence-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #a5d6a7 0%, #66bb6a 100%);
+        transition: width 0.4s ease;
     }
 
     .breed-modal-scroll {
         overflow-y: auto;
-        padding: 1.25rem 1.5rem 0.5rem;
+        padding: 1.35rem 1.5rem 1rem;
         min-height: 0;
+        background: #fffdfa;
+    }
+
+    .breed-quick-facts {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1.35rem;
+    }
+
+    .breed-quick-card {
+        background: #fff;
+        border: 1px solid #e0d6d2;
+        border-top: 3px solid #a1887f;
+        border-radius: 12px;
+        padding: 0.85rem;
+        box-shadow: 0 3px 12px rgba(109, 76, 65, 0.06);
+    }
+
+    .breed-quick-label {
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: #8d6e63;
+        margin-bottom: 0.35rem;
+    }
+
+    .breed-quick-value {
+        font-size: 0.84rem;
+        font-weight: 700;
+        line-height: 1.4;
+        color: #4e342e;
+    }
+
+    .breed-overview {
+        background: #fff;
+        border: 1px solid #e0d6d2;
+        border-left: 4px solid #6d4c41;
+        border-radius: 12px;
+        padding: 1rem 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .breed-overview-title {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #8d6e63;
+        margin-bottom: 0.45rem;
+    }
+
+    .breed-overview p {
+        margin: 0;
+        font-size: 0.92rem;
+        line-height: 1.7;
+        color: #5d4037;
     }
 
     .breed-modal-note {
-        margin: 0 0 1.25rem;
+        margin: 0 0 1.4rem;
         padding: 0.75rem 0.9rem;
         border-radius: 10px;
         background: #fff8e1;
         border: 1px solid #ffe0b2;
         color: #7a5b2e;
         font-size: 0.8rem;
-        line-height: 1.5;
+        line-height: 1.55;
+    }
+
+    #breedInfoSections {
+        counter-reset: breed-section;
     }
 
     .breed-info-section {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.55rem;
     }
 
     .breed-info-section-title {
         font-size: 1rem;
         font-weight: 700;
         color: #6d4c41;
-        margin: 0 0 0.75rem 0;
+        margin: 0 0 0.8rem 0;
         padding-bottom: 0.4rem;
-        border-bottom: 2px solid #f5eee6;
+        border-bottom: 2px solid #f0e5df;
+    }
+
+    .breed-info-section-title::before {
+        counter-increment: breed-section;
+        content: counter(breed-section) ". ";
+        color: #a1887f;
     }
 
     .breed-info-grid {
@@ -956,11 +1085,15 @@
     }
 
     .breed-info-item {
-        background: #efebe9;
+        background: #fff;
         border: 1px solid #e0d6d2;
         border-left: 3px solid #a1887f;
         border-radius: 10px;
         padding: 0.75rem 0.85rem;
+    }
+
+    .breed-info-item.wide {
+        grid-column: 1 / -1;
     }
 
     .breed-info-label {
@@ -974,15 +1107,85 @@
 
     .breed-info-value {
         font-size: 0.875rem;
-        line-height: 1.5;
+        line-height: 1.55;
         color: #4e342e;
     }
 
-    .breed-info-description {
-        font-size: 0.9rem;
+    .breed-bullet-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .breed-bullet-list li {
+        position: relative;
+        padding-left: 1.45rem;
+        font-size: 0.88rem;
+        line-height: 1.55;
+        color: #5d4037;
+    }
+
+    .breed-bullet-list li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1.05rem;
+        height: 1.05rem;
+        border-radius: 50%;
+        background: #efebe9;
+        color: #6d4c41;
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .breed-callout {
+        border-radius: 12px;
+        padding: 0.95rem 1.05rem;
+        font-size: 0.88rem;
         line-height: 1.65;
         color: #5d4037;
-        margin: 0;
+        border-left: 4px solid #6d4c41;
+        background: #f7f1ed;
+        margin-bottom: 1.4rem;
+    }
+
+    .breed-callout.compare {
+        background: #fff8e1;
+        border-left-color: #ff9800;
+    }
+
+    .breed-callout.model {
+        background: #f3e8e3;
+        border-left-color: #8d6e63;
+    }
+
+    .breed-callout strong {
+        display: block;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #8d6e63;
+        margin-bottom: 0.35rem;
+    }
+
+    .breed-info-description {
+        font-size: 0.92rem;
+        line-height: 1.75;
+        color: #5d4037;
+        margin: 0 0 0.9rem;
+    }
+
+    .breed-info-description.extra {
+        padding-top: 0.9rem;
+        border-top: 1px dashed #d7ccc8;
+        color: #6d5c52;
+        font-size: 0.88rem;
     }
 
     .breed-modal-actions {
@@ -996,26 +1199,43 @@
         min-width: 150px;
     }
 
+    @media (max-width: 900px) {
+        .breed-modal-top {
+            grid-template-columns: 180px minmax(0, 1fr);
+            gap: 1.1rem;
+        }
+
+        .breed-quick-facts {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
     @media (max-width: 768px) {
         .breed-modal-top {
             grid-template-columns: 1fr;
             padding: 1.1rem;
+            gap: 1rem;
         }
 
         .breed-modal-image {
-            max-height: 190px;
+            height: 180px;
+            min-height: 0;
         }
 
         .breed-modal-title {
-            font-size: 1.25rem;
+            font-size: 1.35rem;
         }
 
         .breed-modal-scroll {
-            padding: 1rem 1.1rem 0.5rem;
+            padding: 1rem 1.1rem 0.75rem;
         }
 
         .breed-info-grid {
             grid-template-columns: 1fr;
+        }
+
+        .breed-info-item.wide {
+            grid-column: auto;
         }
 
         .breed-modal-actions {
@@ -1024,6 +1244,12 @@
 
         .breed-modal-actions .modal-btn {
             flex: 1 1 140px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .breed-quick-facts {
+            grid-template-columns: 1fr;
         }
     }
 
@@ -1474,9 +1700,28 @@
 <div id="breedInfoModal" class="modal" aria-hidden="true">
     <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="breed-modal-title">
         <div class="breed-modal-top">
+            <img
+                id="breed-modal-image"
+                class="breed-modal-image"
+                alt="Captured or uploaded quail image"
+                src=""
+                style="display: none;"
+            />
+
             <div class="breed-modal-heading">
                 <div class="breed-modal-heading-row">
-                    <span class="breed-modal-eyebrow">Breed Information</span>
+                    <span class="breed-modal-eyebrow">
+                        <svg class="icon" width="15" height="15" aria-hidden="true">
+                            <use xlink:href="#icon-quail"/>
+                        </svg>
+                        Breed Information
+                        <span class="breed-modal-badge">
+                            <svg class="icon" width="12" height="12" aria-hidden="true">
+                                <use xlink:href="#icon-robot"/>
+                            </svg>
+                            AI result
+                        </span>
+                    </span>
 
                     <button
                         type="button"
@@ -1493,26 +1738,62 @@
 
                 <h2 class="breed-modal-title" id="breed-modal-title">Detected Breed</h2>
                 <div class="breed-modal-scientific" id="breed-modal-scientific">Coturnix japonica</div>
-                <div class="breed-modal-confidence" id="breed-modal-confidence">Prediction confidence: 0%</div>
-            </div>
+                <div class="breed-modal-class" id="breed-modal-class">Model class: —</div>
 
-            <img
-                id="breed-modal-image"
-                class="breed-modal-image"
-                alt="Captured or uploaded quail image"
-                src=""
-                style="display: none;"
-            />
+                <div class="breed-modal-confidence-wrap">
+                    <div class="breed-modal-confidence" id="breed-modal-confidence">
+                        Prediction confidence: 0%
+                    </div>
+                    <div
+                        class="breed-confidence-bar"
+                        role="progressbar"
+                        aria-label="Prediction confidence"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow="0"
+                        id="breed-confidence-bar"
+                    >
+                        <div class="breed-confidence-fill" id="breed-confidence-fill"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="breed-modal-scroll">
+            <div class="breed-quick-facts" id="breedQuickFacts"></div>
+
+            <div class="breed-overview">
+                <div class="breed-overview-title">Breed Overview</div>
+                <p id="breedOverview"></p>
+            </div>
+
             <p class="breed-modal-note">
-                The values below are general reference information for this breed, not
-                measurements of the individual bird. Prediction confidence is the model's
-                score for this image and is not a guarantee of accuracy.
+                These values are general reference information for the breed, not
+                measurements of the individual bird in the image. Prediction confidence
+                is the model's score for this image and is not a guarantee of accuracy.
             </p>
 
             <div id="breedInfoSections"></div>
+
+            <section class="breed-info-section">
+                <h3 class="breed-info-section-title">Identification Notes</h3>
+                <ul class="breed-bullet-list" id="breedIdentification"></ul>
+            </section>
+
+            <section class="breed-info-section">
+                <h3 class="breed-info-section-title">Care Checklist</h3>
+                <ul class="breed-bullet-list" id="breedCareChecklist"></ul>
+            </section>
+
+            <div class="breed-callout compare">
+                <strong>Why the two detections stay separate</strong>
+                <span id="breedComparisonNote"></span>
+            </div>
+
+            <div class="breed-callout model">
+                <strong>How to read this result</strong>
+                <span id="breedModelNote"></span>
+            </div>
         </div>
 
         <div class="modal-buttons breed-modal-actions">
@@ -1567,6 +1848,7 @@
     let overlayCtx = null;
     let stream = null;
     let cocoModel = null;
+    let cocoModelPromise = null;
     let detectionInProgress = false;
     let autoDetectionActive = false;
     let autoDetectionInterval = null;
@@ -1581,6 +1863,13 @@
         japanese_quail_group: {
             breedName: "Japanese Coturnix Quail (Taiwan Crossbreed)",
             scientificName: "Coturnix japonica",
+            overview: "Japanese Coturnix Quail (Taiwan Crossbreed) is a domestic Japanese quail breeding line identified by its breeding background rather than by one fixed appearance. Because it is a crossbreed or breeding line, body fullness, feather markings, adult weight, and production performance can vary with the parent stock and with nutrition, lighting, and management. It is raised for both egg and meat production. The information in this modal describes the breed in general terms and is not a measurement of the individual bird in the image.",
+            quickFacts: [
+                ["Primary Purpose", "Egg and meat production"],
+                ["Lifespan", "Several years under appropriate care; varies with health and management"],
+                ["Sexual Maturity", "Commonly around 6–8 weeks"],
+                ["Annual Eggs", "Varies with genetics, age, nutrition, lighting, and management"]
+            ],
             sections: [
                 {
                     title: "Basic Information",
@@ -1589,7 +1878,8 @@
                         ["Scientific Name", "Coturnix japonica"],
                         ["Classification", "Domestic Japanese quail crossbreed or breeding line"],
                         ["Primary Purpose", "Egg and meat production"],
-                        ["Lifespan", "May live for several years under appropriate care; lifespan varies with health and management"]
+                        ["Lifespan", "May live for several years under appropriate care; lifespan varies with health and management"],
+                        ["Breed Context", "Identified by breeding background; physical traits and performance can vary with parent stock and management.", true]
                     ]
                 },
                 {
@@ -1599,7 +1889,8 @@
                         ["Feather Color", "May exhibit brown, cream, and dark feather markings depending on genetic background"],
                         ["Body Structure", "Small domestic quail with a compact body and short tail"],
                         ["Adult Weight", "Varies depending on breeding line, genetics, sex, and age"],
-                        ["Distinctive Features", "Physical characteristics may differ depending on the parent lines used in crossbreeding"]
+                        ["Distinctive Features", "Physical characteristics may differ depending on the parent lines used in crossbreeding"],
+                        ["Variation Note", "Because this is a crossbreed or breeding line, appearance may differ between individuals even within the same category.", true]
                     ]
                 },
                 {
@@ -1608,7 +1899,8 @@
                         ["Annual Egg Production", "Varies according to genetics, age, nutrition, lighting, and management"],
                         ["Egg Color", "Generally cream to pale-colored with brown or dark speckles"],
                         ["Typical Egg Weight", "Often approximately 9–13 grams in Japanese quail, although crossbred lines may differ"],
-                        ["Sexual Maturity", "Commonly around 6–8 weeks, depending on genetics and rearing conditions"]
+                        ["Sexual Maturity", "Commonly around 6–8 weeks, depending on genetics and rearing conditions"],
+                        ["Production Note", "Egg output depends on genetics, age, nutrition, lighting, and management rather than one fixed number.", true]
                     ]
                 },
                 {
@@ -1617,7 +1909,8 @@
                         ["Feed Type", "Balanced commercial quail or game bird feed suitable for the bird's growth or production stage"],
                         ["Protein Requirements", "Depend on age, growth, and egg production requirements"],
                         ["Water Requirement", "Continuous access to clean drinking water"],
-                        ["Feeding Recommendation", "Provide appropriate nutrients to maintain health, growth, and productivity"]
+                        ["Feeding Recommendation", "Provide appropriate nutrients to maintain health, growth, and productivity"],
+                        ["Stage Note", "Nutrient needs change with age, growth, and egg production; match the feed to the bird's current stage.", true]
                     ]
                 },
                 {
@@ -1626,15 +1919,37 @@
                         ["Temperature", "Appropriate for age, feather development, and environmental conditions"],
                         ["Housing", "Clean, dry, secure, and properly ventilated enclosure"],
                         ["Lighting", "Appropriate and consistent lighting for the production stage"],
-                        ["Health Monitoring", "Regularly observe feeding behavior, activity, feather condition, and signs of illness"]
+                        ["Health Monitoring", "Regularly observe feeding behavior, activity, feather condition, and signs of illness"],
+                        ["Comfort Note", "Ventilation, cleanliness, and secure housing all contribute to health and consistent production.", true]
                     ]
                 }
             ],
-            description: "Japanese Coturnix Quail (Taiwan Crossbreed) refers to a domestic Japanese quail breeding line identified by its breeding background. Its physical characteristics, body weight, and production performance may vary depending on the parent stock, genetics, nutrition, and management practices."
+            identification: [
+                "Look for a compact, oval-shaped body; fullness can differ between individuals.",
+                "Feathering may combine brown, cream, and dark markings depending on genetic background.",
+                "Because parent lines vary, appearance alone is not enough to confirm this breeding line; use the model result together with the source of the bird."
+            ],
+            careChecklist: [
+                "Provide balanced commercial quail or game bird feed for the current growth or production stage.",
+                "Keep clean drinking water available at all times.",
+                "Use a clean, dry, secure, and properly ventilated enclosure.",
+                "Maintain consistent lighting suitable for the production stage and watch feeding behavior, activity, feather condition, and signs of illness."
+            ],
+            comparisonNote: "Both Pharaoh Quail and Japanese Coturnix Quail (Taiwan Crossbreed) belong to the same species, Coturnix japonica. They are kept as separate detections because the first is a domestic variety associated with wild-type plumage, while the second is a crossbreed or breeding line identified by its breeding background.",
+            modelNote: "The percentage shown is the model's confidence for this image. It is not a guarantee that the identification is correct, and it does not measure the individual bird. Confidence below the configured threshold is treated as Uncertain Detection and no breed is forced.",
+            description: "Japanese Coturnix Quail (Taiwan Crossbreed) refers to a domestic Japanese quail breeding line identified by its breeding background. Its physical characteristics, body weight, and production performance may vary depending on the parent stock, genetics, nutrition, and management practices.",
+            extendedDescription: "In practical terms, two Japanese Coturnix Quail (Taiwan Crossbreed) birds can look different from each other while still belonging to the same breeding-line category. Egg output, egg weight, and adult size should therefore be read as broad reference ranges rather than fixed expectations. Good records of parent stock, age, diet, lighting, and health are more useful for managing this line than appearance alone."
         },
         pharaoh_quail: {
             breedName: "Pharaoh Quail",
             scientificName: "Coturnix japonica",
+            overview: "Pharaoh Quail is a commonly recognized domestic variety of Japanese quail associated with natural brown, streaked plumage. It is a domestic variety commonly associated with wild-type plumage and is raised for egg and meat production. The characteristics below describe the variety in general; individual birds can vary with genetics, sex, age, and feeding conditions.",
+            quickFacts: [
+                ["Primary Purpose", "Egg and meat production"],
+                ["Lifespan", "Several years under appropriate care; varies with health and management"],
+                ["Sexual Maturity", "Commonly around 6–8 weeks"],
+                ["Annual Eggs", "Approximately 200–300 under favorable laying conditions"]
+            ],
             sections: [
                 {
                     title: "Basic Information",
@@ -1643,7 +1958,8 @@
                         ["Scientific Name", "Coturnix japonica"],
                         ["Classification", "Domestic Japanese quail variety commonly associated with wild-type plumage"],
                         ["Primary Purpose", "Egg and meat production"],
-                        ["Lifespan", "May live for several years under appropriate care; lifespan varies with health and management"]
+                        ["Lifespan", "May live for several years under appropriate care; lifespan varies with health and management"],
+                        ["Breed Context", "A domestic Japanese quail variety commonly associated with wild-type plumage.", true]
                     ]
                 },
                 {
@@ -1653,7 +1969,8 @@
                         ["Feather Color", "Predominantly brown with dark streaks and mottled patterns"],
                         ["Body Structure", "Small, rounded terrestrial bird with short wings and a relatively compact build"],
                         ["Adult Weight", "Varies depending on genetics, sex, age, and feeding conditions"],
-                        ["Distinctive Features", "Wild-type brown plumage with characteristic streaking and mottling"]
+                        ["Distinctive Features", "Wild-type brown plumage with characteristic streaking and mottling"],
+                        ["Variation Note", "Brown streaked plumage is characteristic, but individual variation with genetics, sex, and age is normal.", true]
                     ]
                 },
                 {
@@ -1662,7 +1979,8 @@
                         ["Annual Egg Production", "Approximately 200–300 eggs under favorable laying conditions; actual output varies"],
                         ["Egg Color", "Usually cream to pale-colored with brown or dark speckles"],
                         ["Typical Egg Weight", "Approximately 9–13 grams"],
-                        ["Sexual Maturity", "Commonly around 6–8 weeks of age"]
+                        ["Sexual Maturity", "Commonly around 6–8 weeks of age"],
+                        ["Production Note", "The 200–300 egg figure applies under favorable laying conditions; actual output varies.", true]
                     ]
                 },
                 {
@@ -1671,7 +1989,8 @@
                         ["Feed Type", "Nutritionally balanced quail or game bird feed appropriate for the bird's life stage"],
                         ["Protein Requirements", "Depend on age and production stage; growing birds generally require higher protein levels than mature birds"],
                         ["Water Requirement", "Continuous access to clean drinking water"],
-                        ["Feeding Recommendation", "Provide suitable nutrients to support growth, maintenance, and egg production"]
+                        ["Feeding Recommendation", "Provide suitable nutrients to support growth, maintenance, and egg production"],
+                        ["Stage Note", "Growing birds generally need higher protein levels than mature birds, so match feed to age and production stage.", true]
                     ]
                 },
                 {
@@ -1680,11 +1999,26 @@
                         ["Temperature", "Maintain environmental conditions appropriate for the bird's age and feather development"],
                         ["Housing", "Clean, dry, secure, and adequately ventilated enclosure"],
                         ["Lighting", "Consistent lighting appropriate for the production stage"],
-                        ["Health Monitoring", "Observe feed intake, water consumption, activity, feather condition, and signs of illness"]
+                        ["Health Monitoring", "Observe feed intake, water consumption, activity, feather condition, and signs of illness"],
+                        ["Comfort Note", "Clean, dry, secure, and well-ventilated housing supports health, feeding, and laying.", true]
                     ]
                 }
             ],
-            description: "Pharaoh Quail is a commonly recognized domestic variety of Japanese quail (Coturnix japonica) associated with natural brown, streaked plumage. It is raised for egg and meat production and is known for its relatively early sexual maturity."
+            identification: [
+                "Compact, oval-shaped body with a short tail.",
+                "Predominantly brown plumage with dark streaks and mottled patterns.",
+                "Wild-type brown streaking and mottling are characteristic, but individual variation is normal."
+            ],
+            careChecklist: [
+                "Provide nutritionally balanced quail or game bird feed for the bird's life stage.",
+                "Keep clean drinking water available at all times.",
+                "Use a clean, dry, secure, and adequately ventilated enclosure.",
+                "Provide consistent lighting and observe feed intake, water consumption, activity, feather condition, and signs of illness."
+            ],
+            comparisonNote: "Both Pharaoh Quail and Japanese Coturnix Quail (Taiwan Crossbreed) belong to the same species, Coturnix japonica. They are kept as separate detections because the first is a domestic variety associated with wild-type plumage, while the second is a crossbreed or breeding line identified by its breeding background.",
+            modelNote: "The percentage shown is the model's confidence for this image. It is not a guarantee that the identification is correct, and it does not measure the individual bird. Confidence below the configured threshold is treated as Uncertain Detection and no breed is forced.",
+            description: "Pharaoh Quail is a commonly recognized domestic variety of Japanese quail (Coturnix japonica) associated with natural brown, streaked plumage. It is raised for egg and meat production and is known for its relatively early sexual maturity.",
+            extendedDescription: "Because this variety is associated with wild-type plumage, brown streaked feathering is a useful visual cue, but it is not unique to every Japanese quail. Egg production and sexual maturity are commonly in the ranges shown when birds are healthy and well managed. These figures are general reference points and can vary with genetics, sex, age, and feeding conditions."
         }
     };
 
@@ -2023,6 +2357,37 @@
         }
     }
 
+    /*
+     * Load the detector once and reuse the promise. The camera is started
+     * independently so the Start button reacts immediately.
+     */
+    function ensureCocoModel() {
+        if (cocoModel) {
+            return Promise.resolve(cocoModel);
+        }
+
+        if (typeof cocoSsd === 'undefined') {
+            return Promise.reject(
+                new Error('COCO-SSD detector is not available yet.')
+            );
+        }
+
+        if (!cocoModelPromise) {
+            cocoModelPromise = cocoSsd
+                .load()
+                .then(model => {
+                    cocoModel = model;
+                    return model;
+                })
+                .catch(error => {
+                    cocoModelPromise = null;
+                    throw error;
+                });
+        }
+
+        return cocoModelPromise;
+    }
+
     async function initVideo() {
         video =
             document.getElementById('video-feed');
@@ -2126,10 +2491,8 @@
                 statusChip.querySelector(
                     '.status-text'
                 ).textContent =
-                    'Camera ready — Auto-detecting quails...';
+                    'Camera ready — starting detector...';
             }
-
-            startAutoDetection();
 
             document.getElementById(
                 'start-btn'
@@ -2173,16 +2536,19 @@
             alert(
                 'Please allow camera access to use this feature.'
             );
+
+            throw err;
         }
     }
 
     let cameraStarting = false;
 
     async function startCamera() {
-        if (
-            cameraStarting ||
-            autoDetectionActive
-        ) {
+        /*
+         * autoDetectionActive can still be true after an upload, so the
+         * camera check must be based on the actual stream.
+         */
+        if (cameraStarting || stream) {
             return;
         }
 
@@ -2216,34 +2582,80 @@
             statusChip.querySelector(
                 '.status-text'
             ).textContent =
-                'Loading AI model...';
+                'Starting camera...';
         }
 
         try {
-            cocoModel =
-                await cocoSsd.load();
+            /*
+             * Kick off both tasks immediately. getUserMedia runs on the
+             * user gesture, so the permission prompt appears right away
+             * instead of after the detector has finished downloading.
+             */
+            const videoReady = initVideo();
+            const modelReady = ensureCocoModel();
+
+            await videoReady;
 
             if (statusChip) {
-                statusChip.classList.remove(
-                    'error'
-                );
-
-                statusChip.classList.add(
-                    'loading'
-                );
-
                 statusChip.querySelector(
                     '.status-text'
                 ).textContent =
-                    'Model loaded, initializing camera...';
+                    'Camera ready — loading detector...';
             }
 
-            await initVideo();
+            try {
+                await modelReady;
+
+                startAutoDetection();
+
+                if (statusChip) {
+                    statusChip.classList.remove(
+                        'loading',
+                        'error'
+                    );
+
+                    statusChip.classList.add(
+                        'success'
+                    );
+
+                    statusChip.querySelector(
+                        '.status-icon'
+                    ).innerHTML =
+                        '<svg class="icon" width="16" height="16" aria-hidden="true"><use xlink:href="#icon-check"/></svg>';
+
+                    statusChip.querySelector(
+                        '.status-text'
+                    ).textContent =
+                        'Camera ready — Auto-detecting quails...';
+                }
+
+            } catch (modelError) {
+                console.error(
+                    'AI detector load error:',
+                    modelError
+                );
+
+                if (statusChip) {
+                    statusChip.classList.remove(
+                        'loading',
+                        'success'
+                    );
+
+                    statusChip.classList.add(
+                        'error'
+                    );
+
+                    statusChip.querySelector(
+                        '.status-text'
+                    ).textContent =
+                        'Camera ready — detector unavailable. Refresh to retry.';
+                }
+            }
 
         } catch (err) {
 
             console.error(
-                'Model/Camera loading error:',
+                'Camera start error:',
                 err
             );
 
@@ -3208,6 +3620,15 @@
             return;
         }
 
+        const confidencePercent =
+            Math.min(
+                100,
+                Math.max(
+                    0,
+                    Number(confidence) * 100
+                )
+            );
+
         document.getElementById(
             'breed-modal-title'
         ).textContent = info.breedName;
@@ -3217,11 +3638,38 @@
         ).textContent = info.scientificName;
 
         document.getElementById(
+            'breed-modal-class'
+        ).textContent =
+            'Model class: ' + (classLabel || '—');
+
+        document.getElementById(
             'breed-modal-confidence'
         ).textContent =
             'Prediction confidence: ' +
-            (Number(confidence) * 100).toFixed(1) +
+            confidencePercent.toFixed(1) +
             '%';
+
+        const confidenceFill =
+            document.getElementById(
+                'breed-confidence-fill'
+            );
+
+        if (confidenceFill) {
+            confidenceFill.style.width =
+                confidencePercent + '%';
+        }
+
+        const confidenceBar =
+            document.getElementById(
+                'breed-confidence-bar'
+            );
+
+        if (confidenceBar) {
+            confidenceBar.setAttribute(
+                'aria-valuenow',
+                confidencePercent.toFixed(0)
+            );
+        }
 
         const image =
             document.getElementById(
@@ -3234,6 +3682,53 @@
         } else if (image) {
             image.removeAttribute('src');
             image.style.display = 'none';
+        }
+
+        const quickFacts =
+            document.getElementById(
+                'breedQuickFacts'
+            );
+
+        if (quickFacts) {
+            quickFacts.innerHTML = '';
+
+            info.quickFacts.forEach(fact => {
+                const card =
+                    document.createElement('div');
+
+                card.className =
+                    'breed-quick-card';
+
+                const label =
+                    document.createElement('div');
+
+                label.className =
+                    'breed-quick-label';
+
+                label.textContent = fact[0];
+
+                const value =
+                    document.createElement('div');
+
+                value.className =
+                    'breed-quick-value';
+
+                value.textContent = fact[1];
+
+                card.appendChild(label);
+                card.appendChild(value);
+                quickFacts.appendChild(card);
+            });
+        }
+
+        const overview =
+            document.getElementById(
+                'breedOverview'
+            );
+
+        if (overview) {
+            overview.textContent =
+                info.overview;
         }
 
         const sections =
@@ -3272,6 +3767,10 @@
 
                     item.className =
                         'breed-info-item';
+
+                    if (field[2]) {
+                        item.classList.add('wide');
+                    }
 
                     const label =
                         document.createElement('div');
@@ -3323,6 +3822,15 @@
             description.textContent =
                 info.description;
 
+            const extraDescription =
+                document.createElement('p');
+
+            extraDescription.className =
+                'breed-info-description extra';
+
+            extraDescription.textContent =
+                info.extendedDescription;
+
             descriptionSection.appendChild(
                 descriptionHeading
             );
@@ -3331,9 +3839,67 @@
                 description
             );
 
+            descriptionSection.appendChild(
+                extraDescription
+            );
+
             sections.appendChild(
                 descriptionSection
             );
+        }
+
+        const identification =
+            document.getElementById(
+                'breedIdentification'
+            );
+
+        if (identification) {
+            identification.innerHTML = '';
+
+            info.identification.forEach(text => {
+                const item =
+                    document.createElement('li');
+
+                item.textContent = text;
+                identification.appendChild(item);
+            });
+        }
+
+        const careChecklist =
+            document.getElementById(
+                'breedCareChecklist'
+            );
+
+        if (careChecklist) {
+            careChecklist.innerHTML = '';
+
+            info.careChecklist.forEach(text => {
+                const item =
+                    document.createElement('li');
+
+                item.textContent = text;
+                careChecklist.appendChild(item);
+            });
+        }
+
+        const comparisonNote =
+            document.getElementById(
+                'breedComparisonNote'
+            );
+
+        if (comparisonNote) {
+            comparisonNote.textContent =
+                info.comparisonNote;
+        }
+
+        const modelNote =
+            document.getElementById(
+                'breedModelNote'
+            );
+
+        if (modelNote) {
+            modelNote.textContent =
+                info.modelNote;
         }
 
         modal.classList.add('show');
@@ -3368,6 +3934,15 @@
 
         if (image) {
             image.removeAttribute('src');
+        }
+
+        const confidenceFill =
+            document.getElementById(
+                'breed-confidence-fill'
+            );
+
+        if (confidenceFill) {
+            confidenceFill.style.width = '0%';
         }
 
         /*
@@ -4481,6 +5056,18 @@ function closeDetectionModalAndRefresh(refresh = false) {
         function() {
 
             loadHistory();
+
+            /*
+             * Preload the detector while the page is idle so Start Camera
+             * does not have to wait for the model to download.
+             */
+            ensureCocoModel()
+                .catch(error =>
+                    console.warn(
+                        'Detector preload failed:',
+                        error
+                    )
+                );
 
             const uploadInput =
                 document.getElementById(
