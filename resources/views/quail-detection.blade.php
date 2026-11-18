@@ -808,46 +808,62 @@
         border-radius: 20px;
     }
 
-    .result-modal-hero {
+    /* TOP: image only */
+    .result-modal-image-top {
+        position: relative;
         display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1.35rem 1.6rem;
-        color: #fff;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        padding: 1.25rem 1.6rem;
         background:
-            radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.18), transparent 42%),
-            linear-gradient(135deg, #4e342e 0%, #6d4c41 58%, #a1887f 100%);
-        flex: 0 0 auto;
+            radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.16), transparent 45%),
+            linear-gradient(135deg, #4e342e 0%, #6d4c41 55%, #a1887f 100%);
     }
 
-    .result-modal-eyebrow {
+    .result-modal-image-frame {
+        width: min(100%, 520px);
+        max-height: 320px;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #efebe9;
+        border: 2px solid rgba(255, 255, 255, 0.55);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .result-modal-image-frame img {
+        width: 100%;
+        max-height: 320px;
+        object-fit: contain;
         display: block;
-        font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        opacity: 0.85;
-        margin-bottom: 0.35rem;
+        background: #efebe9;
     }
 
-    .result-modal-hero h2 {
-        margin: 0;
-        font-size: 1.55rem;
-        line-height: 1.25;
-        font-weight: 700;
-    }
-
-    .result-modal-subtitle {
-        margin: 0.4rem 0 0;
+    .result-image-empty {
+        padding: 2.5rem 1rem;
+        color: #9e8b82;
         font-size: 0.85rem;
-        line-height: 1.5;
-        opacity: 0.9;
     }
 
-    #detectionModal .result-modal-hero .modal-close {
+    #detectionModal .result-modal-image-close {
+        position: absolute;
+        top: 0.85rem;
+        right: 1rem;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
         color: #fff;
-        flex: 0 0 auto;
+        background: rgba(62, 39, 35, 0.45);
+    }
+
+    /* BOTTOM: all details */
+    .result-details {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
     }
 
     .result-modal-scroll {
@@ -928,8 +944,10 @@
         flex: 0 0 auto;
     }
 
-    .result-compact-body {
-        margin-bottom: 1.25rem;
+    .result-section-title-upper {
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
     }
 
     .result-breed-line {
@@ -1123,24 +1141,17 @@
     }
 
     @media (max-width: 768px) {
-        .result-modal-hero {
-            padding: 1.1rem;
+        .result-modal-image-top {
+            padding: 1rem;
         }
 
-        .result-modal-hero h2 {
-            font-size: 1.3rem;
+        .result-modal-image-frame,
+        .result-modal-image-frame img {
+            max-height: 240px;
         }
 
         .result-modal-scroll {
             padding: 1rem 1.1rem 0.5rem;
-        }
-
-        .result-image-wrap {
-            grid-template-columns: 1fr;
-        }
-
-        .result-image-frame img {
-            max-height: 210px;
         }
 
         .result-facts {
@@ -1942,19 +1953,13 @@
 
 <!-- Detection Result Modal (shared by live detection and saved history) -->
 <div id="detectionModal" class="modal" aria-hidden="true">
-    <div class="modal-content result-modal-content" role="dialog" aria-modal="true" aria-labelledby="detection-modal-title">
-        <div class="result-modal-hero">
-            <div>
-                <span class="result-modal-eyebrow">Detection Result</span>
-                <h2 id="detection-modal-title">Detection Result</h2>
-                <p class="result-modal-subtitle" id="detection-modal-subtitle">
-                    Live and saved detections use this same result view.
-                </p>
-            </div>
+    <div class="modal-content result-modal-content" role="dialog" aria-modal="true" aria-labelledby="detection-result-heading">
+        <div class="result-modal-image-top">
+            <div class="result-modal-image-frame" id="detectionResultImage"></div>
 
             <button
                 type="button"
-                class="modal-close"
+                class="modal-close result-modal-image-close"
                 id="detectionModalCloseButton"
                 aria-label="Close result dialog"
                 title="Close"
@@ -4905,7 +4910,15 @@
 
         const imageHtml = result.imageData
             ? `<img src="${escapeHtml(result.imageData)}" alt="Captured detection result">`
-            : `<div style="padding:2.5rem 1rem;color:#9e8b82;font-size:0.85rem;">No image recorded</div>`;
+            : `<div class="result-image-empty">No image recorded</div>`;
+
+        const resultImage = document.getElementById(
+            'detectionResultImage'
+        );
+
+        if (resultImage) {
+            resultImage.innerHTML = imageHtml;
+        }
 
         const reference = resolveBreedReference(result);
 
@@ -5007,109 +5020,102 @@
                 );
 
         const html = `
-            <div class="modal-body result-compact-body">
-                <div class="modal-left">
-                    <div class="modal-thumb">${imageHtml}</div>
-                    <div class="result-image-caption">Captured image</div>
+            <div class="result-details">
+                <div>
+                    <div class="modal-status-text" id="detection-result-heading">${escapeHtml(statusView.title)}</div>
+                    <div class="modal-status-details">${escapeHtml(statusView.message)}</div>
                 </div>
 
-                <div class="modal-right">
-                    <div>
-                        <div class="modal-status-text">${escapeHtml(statusView.title)}</div>
-                        <div class="modal-status-details">${escapeHtml(statusView.message)}</div>
-                    </div>
-
-                    <div class="result-breed-line">
-                        <span class="result-breed-line-label">Breed:</span>
-                        <span class="result-breed-line-value${identifiedBreed === 'Breed Not Identified' || identifiedBreed === 'Processing…' ? ' muted' : ''}">${escapeHtml(identifiedBreed)}</span>
-                    </div>
-
-                    <div>
-                        <div class="result-confidence-summary">
-                            <span>Detection Confidence</span>
-                            <strong>${objectConfidenceText}</strong>
-                        </div>
-                        <div
-                            class="modal-confidence-bar"
-                            role="progressbar"
-                            aria-label="Object detection confidence"
-                            aria-valuemin="0"
-                            aria-valuemax="100"
-                            aria-valuenow="${objectConfidenceWidth.toFixed(0)}"
-                        >
-                            <div class="modal-confidence-fill" style="width:${objectConfidenceWidth.toFixed(1)}%"></div>
-                        </div>
-                    </div>
-
-                    <div class="result-facts result-mini-facts">
-                        <div class="result-fact">
-                            <span class="result-fact-label">Detection Date &amp; Time</span>
-                            <span class="result-fact-value">${escapeHtml(formatDateTime(result.detectedAt))}</span>
-                        </div>
-                        <div class="result-fact">
-                            <span class="result-fact-label">Object Detected</span>
-                            <span class="result-fact-value">${escapeHtml(unavailableValue(result.objectDetectionResult))}</span>
-                        </div>
-                        <div class="result-fact">
-                            <span class="result-fact-label">Classification Status</span>
-                            <span class="result-fact-value">${escapeHtml(classificationLabel)}</span>
-                        </div>
-                        <div class="result-fact">
-                            <span class="result-fact-label">Model Class</span>
-                            <span class="result-fact-value">${escapeHtml(unavailableValue(result.modelClassName, 'Not recorded'))}</span>
-                        </div>
-                    </div>
-
-                    <div class="result-confidence-block">
-                        <div class="result-confidence-row">
-                            <span>Object Detection Confidence (COCO-SSD)</span>
-                            <strong>${objectConfidenceText}</strong>
-                        </div>
-                        <div class="result-confidence-row" style="margin-top:0.6rem;">
-                            <span>Breed Classification Confidence (MobileNetV2)</span>
-                            <strong>${escapeHtml(breedConfidenceText)}</strong>
-                        </div>
-                    </div>
-
-                    <p class="result-note">
-                        COCO-SSD only detects that a bird-like object is present.
-                        It cannot identify a quail breed. Breed identification,
-                        when shown, comes only from the trained MobileNetV2 classifier.
-                    </p>
+                <div class="result-breed-line">
+                    <span class="result-breed-line-label">Breed:</span>
+                    <span class="result-breed-line-value${identifiedBreed === 'Breed Not Identified' || identifiedBreed === 'Processing…' ? ' muted' : ''}">${escapeHtml(identifiedBreed)}</span>
                 </div>
-            </div>
 
-            <div class="result-breed-info-block">
-                <h3 class="result-section-title">
-                    <svg class="icon" width="18" height="18" aria-hidden="true">
-                        <use xlink:href="#icon-quail"/>
-                    </svg>
-                    Quail Breed Information
-                </h3>
-                ${breedInformationHtml}
-            </div>
+                <div>
+                    <div class="result-confidence-summary">
+                        <span>Detection Confidence</span>
+                        <strong>${objectConfidenceText}</strong>
+                    </div>
+                    <div
+                        class="modal-confidence-bar"
+                        role="progressbar"
+                        aria-label="Object detection confidence"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow="${objectConfidenceWidth.toFixed(0)}"
+                    >
+                        <div class="modal-confidence-fill" style="width:${objectConfidenceWidth.toFixed(1)}%"></div>
+                    </div>
+                </div>
 
-            <section class="result-section">
-                <h3 class="result-section-title">
-                    <svg class="icon" width="18" height="18" aria-hidden="true">
-                        <use xlink:href="#icon-robot"/>
-                    </svg>
-                    Actual DHT22 Readings
-                </h3>
-
-                <div class="result-facts">
+                <div class="result-facts result-mini-facts">
                     <div class="result-fact">
-                        <span class="result-fact-label">Temperature at Detection (°C)</span>
-                        <span class="result-fact-value${temperatureAvailable ? '' : ' muted'}">${temperatureText}</span>
+                        <span class="result-fact-label">Detection Date &amp; Time</span>
+                        <span class="result-fact-value">${escapeHtml(formatDateTime(result.detectedAt))}</span>
                     </div>
                     <div class="result-fact">
-                        <span class="result-fact-label">Humidity at Detection (%)</span>
-                        <span class="result-fact-value${humidityAvailable ? '' : ' muted'}">${humidityText}</span>
+                        <span class="result-fact-label">Object Detected</span>
+                        <span class="result-fact-value">${escapeHtml(unavailableValue(result.objectDetectionResult))}</span>
+                    </div>
+                    <div class="result-fact">
+                        <span class="result-fact-label">Classification Status</span>
+                        <span class="result-fact-value">${escapeHtml(classificationLabel)}</span>
+                    </div>
+                    <div class="result-fact">
+                        <span class="result-fact-label">Model Class</span>
+                        <span class="result-fact-value">${escapeHtml(unavailableValue(result.modelClassName, 'Not recorded'))}</span>
                     </div>
                 </div>
 
-                <p class="result-note">${sensorNote}</p>
-            </section>
+                <div class="result-confidence-block">
+                    <div class="result-confidence-row">
+                        <span>Object Detection Confidence (COCO-SSD)</span>
+                        <strong>${objectConfidenceText}</strong>
+                    </div>
+                    <div class="result-confidence-row" style="margin-top:0.6rem;">
+                        <span>Breed Classification Confidence (MobileNetV2)</span>
+                        <strong>${escapeHtml(breedConfidenceText)}</strong>
+                    </div>
+                </div>
+
+                <p class="result-note">
+                    COCO-SSD only detects that a bird-like object is present.
+                    It cannot identify a quail breed. Breed identification,
+                    when shown, comes only from the trained MobileNetV2 classifier.
+                </p>
+
+                <div class="result-breed-info-block">
+                    <h3 class="result-section-title result-section-title-upper">
+                        <svg class="icon" width="18" height="18" aria-hidden="true">
+                            <use xlink:href="#icon-quail"/>
+                        </svg>
+                        Breed Info
+                    </h3>
+                    ${breedInformationHtml}
+                </div>
+
+                <section class="result-section">
+                    <h3 class="result-section-title result-section-title-upper">
+                        <svg class="icon" width="18" height="18" aria-hidden="true">
+                            <use xlink:href="#icon-robot"/>
+                        </svg>
+                        Actual DHT22 Readings
+                    </h3>
+
+                    <div class="result-facts">
+                        <div class="result-fact">
+                            <span class="result-fact-label">Temperature at Detection (°C)</span>
+                            <span class="result-fact-value${temperatureAvailable ? '' : ' muted'}">${temperatureText}</span>
+                        </div>
+                        <div class="result-fact">
+                            <span class="result-fact-label">Humidity at Detection (%)</span>
+                            <span class="result-fact-value${humidityAvailable ? '' : ' muted'}">${humidityText}</span>
+                        </div>
+                    </div>
+
+                    <p class="result-note">${sensorNote}</p>
+                </section>
+            </div>
         `;
 
         const content = document.getElementById(
@@ -5118,25 +5124,6 @@
 
         if (content) {
             content.innerHTML = html;
-        }
-
-        const titleEl = document.getElementById(
-            'detection-modal-title'
-        );
-
-        if (titleEl) {
-            titleEl.textContent = statusView.title;
-        }
-
-        const subtitleEl = document.getElementById(
-            'detection-modal-subtitle'
-        );
-
-        if (subtitleEl) {
-            subtitleEl.textContent =
-                result.source === 'history'
-                    ? 'Saved detection — showing the exact recorded values.'
-                    : 'Live detection — COCO-SSD plus the trained breed classifier.';
         }
     }
 
