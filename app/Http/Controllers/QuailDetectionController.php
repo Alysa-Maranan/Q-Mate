@@ -906,26 +906,9 @@ class QuailDetectionController extends Controller
             $breedId = (int) $breedReference['breed_id'];
 
             /*
-             * ==========================================================
-             * 11. GET BREED FROM DATABASE
-             * ==========================================================
-             */
-
-            $breed = QuailBreed::find(
-                $breedId
-            );
-
-            if (!$breed) {
-                throw new \RuntimeException(
-                    'Detected breed ID not found in database: ' .
-                    $breedId
-                );
-            }
-
-            /*
-             * The display name and reference values come from the saved
-             * configuration for this trained class. The database breed is
-             * still required so existing breed relations keep working.
+             * The saved configuration is the canonical source for the two
+             * trained classes. Do not make breed detection depend on the
+             * remote breeds table being reachable.
              */
 
             $breedName = (string) $breedReference['common_name'];
@@ -933,7 +916,7 @@ class QuailDetectionController extends Controller
             if ($breedName === '') {
                 $breedName = (string) (
                     $metadataDisplayNames[$classLabel]
-                    ?? ($result['breed_name'] ?? $breed->name)
+                    ?? ($result['breed_name'] ?? '')
                 );
             }
 

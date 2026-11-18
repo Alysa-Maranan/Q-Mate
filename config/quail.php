@@ -4,7 +4,7 @@ return [
     'default_breed_id' => env('DEFAULT_QUAIL_BREED_ID', 1),
 
     // Minimum model confidence required before showing a detected breed.
-    'confidence_threshold' => env('QUAIL_CONFIDENCE_THRESHOLD', 0.60),
+    'confidence_threshold' => env('QUAIL_CONFIDENCE_THRESHOLD', 0.50),
 
     /*
      * Reference data for the two classes supported by the trained
