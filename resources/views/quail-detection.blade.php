@@ -840,6 +840,193 @@
         background: #e5dedb;
     }
 
+    /* Breed Information Modal */
+    #breedInfoModal {
+        z-index: 100010;
+    }
+
+    #breedInfoModal .modal-content {
+        max-width: 860px;
+        max-height: min(92vh, 900px);
+        padding: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .breed-modal-top {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 190px;
+        gap: 1.25rem;
+        align-items: center;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #6d4c41 0%, #a1887f 100%);
+        color: #fff;
+    }
+
+    .breed-modal-heading-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .breed-modal-eyebrow {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.85;
+    }
+
+    #breedInfoModal .modal-close {
+        color: #fff;
+        flex: 0 0 auto;
+    }
+
+    .breed-modal-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.25;
+        margin: 0 0 0.35rem 0;
+    }
+
+    .breed-modal-scientific {
+        font-size: 0.95rem;
+        font-style: italic;
+        opacity: 0.9;
+        margin-bottom: 0.75rem;
+    }
+
+    .breed-modal-confidence {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 999px;
+        padding: 0.4rem 0.85rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .breed-modal-image {
+        width: 100%;
+        max-height: 170px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 2px solid rgba(255, 255, 255, 0.55);
+        background: #efebe9;
+        display: block;
+    }
+
+    .breed-modal-scroll {
+        overflow-y: auto;
+        padding: 1.25rem 1.5rem 0.5rem;
+        min-height: 0;
+    }
+
+    .breed-modal-note {
+        margin: 0 0 1.25rem;
+        padding: 0.75rem 0.9rem;
+        border-radius: 10px;
+        background: #fff8e1;
+        border: 1px solid #ffe0b2;
+        color: #7a5b2e;
+        font-size: 0.8rem;
+        line-height: 1.5;
+    }
+
+    .breed-info-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .breed-info-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #6d4c41;
+        margin: 0 0 0.75rem 0;
+        padding-bottom: 0.4rem;
+        border-bottom: 2px solid #f5eee6;
+    }
+
+    .breed-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .breed-info-item {
+        background: #efebe9;
+        border: 1px solid #e0d6d2;
+        border-left: 3px solid #a1887f;
+        border-radius: 10px;
+        padding: 0.75rem 0.85rem;
+    }
+
+    .breed-info-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #8d6e63;
+        margin-bottom: 0.3rem;
+    }
+
+    .breed-info-value {
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: #4e342e;
+    }
+
+    .breed-info-description {
+        font-size: 0.9rem;
+        line-height: 1.65;
+        color: #5d4037;
+        margin: 0;
+    }
+
+    .breed-modal-actions {
+        margin: 0;
+        padding: 1rem 1.5rem 1.25rem;
+        border-top: 1px solid #efebe9;
+        background: #fff;
+    }
+
+    .breed-modal-actions .modal-btn {
+        min-width: 150px;
+    }
+
+    @media (max-width: 768px) {
+        .breed-modal-top {
+            grid-template-columns: 1fr;
+            padding: 1.1rem;
+        }
+
+        .breed-modal-image {
+            max-height: 190px;
+        }
+
+        .breed-modal-title {
+            font-size: 1.25rem;
+        }
+
+        .breed-modal-scroll {
+            padding: 1rem 1.1rem 0.5rem;
+        }
+
+        .breed-info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .breed-modal-actions {
+            padding: 0.9rem 1.1rem 1rem;
+        }
+
+        .breed-modal-actions .modal-btn {
+            flex: 1 1 140px;
+        }
+    }
+
     .icon-btn {
         width: 40px;
         height: 40px;
@@ -1082,6 +1269,21 @@
                     </svg>
                     Stop Camera
                 </button>
+
+                <button class="btn btn-secondary" id="upload-btn" onclick="document.getElementById('image-upload').click()" aria-label="Upload quail image" type="button">
+                    <svg class="btn-icon" width="18" height="18" aria-hidden="true">
+                        <use xlink:href="#icon-camera"/>
+                    </svg>
+                    Upload Image
+                </button>
+
+                <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/*"
+                    style="display: none;"
+                    aria-label="Choose a quail image to classify"
+                />
             </div>
 
             <div class="detection-model-info">
@@ -1100,7 +1302,7 @@
                 </h3>
 
                 <ol style="margin: 0; padding-left: 1.25rem; color: #5d4037; font-size: 0.875rem; line-height: 1.6;">
-                    <li><strong>Click "Start Camera"</strong> to enable your webcam</li>
+                    <li><strong>Click "Start Camera"</strong> to enable your webcam, or <strong>Upload Image</strong> to use a saved photo</li>
                     <li><strong>Point the camera</strong> at your quails in good lighting</li>
                     <li><strong>Hold steady</strong> - the system auto-detects every 2 seconds</li>
                     <li><strong>Quail detected?</strong> Breed info will appear automatically</li>
@@ -1268,6 +1470,71 @@
     </div>
 </div>
 
+<!-- Breed Information Modal -->
+<div id="breedInfoModal" class="modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="breed-modal-title">
+        <div class="breed-modal-top">
+            <div class="breed-modal-heading">
+                <div class="breed-modal-heading-row">
+                    <span class="breed-modal-eyebrow">Breed Information</span>
+
+                    <button
+                        type="button"
+                        class="modal-close"
+                        id="breedModalCloseTopButton"
+                        aria-label="Close breed information"
+                        title="Close"
+                    >
+                        <svg class="icon" width="18" height="18" aria-hidden="true">
+                            <use xlink:href="#icon-cross"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <h2 class="breed-modal-title" id="breed-modal-title">Detected Breed</h2>
+                <div class="breed-modal-scientific" id="breed-modal-scientific">Coturnix japonica</div>
+                <div class="breed-modal-confidence" id="breed-modal-confidence">Prediction confidence: 0%</div>
+            </div>
+
+            <img
+                id="breed-modal-image"
+                class="breed-modal-image"
+                alt="Captured or uploaded quail image"
+                src=""
+                style="display: none;"
+            />
+        </div>
+
+        <div class="breed-modal-scroll">
+            <p class="breed-modal-note">
+                The values below are general reference information for this breed, not
+                measurements of the individual bird. Prediction confidence is the model's
+                score for this image and is not a guarantee of accuracy.
+            </p>
+
+            <div id="breedInfoSections"></div>
+        </div>
+
+        <div class="modal-buttons breed-modal-actions">
+            <button
+                type="button"
+                class="modal-btn modal-btn-secondary"
+                id="breedModalCloseButton"
+            >
+                Close
+            </button>
+
+            <button
+                type="button"
+                class="modal-btn modal-btn-primary"
+                id="breedModalScanAgainButton"
+            >
+                Scan Again
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Delete Confirmation Modal -->
 <div id="deleteModal" class="delete-modal">
     <div class="delete-modal-content">
@@ -1309,6 +1576,117 @@
     let deleteMode = 'single';
     let lastClassification = null;
     let modalCooldownUntil = 0;
+
+    const BREED_INFO = {
+        japanese_quail_group: {
+            breedName: "Japanese Coturnix Quail (Taiwan Crossbreed)",
+            scientificName: "Coturnix japonica",
+            sections: [
+                {
+                    title: "Basic Information",
+                    fields: [
+                        ["Breed Name", "Japanese Coturnix Quail (Taiwan Crossbreed)"],
+                        ["Scientific Name", "Coturnix japonica"],
+                        ["Classification", "Domestic Japanese quail crossbreed or breeding line"],
+                        ["Primary Purpose", "Egg and meat production"],
+                        ["Lifespan", "May live for several years under appropriate care; lifespan varies with health and management"]
+                    ]
+                },
+                {
+                    title: "Physical Characteristics",
+                    fields: [
+                        ["Body Shape", "Compact, oval-shaped body; body fullness varies among individuals"],
+                        ["Feather Color", "May exhibit brown, cream, and dark feather markings depending on genetic background"],
+                        ["Body Structure", "Small domestic quail with a compact body and short tail"],
+                        ["Adult Weight", "Varies depending on breeding line, genetics, sex, and age"],
+                        ["Distinctive Features", "Physical characteristics may differ depending on the parent lines used in crossbreeding"]
+                    ]
+                },
+                {
+                    title: "Egg Production",
+                    fields: [
+                        ["Annual Egg Production", "Varies according to genetics, age, nutrition, lighting, and management"],
+                        ["Egg Color", "Generally cream to pale-colored with brown or dark speckles"],
+                        ["Typical Egg Weight", "Often approximately 9–13 grams in Japanese quail, although crossbred lines may differ"],
+                        ["Sexual Maturity", "Commonly around 6–8 weeks, depending on genetics and rearing conditions"]
+                    ]
+                },
+                {
+                    title: "Feeding Requirements",
+                    fields: [
+                        ["Feed Type", "Balanced commercial quail or game bird feed suitable for the bird's growth or production stage"],
+                        ["Protein Requirements", "Depend on age, growth, and egg production requirements"],
+                        ["Water Requirement", "Continuous access to clean drinking water"],
+                        ["Feeding Recommendation", "Provide appropriate nutrients to maintain health, growth, and productivity"]
+                    ]
+                },
+                {
+                    title: "Environmental and Care Requirements",
+                    fields: [
+                        ["Temperature", "Appropriate for age, feather development, and environmental conditions"],
+                        ["Housing", "Clean, dry, secure, and properly ventilated enclosure"],
+                        ["Lighting", "Appropriate and consistent lighting for the production stage"],
+                        ["Health Monitoring", "Regularly observe feeding behavior, activity, feather condition, and signs of illness"]
+                    ]
+                }
+            ],
+            description: "Japanese Coturnix Quail (Taiwan Crossbreed) refers to a domestic Japanese quail breeding line identified by its breeding background. Its physical characteristics, body weight, and production performance may vary depending on the parent stock, genetics, nutrition, and management practices."
+        },
+        pharaoh_quail: {
+            breedName: "Pharaoh Quail",
+            scientificName: "Coturnix japonica",
+            sections: [
+                {
+                    title: "Basic Information",
+                    fields: [
+                        ["Breed Name", "Pharaoh Quail"],
+                        ["Scientific Name", "Coturnix japonica"],
+                        ["Classification", "Domestic Japanese quail variety commonly associated with wild-type plumage"],
+                        ["Primary Purpose", "Egg and meat production"],
+                        ["Lifespan", "May live for several years under appropriate care; lifespan varies with health and management"]
+                    ]
+                },
+                {
+                    title: "Physical Characteristics",
+                    fields: [
+                        ["Body Shape", "Compact, oval-shaped body with a short tail"],
+                        ["Feather Color", "Predominantly brown with dark streaks and mottled patterns"],
+                        ["Body Structure", "Small, rounded terrestrial bird with short wings and a relatively compact build"],
+                        ["Adult Weight", "Varies depending on genetics, sex, age, and feeding conditions"],
+                        ["Distinctive Features", "Wild-type brown plumage with characteristic streaking and mottling"]
+                    ]
+                },
+                {
+                    title: "Egg Production",
+                    fields: [
+                        ["Annual Egg Production", "Approximately 200–300 eggs under favorable laying conditions; actual output varies"],
+                        ["Egg Color", "Usually cream to pale-colored with brown or dark speckles"],
+                        ["Typical Egg Weight", "Approximately 9–13 grams"],
+                        ["Sexual Maturity", "Commonly around 6–8 weeks of age"]
+                    ]
+                },
+                {
+                    title: "Feeding Requirements",
+                    fields: [
+                        ["Feed Type", "Nutritionally balanced quail or game bird feed appropriate for the bird's life stage"],
+                        ["Protein Requirements", "Depend on age and production stage; growing birds generally require higher protein levels than mature birds"],
+                        ["Water Requirement", "Continuous access to clean drinking water"],
+                        ["Feeding Recommendation", "Provide suitable nutrients to support growth, maintenance, and egg production"]
+                    ]
+                },
+                {
+                    title: "Environmental and Care Requirements",
+                    fields: [
+                        ["Temperature", "Maintain environmental conditions appropriate for the bird's age and feather development"],
+                        ["Housing", "Clean, dry, secure, and adequately ventilated enclosure"],
+                        ["Lighting", "Consistent lighting appropriate for the production stage"],
+                        ["Health Monitoring", "Observe feed intake, water consumption, activity, feather condition, and signs of illness"]
+                    ]
+                }
+            ],
+            description: "Pharaoh Quail is a commonly recognized domestic variety of Japanese quail (Coturnix japonica) associated with natural brown, streaked plumage. It is raised for egg and meat production and is known for its relatively early sexual maturity."
+        }
+    };
 
     function loadHistory() {
         const saved = localStorage.getItem('quail_detection_history');
@@ -1543,6 +1921,8 @@
             const breedMapping = {
                 'Japanese Quail': 1,
                 'Japanese Quail (Coturnix Japonica)': 1,
+                'Japanese Quail Group': 2,
+                'Japanese Coturnix Quail (Taiwan Crossbreed)': 2,
                 'Japanese Coturnix Crossbreed (Taiwan)': 2,
                 'Japanese Coturnix Crossbreed (Taiwan Brown Line)': 2,
                 'Pharaoh Quail': 3
@@ -2008,12 +2388,10 @@
         }
     }
 
-    // UI display confidence: keeps the displayed detection score in the
-    // requested 99%-100% range while the raw COCO-SSD score remains available
-    // internally for detection logic.
+    // Display the actual object-detection score without inflating it.
     function getDisplayedDetectionConfidence(score) {
         const raw = Number(score) || 0;
-        return Math.min(1, Math.max(0.99, raw));
+        return Math.min(1, Math.max(0, raw));
     }
 
     function drawOverlay(predictions) {
@@ -2416,10 +2794,21 @@
                     'detectionModal'
                 );
 
+            const breedModal =
+                document.getElementById(
+                    'breedInfoModal'
+                );
+
             const suppressed =
                 (
                     modal &&
                     modal.classList.contains(
+                        'show'
+                    )
+                ) ||
+                (
+                    breedModal &&
+                    breedModal.classList.contains(
                         'show'
                     )
                 ) ||
@@ -2507,96 +2896,11 @@
                         imageData
                     );
 
-                if (
-                    classificationResult &&
-                    classificationResult.success
-                ) {
-                    const predictedClass =
-                        Number(
-                            classificationResult.predicted_class
-                        );
-
-                    const breedNames = {
-                        0: 'Japanese Quail',
-                        1: 'Japanese Coturnix Crossbreed (Taiwan)',
-                        2: 'Pharaoh Quail'
-                    };
-
-                    const returnedBreedName =
-                        typeof classificationResult.breed_name === 'string'
-                            ? classificationResult.breed_name.trim()
-                            : '';
-
-                    const mappedBreedName =
-                        breedNames[predictedClass] || '';
-
-                    const breedName =
-                        returnedBreedName ||
-                        mappedBreedName;
-
-                    const breedId =
-                        Number.isInteger(predictedClass) &&
-                        breedNames[predictedClass]
-                            ? predictedClass + 1
-                            : null;
-
-                    if (
-                        breedName &&
-                        breedId
-                    ) {
-                        lastClassification = {
-                            breedName: breedName,
-                            confidence: detectorConfidence
-                        };
-
-                        showDetectionResult(
-                            'quail',
-                            'Quail Detected!',
-                            `Breed: ${breedName}`,
-                            detectorConfidence,
-                            breedId,
-                            imageData,
-                            true
-                        );
-
-                        addToHistory(
-                            'quail',
-                            breedName,
-                            detectorConfidence,
-                            thumbData
-                        );
-
-                        await fetchAndShowBreedInfo(
-                            breedId,
-                            true
-                        );
-
-                        return;
-                    }
-                }
-
-                console.error(
-                    'Quail classification failed:',
-                    classificationResult
-                );
-
-                lastClassification = null;
-
-                showDetectionResult(
-                    'quail',
-                    'Quail Detected!',
-                    'Quail detected. Breed classification is currently unavailable.',
-                    detectorConfidence,
-                    null,
+                await handleBreedClassification(
+                    classificationResult,
                     imageData,
-                    true
-                );
-
-                addToHistory(
-                    'quail',
-                    'Quail',
-                    detectorConfidence,
-                    thumbData
+                    thumbData,
+                    detectorConfidence
                 );
 
                 return;
@@ -2750,6 +3054,458 @@
                     err.message
             };
         }
+    }
+
+    async function handleBreedClassification(
+        classificationResult,
+        imageData,
+        thumbData,
+        detectionConfidence = 0
+    ) {
+        if (
+            !classificationResult ||
+            classificationResult.success !== true
+        ) {
+            console.error(
+                'Quail classification failed:',
+                classificationResult
+            );
+
+            lastClassification = null;
+
+            showDetectionResult(
+                'quail',
+                'Quail Detected!',
+                'Quail detected. Breed classification is currently unavailable.',
+                detectionConfidence,
+                null,
+                imageData,
+                true
+            );
+
+            addToHistory(
+                'quail',
+                'Quail',
+                detectionConfidence,
+                thumbData
+            );
+
+            return;
+        }
+
+        const breedName =
+            typeof classificationResult.breed_name === 'string'
+                ? classificationResult.breed_name.trim()
+                : '';
+
+        const breedId =
+            classificationResult.breed_id !== null &&
+            classificationResult.breed_id !== undefined
+                ? Number(classificationResult.breed_id)
+                : null;
+
+        const modelConfidence =
+            Number(classificationResult.confidence);
+
+        const modelClassName =
+            typeof classificationResult.model_class_name === 'string'
+                ? classificationResult.model_class_name.trim()
+                : '';
+
+        const uncertain =
+            classificationResult.uncertain === true;
+
+        if (
+            uncertain ||
+            !breedName ||
+            !breedId ||
+            !Number.isFinite(modelConfidence)
+        ) {
+            lastClassification = null;
+
+            showDetectionResult(
+                'quail',
+                'Uncertain Detection',
+                'The model is not confident enough to identify a breed. Please try another image.',
+                detectionConfidence,
+                null,
+                imageData,
+                true
+            );
+
+            addToHistory(
+                'quail',
+                'Uncertain Detection',
+                detectionConfidence,
+                thumbData
+            );
+
+            return;
+        }
+
+        lastClassification = {
+            breedName: breedName,
+            confidence: modelConfidence
+        };
+
+        showDetectionResult(
+            'quail',
+            'Quail Detected!',
+            `Breed: ${breedName}`,
+            detectionConfidence,
+            breedId,
+            imageData,
+            true
+        );
+
+        addToHistory(
+            'quail',
+            breedName,
+            detectionConfidence,
+            thumbData
+        );
+
+        /*
+         * Replace the short result dialog with the detailed breed
+         * information modal after a confident classification.
+         */
+        closeDetectionModalAndRefresh(false);
+        modalCooldownUntil = Date.now() + 2000;
+
+        openBreedInfoModal(
+            modelClassName,
+            breedName,
+            modelConfidence,
+            imageData
+        );
+    }
+
+    function openBreedInfoModal(
+        classLabel,
+        breedName,
+        confidence,
+        imageData
+    ) {
+        const info =
+            BREED_INFO[classLabel] ||
+            Object.values(BREED_INFO).find(
+                entry => entry.breedName === breedName
+            );
+
+        if (!info) {
+            console.error(
+                'No breed information found for:',
+                classLabel,
+                breedName
+            );
+            return;
+        }
+
+        const modal =
+            document.getElementById('breedInfoModal');
+
+        if (!modal) {
+            return;
+        }
+
+        document.getElementById(
+            'breed-modal-title'
+        ).textContent = info.breedName;
+
+        document.getElementById(
+            'breed-modal-scientific'
+        ).textContent = info.scientificName;
+
+        document.getElementById(
+            'breed-modal-confidence'
+        ).textContent =
+            'Prediction confidence: ' +
+            (Number(confidence) * 100).toFixed(1) +
+            '%';
+
+        const image =
+            document.getElementById(
+                'breed-modal-image'
+            );
+
+        if (image && imageData) {
+            image.src = imageData;
+            image.style.display = 'block';
+        } else if (image) {
+            image.removeAttribute('src');
+            image.style.display = 'none';
+        }
+
+        const sections =
+            document.getElementById(
+                'breedInfoSections'
+            );
+
+        if (sections) {
+            sections.innerHTML = '';
+
+            info.sections.forEach(section => {
+                const sectionEl =
+                    document.createElement('section');
+
+                sectionEl.className =
+                    'breed-info-section';
+
+                const heading =
+                    document.createElement('h3');
+
+                heading.className =
+                    'breed-info-section-title';
+
+                heading.textContent =
+                    section.title;
+
+                const grid =
+                    document.createElement('div');
+
+                grid.className =
+                    'breed-info-grid';
+
+                section.fields.forEach(field => {
+                    const item =
+                        document.createElement('div');
+
+                    item.className =
+                        'breed-info-item';
+
+                    const label =
+                        document.createElement('div');
+
+                    label.className =
+                        'breed-info-label';
+
+                    label.textContent = field[0];
+
+                    const value =
+                        document.createElement('div');
+
+                    value.className =
+                        'breed-info-value';
+
+                    value.textContent = field[1];
+
+                    item.appendChild(label);
+                    item.appendChild(value);
+                    grid.appendChild(item);
+                });
+
+                sectionEl.appendChild(heading);
+                sectionEl.appendChild(grid);
+                sections.appendChild(sectionEl);
+            });
+
+            const descriptionSection =
+                document.createElement('section');
+
+            descriptionSection.className =
+                'breed-info-section';
+
+            const descriptionHeading =
+                document.createElement('h3');
+
+            descriptionHeading.className =
+                'breed-info-section-title';
+
+            descriptionHeading.textContent =
+                'Breed Description';
+
+            const description =
+                document.createElement('p');
+
+            description.className =
+                'breed-info-description';
+
+            description.textContent =
+                info.description;
+
+            descriptionSection.appendChild(
+                descriptionHeading
+            );
+
+            descriptionSection.appendChild(
+                description
+            );
+
+            sections.appendChild(
+                descriptionSection
+            );
+        }
+
+        modal.classList.add('show');
+        modal.style.display = 'flex';
+        modal.style.pointerEvents = 'auto';
+        modal.setAttribute(
+            'aria-hidden',
+            'false'
+        );
+    }
+
+    function closeBreedInfoModal() {
+        const modal =
+            document.getElementById('breedInfoModal');
+
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        modal.style.pointerEvents = 'none';
+        modal.setAttribute(
+            'aria-hidden',
+            'true'
+        );
+
+        const image =
+            document.getElementById(
+                'breed-modal-image'
+            );
+
+        if (image) {
+            image.removeAttribute('src');
+        }
+
+        /*
+         * Camera-driven detection can continue once the detailed
+         * information is closed.
+         */
+        if (stream) {
+            startAutoDetection();
+        }
+    }
+
+    function scanAgain() {
+        closeBreedInfoModal();
+        clearResults();
+
+        lastClassification = null;
+        modalCooldownUntil = Date.now() + 1000;
+
+        /*
+         * Offer the file picker when no camera is active; otherwise the
+         * running camera can capture the next quail immediately.
+         */
+        if (!stream) {
+            const uploadInput =
+                document.getElementById(
+                    'image-upload'
+                );
+
+            if (uploadInput) {
+                uploadInput.value = '';
+                uploadInput.click();
+            }
+        }
+    }
+
+    function makeThumbnail(
+        imageDataUrl,
+        maxWidth = 160,
+        quality = 0.5
+    ) {
+        return new Promise(resolve => {
+            const image = new Image();
+
+            image.onload = function() {
+                const scale = Math.min(
+                    1,
+                    maxWidth / image.width
+                );
+
+                const thumbCanvas =
+                    document.createElement('canvas');
+
+                thumbCanvas.width = Math.max(
+                    1,
+                    Math.round(image.width * scale)
+                );
+
+                thumbCanvas.height = Math.max(
+                    1,
+                    Math.round(image.height * scale)
+                );
+
+                const context =
+                    thumbCanvas.getContext('2d');
+
+                context.drawImage(
+                    image,
+                    0,
+                    0,
+                    thumbCanvas.width,
+                    thumbCanvas.height
+                );
+
+                resolve(
+                    thumbCanvas.toDataURL(
+                        'image/jpeg',
+                        quality
+                    )
+                );
+            };
+
+            image.onerror = function() {
+                resolve(imageDataUrl);
+            };
+
+            image.src = imageDataUrl;
+        });
+    }
+
+    async function classifyUploadedImage(file) {
+        if (!file || !file.type.startsWith('image/')) {
+            alert('Please choose an image file.');
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = async function(event) {
+            const imageData =
+                String(event.target.result);
+
+            const thumbData =
+                await makeThumbnail(imageData);
+
+            stopAutoDetection();
+            lastClassification = null;
+
+            showDetectionResult(
+                'quail',
+                'Image Uploaded',
+                'Classifying quail breed...',
+                0,
+                null,
+                imageData,
+                false
+            );
+
+            modalCooldownUntil =
+                Date.now() + 1000;
+
+            const classificationResult =
+                await classifyBreedFromImage(
+                    imageData
+                );
+
+            await handleBreedClassification(
+                classificationResult,
+                imageData,
+                thumbData,
+                0
+            );
+        };
+
+        reader.onerror = function() {
+            alert('Unable to read the selected image.');
+        };
+
+        reader.readAsDataURL(file);
     }
 
     function determineBreed(
@@ -3726,6 +4482,109 @@ function closeDetectionModalAndRefresh(refresh = false) {
 
             loadHistory();
 
+            const uploadInput =
+                document.getElementById(
+                    'image-upload'
+                );
+
+            if (uploadInput) {
+                uploadInput.addEventListener(
+                    'change',
+                    function(event) {
+                        const file =
+                            event.target.files &&
+                            event.target.files[0];
+
+                        if (file) {
+                            classifyUploadedImage(
+                                file
+                            );
+                        }
+                    }
+                );
+            }
+
+            const breedModal =
+                document.getElementById(
+                    'breedInfoModal'
+                );
+
+            const breedCloseTopButton =
+                document.getElementById(
+                    'breedModalCloseTopButton'
+                );
+
+            const breedCloseButton =
+                document.getElementById(
+                    'breedModalCloseButton'
+                );
+
+            const scanAgainButton =
+                document.getElementById(
+                    'breedModalScanAgainButton'
+                );
+
+            if (breedCloseTopButton) {
+                breedCloseTopButton.addEventListener(
+                    'click',
+                    function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        closeBreedInfoModal();
+                    }
+                );
+            }
+
+            if (breedCloseButton) {
+                breedCloseButton.addEventListener(
+                    'click',
+                    function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        closeBreedInfoModal();
+                    }
+                );
+            }
+
+            if (scanAgainButton) {
+                scanAgainButton.addEventListener(
+                    'click',
+                    function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        scanAgain();
+                    }
+                );
+            }
+
+            if (breedModal) {
+                breedModal.addEventListener(
+                    'click',
+                    function(event) {
+                        if (
+                            event.target ===
+                            breedModal
+                        ) {
+                            closeBreedInfoModal();
+                        }
+                    }
+                );
+
+                const breedModalContent =
+                    breedModal.querySelector(
+                        '.modal-content'
+                    );
+
+                if (breedModalContent) {
+                    breedModalContent.addEventListener(
+                        'click',
+                        function(event) {
+                            event.stopPropagation();
+                        }
+                    );
+                }
+            }
+
             const modal =
                 document.getElementById(
                     'detectionModal'
@@ -3832,6 +4691,21 @@ function closeDetectionModalAndRefresh(refresh = false) {
                         event.key ===
                         'Escape'
                     ) {
+
+                        const breedModalEl =
+                            document.getElementById(
+                                'breedInfoModal'
+                            );
+
+                        if (
+                            breedModalEl &&
+                            breedModalEl.classList.contains(
+                                'show'
+                            )
+                        ) {
+                            closeBreedInfoModal();
+                            return;
+                        }
 
                         const currentModal =
                             document.getElementById(

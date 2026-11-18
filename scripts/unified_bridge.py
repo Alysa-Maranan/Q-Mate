@@ -11,6 +11,8 @@ import time
 import os
 import json
 import re
+import math
+import random
 import serial
 import serial.tools.list_ports
 import urllib.request
@@ -41,7 +43,8 @@ API_BASE_URL = configured_value(
 ).rstrip("/")
 API_URL     = f"{API_BASE_URL}/api/sensor-data"
 BAUD        = 115200
-SENSOR_INTERVAL = 60  # Read and publish DHT22 data once per minute
+SENSOR_INTERVAL = 5  # Read and publish DHT22 data every five seconds
+SENSOR_POST_TIMEOUT = 4
 FOOD_LEVEL_INTERVAL = 15  # Dati 2s - binabara nito ang RX buffer ng WEMOS!
 
 # ============== SINGLE INSTANCE LOCK ==============
@@ -71,7 +74,6 @@ def _pid_alive(pid):
         return str(pid) in output
     except Exception:
         return True  # Hindi ma-verify? Safe assumption: buhay pa.
-
 
 def acquire_instance_lock():
     """Returns True if this is the ONLY bridge instance allowed to run."""
@@ -153,31 +155,33 @@ def ts():
 
 def get_connection(port):
     """Balikan ang nakabukas nang serial connection (o kumonekta kung wala pa)."""
-    ser = _CONN['ser']
-    if ser is not None and ser.is_open and _CONN['port'] == port:
+    with _SERIAL_LOCK:
+        ser = _CONN['ser']
+        if ser is not None and ser.is_open and _CONN['port'] == port:
+            return ser
+        if ser is not None and ser.is_open:
+            try:
+                ser.close()
+            except Exception:
+                pass
+        print(f'[{ts()}] Opening serial port {port} at {BAUD} baud...', flush=True)
+        ser = open_serial(port)   # may 2s boot wait - FIRST connect / reconnect LANG
+        _CONN['ser'] = ser
+        _CONN['port'] = port
+        print(f'[{ts()}] Serial connection ready - next commands are INSTANT', flush=True)
         return ser
-    if ser is not None and ser.is_open:
-        try:
-            ser.close()
-        except Exception:
-            pass
-    print(f'[{ts()}] Opening serial port {port} at {BAUD} baud...', flush=True)
-    ser = open_serial(port)   # may 2s boot wait - FIRST connect / reconnect LANG
-    _CONN['ser'] = ser
-    _CONN['port'] = port
-    print(f'[{ts()}] Serial connection ready - next commands are INSTANT', flush=True)
-    return ser
 
 def drop_connection():
-    ser = _CONN['ser']
-    if ser is not None:
-        try:
-            if ser.is_open:
-                ser.close()
-        except Exception:
-            pass
-    _CONN['ser'] = None
-    _CONN['port'] = None
+    with _SERIAL_LOCK:
+        ser = _CONN['ser']
+        if ser is not None:
+            try:
+                if ser.is_open:
+                    ser.close()
+            except Exception:
+                pass
+        _CONN['ser'] = None
+        _CONN['port'] = None
 
 def _send_cmd(port, command, wait_time=3, response_match=None):
     """send_command() gamit ang persistent connection + auto-reconnect + retry."""
@@ -236,22 +240,26 @@ def send_command(ser, command, wait_time=3, response_match=None):
 # ============== SENSOR READING ==============
 def parse_sensor(response):
     temp = hum = None
-    m = re.search(r'Temperature:\s*([\d.]+)', response)
+    m = re.search(r'Temperature:\s*([-+]?\d+(?:\.\d+)?)', response)
     if m:
         temp = float(m.group(1))
-    m = re.search(r'Humidity:\s*([\d.]+)', response)
+    m = re.search(r'Humidity:\s*([-+]?\d+(?:\.\d+)?)', response)
     if m:
         hum = float(m.group(1))
     return temp, hum
 
-def post_to_api(temperature, humidity):
-    payload = json.dumps({"temperature": temperature, "humidity": humidity}).encode()
+def post_to_api(temperature, humidity, source):
+    payload = json.dumps({
+        "temperature": temperature,
+        "humidity": humidity,
+        "source": source,
+    }).encode()
     req = urllib.request.Request(
         API_URL, data=payload,
         headers={"Content-Type": "application/json"}, method="POST"
     )
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=SENSOR_POST_TIMEOUT) as resp:
             return json.loads(resp.read().decode())
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -259,27 +267,108 @@ def post_to_api(temperature, humidity):
 def read_sensors(port):
     response = ""
     try:
-        for attempt in range(1, 4):
-            # Persistent connection - WALANG port-open + 2s boot wait dito
-            response = _send_cmd(
-                port,
-                "TEMP",
-                wait_time=8,
-                response_match=lambda value: (
-                    re.search(r'Temperature:\s*[-\d.]+', value) is not None
-                    and re.search(r'Humidity:\s*[-\d.]+', value) is not None
-                ) or "DHT22 ERROR" in value
-            )
-            temp, hum = parse_sensor(response)
-            if temp is not None and hum is not None:
-                return temp, hum, None
-            if attempt < 3:
-                time.sleep(1)
-        print(f'[{ts()}] DHT22: no valid TEMP response after 3 attempts: {response!r}', flush=True)
+        # A single bounded attempt leaves time to publish a fallback in this cycle.
+        response = _send_cmd(
+            port,
+            "TEMP",
+            wait_time=2.5,
+            response_match=lambda value: (
+                re.search(r'Temperature:\s*[-+]?\d+(?:\.\d+)?', value) is not None
+                and re.search(r'Humidity:\s*[-+]?\d+(?:\.\d+)?', value) is not None
+            ) or "DHT22 ERROR" in value
+        )
+        if "DHT22 ERROR" in response.upper():
+            print(f'[{ts()}] DHT22 reported a sensor error: {response!r}', flush=True)
+            return None, None, None
+        temp, hum = parse_sensor(response)
+        if (
+            temp is not None
+            and hum is not None
+            and math.isfinite(temp)
+            and math.isfinite(hum)
+            and -40 <= temp <= 80
+            and 0 <= hum <= 100
+        ):
+            return temp, hum, None
+        print(f'[{ts()}] DHT22: no valid TEMP response: {response!r}', flush=True)
         return None, None, None
     except Exception as e:
         print(f'[{ts()}] DHT22 read error: {e}', flush=True)
         return None, None, None
+
+_simulated_reading = {'temperature': 27.5, 'humidity': 75.0}
+
+def generate_simulated_reading():
+    _simulated_reading['temperature'] = min(
+        34.0,
+        max(24.0, _simulated_reading['temperature'] + random.uniform(-0.2, 0.2))
+    )
+    _simulated_reading['humidity'] = min(
+        90.0,
+        max(55.0, _simulated_reading['humidity'] + random.uniform(-0.8, 0.8))
+    )
+    return _simulated_reading['temperature'], _simulated_reading['humidity']
+
+def sensor_recording_loop(bridge_state, stop_event):
+    next_read_at = time.monotonic()
+
+    while not stop_event.is_set():
+        temperature = humidity = None
+        serial_busy = False
+        try:
+            port = bridge_state['port'] or find_port()
+            if port:
+                bridge_state['port'] = port
+                if _SERIAL_LOCK.acquire(timeout=0.25):
+                    try:
+                        temperature, humidity, _ = read_sensors(port)
+                    finally:
+                        _SERIAL_LOCK.release()
+                else:
+                    temperature, humidity = None, None
+                    serial_busy = True
+            else:
+                temperature, humidity = None, None
+        except Exception as e:
+            print(f'[{ts()}] Sensor read error: {e}', flush=True)
+
+        if temperature is None or humidity is None:
+            if not serial_busy:
+                try:
+                    detected_port = find_port()
+                    if detected_port and detected_port != bridge_state['port']:
+                        with _SERIAL_LOCK:
+                            drop_connection()
+                        bridge_state['port'] = detected_port
+                except Exception as e:
+                    print(f'[{ts()}] Sensor port detection error: {e}', flush=True)
+            temperature, humidity = generate_simulated_reading()
+            source = 'simulated'
+        else:
+            source = 'actual'
+
+        try:
+            result = post_to_api(temperature, humidity, source)
+            if result.get('success'):
+                print(
+                    f'[{ts()}] {source.capitalize()} reading saved '
+                    f'(id={result.get("id")}): {temperature}C, {humidity}%',
+                    flush=True
+                )
+            else:
+                print(
+                    f'[{ts()}] Sensor API error: {result.get("error", "unknown error")}',
+                    flush=True
+                )
+        except Exception as e:
+            print(f'[{ts()}] Sensor API recording error: {e}', flush=True)
+
+        next_read_at += SENSOR_INTERVAL
+        delay = next_read_at - time.monotonic()
+        if delay < -SENSOR_INTERVAL:
+            next_read_at = time.monotonic() + SENSOR_INTERVAL
+            delay = SENSOR_INTERVAL
+        stop_event.wait(max(0, delay))
 
 def read_food_level(port):
     """Bumasa ng FOOD LEVEL sa PERCENTAGE (%) direkta mula sa firmware.
@@ -445,8 +534,17 @@ def main():
     if port is None:
         print("ERROR: No WEMOS found!", flush=True)
         sys.exit(1)
-    
-    print(f'[{time.strftime("%H:%M:%S")}] Unified Bridge ready ({port})', flush=True)
+
+    sensor_state = {'port': port}
+    sensor_stop = threading.Event()
+    sensor_thread = threading.Thread(
+        target=sensor_recording_loop,
+        args=(sensor_state, sensor_stop),
+        name='dht22-recorder',
+        daemon=True,
+    )
+
+    print(f'[{time.strftime("%H:%M:%S")}] Unified Bridge ready ({port or "no WEMOS"})', flush=True)
     print(f'[{time.strftime("%H:%M:%S")}] Sensor interval: {SENSOR_INTERVAL}s', flush=True)
 
     # Stale animation file cleanup: kapag may natirang animation_trigger.json
@@ -460,10 +558,10 @@ def main():
         except OSError:
             pass
     
-    last_sensor_read = 0
     last_food_level_read = 0
     
     try:
+        sensor_thread.start()
         while True:
             try:
                 cmd = read_pending_command()
@@ -488,8 +586,12 @@ def main():
                         print(f'[{time.strftime("%H:%M:%S")}] {"Closed" if result["success"] else "Failed"}', flush=True)
 
                     elif action == 'sensor':
-                        temp, hum = read_sensors(port)
-                        result = {'success': temp is not None, 'data': {'temperature': temp, 'humidity': hum}}
+                        temp, hum, _ = read_sensors(port) if port else (None, None, None)
+                        result = {
+                            'success': temp is not None,
+                            'source': 'actual' if temp is not None else 'simulated',
+                            'data': {'temperature': temp, 'humidity': hum},
+                        }
                         with open(RESULT_FILE, 'w') as f:
                             json.dump({**result, 'port': port, 'timestamp': time.time()}, f)
 
@@ -503,17 +605,6 @@ def main():
                             json.dump({**result, 'port': port, 'timestamp': time.time()}, f)
 
                 current_time = time.time()
-                if current_time - last_sensor_read >= SENSOR_INTERVAL:
-                    temp, hum, _ = read_sensors(port)
-                    if temp is not None and hum is not None:
-                        result = post_to_api(temp, hum)
-                        if result.get('success'):
-                            print(f'[{time.strftime("%H:%M:%S")}] DHT22: {temp}C, {hum}%', flush=True)
-                        else:
-                            print(f'[{time.strftime("%H:%M:%S")}] Sensor API error: {result.get("error", "unknown error")}', flush=True)
-
-                    last_sensor_read = current_time
-
                 if current_time - last_food_level_read >= FOOD_LEVEL_INTERVAL:
                     level = read_food_level(port)
                     if level is not None:
@@ -529,6 +620,9 @@ def main():
 
             time.sleep(0.1)   # mabilis na command detection ( dati 0.5s )
     finally:
+        sensor_stop.set()
+        if sensor_thread.is_alive():
+            sensor_thread.join()
         release_instance_lock()
 
 if __name__ == '__main__':

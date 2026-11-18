@@ -1,27 +1,29 @@
 {
   "classes": {
-    "japanese_quail": 0,
-    "japanese_coturnix_crossbreed_taiwan": 1,
-    "pharaoh_quail": 2
+    "japanese_quail_group": 0,
+    "pharaoh_quail": 1
   },
   "class_names": {
-    "0": "japanese_quail",
-    "1": "japanese_coturnix_crossbreed_taiwan",
-    "2": "pharaoh_quail"
+    "0": "japanese_quail_group",
+    "1": "pharaoh_quail"
   },
   "breeds": [
-    "japanese_quail",
-    "japanese_coturnix_crossbreed_taiwan",
+    "japanese_quail_group",
     "pharaoh_quail"
   ],
+  "display_names": {
+    "japanese_quail_group": "Japanese Coturnix Quail (Taiwan Crossbreed)",
+    "pharaoh_quail": "Pharaoh Quail"
+  },
   "image_size": [
     224,
     224
   ],
-  "trained_at": "2026-09-17T11:39:39.587385",
+  "trained_at": "2026-10-25T20:21:17.578146",
   "model_type": "MobileNetV2 Transfer Learning + Fine Tuning",
   "preprocessing": "keras.applications.mobilenet_v2.preprocess_input",
-  "training_accuracy": 0.5925925970077515,
-  "validation_accuracy": 0.5,
-  "dataset_size": 68
+  "training_accuracy": 1.0,
+  "validation_accuracy": 0.8888888955116272,
+  "dataset_size": 44,
+  "num_classes": 2
 }

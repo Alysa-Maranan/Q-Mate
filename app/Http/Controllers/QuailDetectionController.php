@@ -483,20 +483,29 @@ class QuailDetectionController extends Controller
 
             /*
              * ==========================================================
-             * RENDER / LINUX PYTHON
+             * PYTHON ENVIRONMENT
              * ==========================================================
              *
-             * Dockerfile creates:
-             *
-             * /opt/qmate-venv/bin/python
-             *
-             * Do NOT use the Windows path:
-             *
-             * .venv\Scripts\python.exe
-             *
+             * Prefer an explicitly configured interpreter, then the
+             * Docker venv, then the project-local venv used on Windows.
              */
 
-            $pythonExecutable = '/opt/qmate-venv/bin/python';
+            $pythonCandidates = array_values(array_filter([
+                env('PYTHON_PATH'),
+                '/opt/qmate-venv/bin/python',
+                base_path('.venv/Scripts/python.exe'),
+                base_path('.venv/bin/python'),
+            ]));
+
+            $pythonExecutable = $pythonCandidates[0]
+                ?? '/opt/qmate-venv/bin/python';
+
+            foreach ($pythonCandidates as $candidate) {
+                if (is_file($candidate) && is_executable($candidate)) {
+                    $pythonExecutable = $candidate;
+                    break;
+                }
+            }
 
             /*
              * ==========================================================
@@ -607,12 +616,12 @@ class QuailDetectionController extends Controller
              */
 
             $command = sprintf(
-                '"%s" "%s" "%s" "%s" "%s" 2>&1',
-                $pythonExecutable,
-                $pythonScript,
-                $fullPath,
-                $modelPath,
-                $metadataPath
+                '%s %s %s %s %s 2>&1',
+                escapeshellarg($pythonExecutable),
+                escapeshellarg($pythonScript),
+                escapeshellarg($fullPath),
+                escapeshellarg($modelPath),
+                escapeshellarg($metadataPath)
             );
 
             \Log::info(
@@ -740,45 +749,80 @@ class QuailDetectionController extends Controller
 
             /*
              * ==========================================================
-             * 10. MAP MODEL CLASS TO DATABASE BREED
+             * 10. MAP MODEL CLASS TO THE SAVED LABEL AND DATABASE BREED
              * ==========================================================
              *
-             * MODEL:
-             *
-             * 0 = japanese_quail
-             * 1 = japanese_coturnix_crossbreed_taiwan
-             * 2 = pharaoh_quail
-             *
-             * DATABASE:
-             *
-             * 1 = Japanese Quail
-             * 2 = Japanese Coturnix Crossbreed (Taiwan)
-             * 3 = Pharaoh Quail
+             * The label order is read from model_metadata.json; the model
+             * class index is never assumed to imply a particular breed.
              */
 
-            $classToBreedId = [
-                0 => 1,
-                1 => 2,
-                2 => 3,
-            ];
+            $metadata = [];
 
-            /*
-             * Do NOT silently convert invalid
-             * classes to breed 1.
-             */
+            if (is_file($metadataPath)) {
+                $decodedMetadata = json_decode(
+                    (string) file_get_contents($metadataPath),
+                    true
+                );
 
-            if (!array_key_exists(
-                $classIndex,
-                $classToBreedId
-            )) {
+                if (is_array($decodedMetadata)) {
+                    $metadata = $decodedMetadata;
+                }
+            }
+
+            $metadataClassNames = [];
+
+            if (
+                isset($metadata['class_names']) &&
+                is_array($metadata['class_names'])
+            ) {
+                foreach ($metadata['class_names'] as $index => $label) {
+                    $metadataClassNames[(int) $index] = (string) $label;
+                }
+            }
+
+            $metadataDisplayNames = [];
+
+            if (
+                isset($metadata['display_names']) &&
+                is_array($metadata['display_names'])
+            ) {
+                foreach ($metadata['display_names'] as $label => $displayName) {
+                    $metadataDisplayNames[(string) $label] = (string) $displayName;
+                }
+            }
+
+            $classLabel = $metadataClassNames[$classIndex]
+                ?? (isset($result['class_name'])
+                    ? trim((string) $result['class_name'])
+                    : '');
+
+            if ($classLabel === '') {
                 throw new \RuntimeException(
-                    'Invalid predicted class returned by model: ' .
+                    'No saved class label for predicted class: ' .
                     $classIndex
                 );
             }
 
-            $breedId =
-                $classToBreedId[$classIndex];
+            /*
+             * Map the saved label (not the class index) to the existing
+             * database breed. Legacy labels are kept for older models.
+             */
+
+            $labelToBreedId = [
+                'japanese_quail_group' => 2,
+                'japanese_quail' => 1,
+                'japanese_coturnix_crossbreed_taiwan' => 2,
+                'pharaoh_quail' => 3,
+            ];
+
+            if (!array_key_exists($classLabel, $labelToBreedId)) {
+                throw new \RuntimeException(
+                    'No database breed mapping for model class label: ' .
+                    $classLabel
+                );
+            }
+
+            $breedId = $labelToBreedId[$classLabel];
 
             /*
              * ==========================================================
@@ -798,6 +842,20 @@ class QuailDetectionController extends Controller
             }
 
             /*
+             * The display breed name comes from the saved metadata so the
+             * two names stay separate even though both are Coturnix japonica.
+             */
+
+            $breedName = $metadataDisplayNames[$classLabel]
+                ?? (isset($result['breed_name'])
+                    ? trim((string) $result['breed_name'])
+                    : '');
+
+            if ($breedName === '') {
+                $breedName = $breed->name;
+            }
+
+            /*
              * ==========================================================
              * 12. GET ACTUAL MODEL INFORMATION
              * ==========================================================
@@ -808,33 +866,17 @@ class QuailDetectionController extends Controller
                     ? (float) $result['confidence']
                     : 0.0;
 
-            $modelClassName =
-                isset($result['class_name'])
-                    ? trim(
-                        (string) $result['class_name']
-                    )
-                    : '';
+            $modelClassName = $classLabel;
+
+            $confidenceThreshold =
+                (float) config('quail.confidence_threshold', 0.60);
 
             /*
-             * If Python did not return a class name,
-             * use the metadata class name based on the index.
-             *
-             * This is NOT a random breed.
+             * Never force a breed identification when the model is not
+             * confident enough. The frontend shows "Uncertain Detection".
              */
 
-            if ($modelClassName === '') {
-                $metadataClassNames = [
-                    0 => 'japanese_quail',
-                    1 =>
-                        'japanese_coturnix_crossbreed_taiwan',
-                    2 => 'pharaoh_quail',
-                ];
-
-                $modelClassName =
-                    $metadataClassNames[
-                        $classIndex
-                    ] ?? '';
-            }
+            $uncertain = $modelConfidence < $confidenceThreshold;
 
             /*
              * ==========================================================
@@ -855,10 +897,13 @@ class QuailDetectionController extends Controller
                         $breedId,
 
                     'breed_name' =>
-                        $breed->name,
+                        $breedName,
 
                     'model_confidence' =>
                         $modelConfidence,
+
+                    'uncertain' =>
+                        $uncertain,
 
                     'all_predictions' =>
                         $result['all_predictions']
@@ -875,11 +920,22 @@ class QuailDetectionController extends Controller
             return response()->json([
                 'success' => true,
 
+                'uncertain' =>
+                    $uncertain,
+
+                'confidence_threshold' =>
+                    $confidenceThreshold,
+
+                'message' =>
+                    $uncertain
+                        ? 'Uncertain Detection'
+                        : 'Breed classified successfully.',
+
                 'breed_id' =>
-                    $breedId,
+                    $uncertain ? null : $breedId,
 
                 'breed_name' =>
-                    $breed->name,
+                    $uncertain ? null : $breedName,
 
                 'model_class_name' =>
                     $modelClassName,
