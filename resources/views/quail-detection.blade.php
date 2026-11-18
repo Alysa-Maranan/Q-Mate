@@ -4266,12 +4266,12 @@
             );
 
             /*
-             * The color rule is fast. Never leave the modal stuck on
-             * "Processing..." if the server or network stalls.
+             * Keep upload and camera breed classification within the
+             * requested three-second response window.
              */
             classifyTimeoutId = setTimeout(
                 () => abortController.abort(),
-                8000
+                3000
             );
 
             const classifyResponse =
@@ -5011,7 +5011,7 @@
             identifiedBreed !== 'Breed Not Identified'
                 ? `
                     <div class="result-confidence-summary">
-                        <span>Breed Confidence</span>
+                        <span>Color Match</span>
                         <strong>${breedConfidenceDisplay}</strong>
                     </div>
                 `

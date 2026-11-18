@@ -48,10 +48,14 @@ After training completes:
 
 ## Next Steps
 
-After training:
-1. Copy trained model to web-accessible location
-2. Update `quail-detection.blade.php` to use new model
-3. Test detection with your trained model
+The current web detector uses `classify_quail_color.py`, not the MobileNetV2
+model produced by this training script. It maps brown plumage to Japanese
+Quail / Coturnix and gray or dark-gray plumage to Pharaoh Quail, regardless of
+bird size. The classifier resizes images before analysis and does not require
+the `.keras` model or its metadata.
+
+To switch the web detector to a newly trained MobileNetV2 model, the inference
+flow in `QuailDetectionController` must be intentionally changed and tested.
 
 ## Troubleshooting
 

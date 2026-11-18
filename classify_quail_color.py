@@ -5,8 +5,9 @@ Rules requested for Q-MATE:
 - Brown quail  -> Japanese Quail / Coturnix Quail (japanese_quail_group)
 - Gray / dark gray quail -> Pharaoh Quail (pharaoh_quail)
 
-Size is ignored. No TensorFlow model is loaded and no probability is inferred;
-the rule is deterministic, so the reported confidence is 1.0.
+Size is ignored. No TensorFlow model is loaded. The reported confidence is the
+share of brown or gray pixels supporting the selected color rule, not a model
+probability.
 """
 
 import json
@@ -65,8 +66,10 @@ def rgb_to_hsv(rgb):
 def classify_by_color(image_path):
     try:
         with Image.open(image_path) as image:
-            rgb = np.asarray(image.convert("RGB"), dtype=np.uint8)
-    except Exception as error:
+            image = image.convert("RGB")
+            image.thumbnail((480, 480), Image.Resampling.BILINEAR)
+            rgb = np.asarray(image, dtype=np.uint8)
+    except (OSError, ValueError) as error:
         return {
             "success": False,
             "error": "Unable to read image: " + str(error),
@@ -104,6 +107,13 @@ def classify_by_color(image_path):
 
     brown_pixels = int(np.count_nonzero(brown_mask))
     gray_pixels = int(np.count_nonzero(gray_mask))
+    color_pixels = brown_pixels + gray_pixels
+
+    if color_pixels == 0:
+        return {
+            "success": False,
+            "error": "No brown or gray/dark gray plumage pixels were found.",
+        }
 
     if gray_pixels > brown_pixels:
         class_index = PHARAOH_CLASS
@@ -120,18 +130,14 @@ def classify_by_color(image_path):
         "class_index": class_index,
         "class_name": class_name,
         "breed_name": DISPLAY_NAMES[class_name],
-        "confidence": 1.0,
+        "confidence": max(brown_pixels, gray_pixels) / color_pixels,
         "classification_method": "color_rule",
         "detected_color": detected_color,
         "brown_pixels": brown_pixels,
         "gray_pixels": gray_pixels,
         "all_predictions": {
-            "japanese_quail_group": (
-                1.0 if class_index == JAPANESE_CLASS else 0.0
-            ),
-            "pharaoh_quail": (
-                1.0 if class_index == PHARAOH_CLASS else 0.0
-            ),
+            "japanese_quail_group": brown_pixels / color_pixels,
+            "pharaoh_quail": gray_pixels / color_pixels,
         },
         "display_names": DISPLAY_NAMES,
     }
@@ -141,7 +147,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(json.dumps({
             "success": False,
-            "error": "Usage: classify_quail_color.py <image_path> [unused] [unused]",
+            "error": "Usage: classify_quail_color.py <image_path>",
         }))
         sys.exit(1)
 

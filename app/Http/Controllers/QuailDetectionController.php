@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\Process\Process;
 
 use App\Helpers\QuailBreedHelper;
 use App\Models\DetectionHistory;
@@ -493,7 +494,7 @@ class QuailDetectionController extends Controller
 
     /**
      * Classify quail breed from image
-     * using the trained ML model.
+     * using the configured plumage color rule.
      */
     public function classifyBreed(Request $request)
     {
@@ -537,14 +538,6 @@ class QuailDetectionController extends Controller
 
             $pythonScript = base_path(
                 'classify_quail_color.py'
-            );
-
-            $modelPath = base_path(
-                'public/models/quail_breed_model.keras'
-            );
-
-            $metadataPath = base_path(
-                'public/models/model_metadata.json'
             );
 
             /*
@@ -598,22 +591,6 @@ class QuailDetectionController extends Controller
                             $pythonScript
                         ),
 
-                    'model' =>
-                        $modelPath,
-
-                    'model_exists' =>
-                        file_exists(
-                            $modelPath
-                        ),
-
-                    'metadata' =>
-                        $metadataPath,
-
-                    'metadata_exists' =>
-                        file_exists(
-                            $metadataPath
-                        ),
-
                     'image' =>
                         $fullPath,
 
@@ -649,24 +626,6 @@ class QuailDetectionController extends Controller
             }
 
             if (!file_exists(
-                $modelPath
-            )) {
-                throw new \RuntimeException(
-                    'Quail breed model not found: ' .
-                    $modelPath
-                );
-            }
-
-            if (!file_exists(
-                $metadataPath
-            )) {
-                throw new \RuntimeException(
-                    'Model metadata not found: ' .
-                    $metadataPath
-                );
-            }
-
-            if (!file_exists(
                 $fullPath
             )) {
                 throw new \RuntimeException(
@@ -681,22 +640,33 @@ class QuailDetectionController extends Controller
              * ==========================================================
              */
 
-            $command = sprintf(
-                '%s %s %s %s %s 2>&1',
-                escapeshellarg($pythonExecutable),
-                escapeshellarg($pythonScript),
-                escapeshellarg($fullPath),
-                escapeshellarg($modelPath),
-                escapeshellarg($metadataPath)
-            );
-
             \Log::info(
                 'Executing quail color-rule classifier.'
             );
 
-            $output = shell_exec(
-                $command
-            );
+            $process = new Process([
+                $pythonExecutable,
+                $pythonScript,
+                $fullPath,
+            ]);
+            $process->setTimeout(2.5);
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                $processError = trim(
+                    $process->getErrorOutput() .
+                    "\n" .
+                    $process->getOutput()
+                );
+
+                throw new \RuntimeException(
+                    $processError !== ''
+                        ? $processError
+                        : 'Python color-rule classifier failed.'
+                );
+            }
+
+            $output = $process->getOutput();
 
             \Log::info(
                 'Python classifier output: ' .
@@ -815,65 +785,30 @@ class QuailDetectionController extends Controller
 
             /*
              * ==========================================================
-             * 10. MAP COLOR-RULE CLASS TO THE SAVED LABEL
+             * 10. VALIDATE THE COLOR-RULE CLASS
              * ==========================================================
-             *
-             * The label order is read from model_metadata.json; the returned
-             * class index is matched to the metadata label before mapping it
-             * to the configured breed reference.
              */
 
-            $metadata = [];
+            $classLabel = isset($result['class_name'])
+                ? trim((string) $result['class_name'])
+                : '';
 
-            if (is_file($metadataPath)) {
-                $decodedMetadata = json_decode(
-                    (string) file_get_contents($metadataPath),
-                    true
-                );
-
-                if (is_array($decodedMetadata)) {
-                    $metadata = $decodedMetadata;
-                }
-            }
-
-            $metadataClassNames = [];
+            $expectedClassLabels = [
+                0 => 'japanese_quail_group',
+                1 => 'pharaoh_quail',
+            ];
 
             if (
-                isset($metadata['class_names']) &&
-                is_array($metadata['class_names'])
+                !isset($expectedClassLabels[$classIndex]) ||
+                $expectedClassLabels[$classIndex] !== $classLabel
             ) {
-                foreach ($metadata['class_names'] as $index => $label) {
-                    $metadataClassNames[(int) $index] = (string) $label;
-                }
-            }
-
-            $metadataDisplayNames = [];
-
-            if (
-                isset($metadata['display_names']) &&
-                is_array($metadata['display_names'])
-            ) {
-                foreach ($metadata['display_names'] as $label => $displayName) {
-                    $metadataDisplayNames[(string) $label] = (string) $displayName;
-                }
-            }
-
-            $classLabel = $metadataClassNames[$classIndex]
-                ?? (isset($result['class_name'])
-                    ? trim((string) $result['class_name'])
-                    : '');
-
-            if ($classLabel === '') {
                 throw new \RuntimeException(
-                    'No saved class label for predicted class: ' .
-                    $classIndex
+                    'Color-rule classifier returned an unsupported class.'
                 );
             }
 
             /*
-             * Map the saved label (not the class index) to the configured
-             * reference data. Legacy labels are accepted only when they
-             * resolve to one of the two supported trained classes.
+             * Map the validated class label to its configured reference.
              */
 
             $referenceKeyByLabel = [
@@ -908,18 +843,11 @@ class QuailDetectionController extends Controller
 
             /*
              * The saved configuration is the canonical source for the two
-             * trained classes. Do not make breed detection depend on the
-             * remote breeds table being reachable.
+             * color-rule classes. Do not make detection depend on the remote
+             * breeds table being reachable.
              */
 
             $breedName = (string) $breedReference['common_name'];
-
-            if ($breedName === '') {
-                $breedName = (string) (
-                    $metadataDisplayNames[$classLabel]
-                    ?? ($result['breed_name'] ?? '')
-                );
-            }
 
             $normalizedReference = [
                 'reference_key' => $referenceKey,
@@ -937,28 +865,13 @@ class QuailDetectionController extends Controller
                 'reference_note' => (string) $breedReference['reference_note'],
             ];
 
-            /*
-             * ==========================================================
-             * 12. GET ACTUAL MODEL INFORMATION
-             * ==========================================================
-             */
-
-            $modelConfidence =
+            $colorMatchRatio =
                 isset($result['confidence'])
                     ? (float) $result['confidence']
                     : 0.0;
 
-            $modelClassName = $classLabel;
-
-            $confidenceThreshold =
-                (float) config('quail.confidence_threshold', 0.60);
-
-            /*
-             * Never force a breed identification when the model is not
-             * confident enough. The frontend shows "Uncertain Detection".
-             */
-
-            $uncertain = $modelConfidence < $confidenceThreshold;
+            // The color rule has rejected images with no matching plumage.
+            $uncertain = false;
 
             /*
              * ==========================================================
@@ -973,7 +886,7 @@ class QuailDetectionController extends Controller
                         $classIndex,
 
                     'model_class_name' =>
-                        $modelClassName,
+                        $classLabel,
 
                     'breed_id' =>
                         $breedId,
@@ -981,8 +894,8 @@ class QuailDetectionController extends Controller
                     'breed_name' =>
                         $breedName,
 
-                    'model_confidence' =>
-                        $modelConfidence,
+                    'color_match_ratio' =>
+                        $colorMatchRatio,
 
                     'uncertain' =>
                         $uncertain,
@@ -1005,9 +918,6 @@ class QuailDetectionController extends Controller
                 'uncertain' =>
                     $uncertain,
 
-                'confidence_threshold' =>
-                    $confidenceThreshold,
-
                 'message' =>
                     $uncertain
                         ? 'Uncertain Detection'
@@ -1026,17 +936,20 @@ class QuailDetectionController extends Controller
                     $uncertain ? null : $normalizedReference,
 
                 'model_class_name' =>
-                    $modelClassName,
+                    $classLabel,
 
                 'predicted_class' =>
                     $classIndex,
 
                 'confidence' =>
-                    $modelConfidence,
+                    $colorMatchRatio,
 
                 'all_predictions' =>
                     $result['all_predictions']
                     ?? [],
+
+                'classification_method' =>
+                    'color_rule',
 
                 'fallback' => false,
             ]);
