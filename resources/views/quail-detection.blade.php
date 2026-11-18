@@ -1132,6 +1132,31 @@
         line-height: 1.65;
     }
 
+    .result-guide-care {
+        display: grid;
+        gap: 0.85rem;
+        margin-top: 1rem;
+    }
+
+    .result-guide-subtitle {
+        margin: 0 0 0.45rem;
+        color: #6d4c41;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    .result-guide-list {
+        margin: 0;
+        padding-left: 1.15rem;
+        color: #5d4037;
+        font-size: 0.82rem;
+        line-height: 1.6;
+    }
+
+    .result-guide-list li + li {
+        margin-top: 0.3rem;
+    }
+
     .result-modal-actions {
         flex: 0 0 auto;
         margin: 0;
@@ -2172,6 +2197,119 @@
      */
     const QUAIL_BREED_REFERENCES = @json(config('quail.breed_references'));
 
+    /*
+     * Care details condensed from the Learn Book entries for
+     * Japanese Quail / Coturnix Quail and Pharaoh Quail.
+     */
+    const LEARNBOOK_GUIDES = {
+        japanese_quail_group: {
+            title: 'Japanese Quail / Coturnix Quail Care Guide',
+            overview: 'The most commonly raised quail in the Philippines. Hardier, fast-growing, and known for high egg production; suitable even for small-space farming.',
+            facts: [
+                ['Scientific Name', 'Coturnix japonica'],
+                ['Primary Purpose', 'Eggs primarily; meat is also possible'],
+                ['Laying Age', '35–45 days'],
+                ['Annual Eggs', '250–300 eggs per hen per year'],
+                ['Adult Weight', '120–180 g'],
+                ['Lifespan', '2–3 years'],
+                ['Daily Feed', '~20–25 g per bird per day'],
+                ['Temperament', 'Active but easy to manage'],
+                ['Climate', 'Adapts to hot, tropical climates']
+            ],
+            care: [
+                {
+                    title: 'Feeding & Nutrition',
+                    items: [
+                        'Starter feed for 0–3 weeks, grower feed for 3–5 weeks, then layer feed for laying birds.',
+                        'Protein 18–24% with calcium for eggshell formation.',
+                        'Clean drinking water should always be available.'
+                    ]
+                },
+                {
+                    title: 'Lighting for Egg Production',
+                    items: [
+                        'Provide 14–16 hours of light per day for continuous laying.'
+                    ]
+                },
+                {
+                    title: 'Housing & Cleanliness',
+                    items: [
+                        'Good ventilation; avoid overcrowding.',
+                        'Protect birds from heat and rain.',
+                        'Clean the enclosure regularly; a wire cage system is recommended.'
+                    ]
+                },
+                {
+                    title: 'Health & Disease Prevention',
+                    items: [
+                        'Watch for stress from heat or crowding, nutrient deficiency, and infections.',
+                        'Keep the area clean, avoid sudden feed changes, and ensure enough water and ventilation.'
+                    ]
+                },
+                {
+                    title: 'Breeding',
+                    items: [
+                        'Mating ratio: 1 male to 3–4 females.',
+                        'Incubation: 17–18 days at about 37.5 °C and 60–70% humidity.'
+                    ]
+                }
+            ]
+        },
+        pharaoh_quail: {
+            title: 'Pharaoh Quail Care Guide',
+            overview: 'A brown, streaked domestic Japanese quail raised for both eggs and meat. It is larger than many other Japanese quail lines and adapts well to tropical climates.',
+            facts: [
+                ['Scientific Name', 'Coturnix japonica'],
+                ['Primary Purpose', 'Eggs and meat (dual purpose)'],
+                ['Laying Age', '35–45 days'],
+                ['Annual Eggs', '200–280 eggs per hen per year'],
+                ['Adult Weight', '150–200 g'],
+                ['Lifespan', '2–3 years'],
+                ['Daily Feed', '~20–30 g per bird per day'],
+                ['Color', 'Dark brown with a pattern'],
+                ['Climate', 'Suitable for tropical climates']
+            ],
+            care: [
+                {
+                    title: 'Feeding & Nutrition',
+                    items: [
+                        "Use starter, grower, and layer or finisher feeds depending on the bird's stage and purpose.",
+                        'Protein 18–24%; calcium is especially important for layers.',
+                        'Clean drinking water should always be available.'
+                    ]
+                },
+                {
+                    title: 'Lighting for Egg Production',
+                    items: [
+                        'Keep lighting consistent and nutrition adequate for steady laying.'
+                    ]
+                },
+                {
+                    title: 'Housing & Cleanliness',
+                    items: [
+                        'Provide good airflow and avoid crowding.',
+                        'Protect birds from rain and heat.',
+                        'Clean the enclosure regularly; wire cages are recommended.'
+                    ]
+                },
+                {
+                    title: 'Health & Disease Prevention',
+                    items: [
+                        'Watch for stress from heat or crowding, nutrient deficiency, and infections.',
+                        'Maintain cleanliness, avoid sudden feed changes, and provide sufficient water and a good environment.'
+                    ]
+                },
+                {
+                    title: 'Breeding',
+                    items: [
+                        'Mating ratio: 1 male to 3–4 females.',
+                        'Incubation: 17–18 days at about 37.5 °C and 60–70% humidity.'
+                    ]
+                }
+            ]
+        }
+    };
+
     const BREED_INFO = {
         japanese_quail_group: {
             breedName: "Japanese Coturnix Quail (Taiwan Crossbreed)",
@@ -2370,14 +2508,24 @@
             return 'Not recorded';
         }
 
-        return date.toLocaleString('en-US', {
+        const datePart = date.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
+            year: 'numeric'
         });
+
+        const hours24 = date.getHours();
+        const hours12 = hours24 % 12 || 12;
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const meridiem = hours24 >= 12 ? 'PM' : 'AM';
+
+        return (
+            datePart +
+            ' ' +
+            String(hours12).padStart(2, '0') +
+            minutes +
+            meridiem
+        );
     }
 
     function unavailableValue(value, fallback = 'Not recorded') {
@@ -2464,58 +2612,6 @@
         return null;
     }
 
-    /*
-     * Fetch the latest real DHT22 reading. Weather fallback values are
-     * deliberately rejected: this modal must show sensor data or state
-     * that the data is unavailable.
-     */
-    async function fetchLatestSensorReading() {
-        const unavailable = {
-            temperature: null,
-            humidity: null,
-            sensorStatus: 'unavailable',
-            sensorSource: null,
-            sensorRecordedAt: null
-        };
-
-        try {
-            const response = await fetch(
-                '/api/sensor-data/latest',
-                { cache: 'no-store' }
-            );
-
-            if (!response.ok) {
-                return unavailable;
-            }
-
-            const data = await response.json();
-            const source = String(data.source || '')
-                .trim()
-                .toLowerCase();
-
-            const isDht22 =
-                data.success === true &&
-                (source === 'hardware' || source === 'actual') &&
-                finiteNumber(data.temperature) !== null &&
-                finiteNumber(data.humidity) !== null;
-
-            if (!isDht22) {
-                return unavailable;
-            }
-
-            return {
-                temperature: finiteNumber(data.temperature),
-                humidity: finiteNumber(data.humidity),
-                sensorStatus: 'available',
-                sensorSource: source,
-                sensorRecordedAt: data.recorded_at || null
-            };
-        } catch (error) {
-            console.warn('DHT22 reading unavailable:', error);
-            return unavailable;
-        }
-    }
-
     function createDetectionRecord(options) {
         const optionsObject = options || {};
         const detectionType =
@@ -2537,13 +2633,13 @@
         let modelClassName = null;
         let breedConfidence = null;
         let classificationMessage =
-            'Object detected by COCO-SSD. Breed classification is not applicable.';
+            'Object detected by the camera. Breed classification is not applicable.';
 
         if (detectionType === 'quail') {
             if (optionsObject.processing) {
                 classificationStatus = 'processing';
                 classificationMessage =
-                    'COCO-SSD found a bird. Waiting for the trained breed classifier and DHT22 reading.';
+                    'Identifying the breed from the captured image.';
             } else if (
                 classification &&
                 classification.success === true &&
@@ -2562,7 +2658,7 @@
                 breedConfidence =
                     finiteNumber(classification.confidence);
                 classificationMessage =
-                    'COCO-SSD detected a bird; MobileNetV2 identified the breed.';
+                    'Breed identified from the captured image.';
             } else if (
                 classification &&
                 classification.success === true &&
@@ -2574,11 +2670,11 @@
                 breedConfidence =
                     finiteNumber(classification.confidence);
                 classificationMessage =
-                    'The trained model was not confident enough. No breed was assigned.';
+                    'The breed could not be confirmed from this image.';
             } else {
                 classificationStatus = 'unavailable';
                 classificationMessage =
-                    'Breed classification failed or the trained model is unavailable.';
+                    'No breed was identified from this image.';
             }
         }
 
@@ -3946,10 +4042,9 @@
 
             /*
              * BIRD:
-             * COCO-SSD only reports bird presence. The trained MobileNetV2
-             * classifier and DHT22 read run in parallel while the dialog
-             * already shows an honest processing state with no invented
-             * breed or sensor values.
+             * COCO-SSD only reports bird presence. The trained classifier
+             * runs while the dialog already shows an honest processing state
+             * with no invented breed values.
              */
             if (isBird) {
                 lastClassification = null;
@@ -3979,15 +4074,10 @@
                     Date.now() + 10000;
 
                 try {
-                    const [
-                        classificationResult,
-                        sensor
-                    ] = await Promise.all([
-                        classifyBreedFromImage(
+                    const classificationResult =
+                        await classifyBreedFromImage(
                             imageData
-                        ),
-                        fetchLatestSensorReading()
-                    ]);
+                        );
 
                     const finalRecord =
                         createDetectionRecord({
@@ -3998,7 +4088,6 @@
                                 detectorConfidence,
                             classification:
                                 classificationResult,
-                            sensor: sensor,
                             imageData: imageData,
                             detectedAt: detectedAt,
                             source: 'camera'
@@ -4712,15 +4801,10 @@
                 Date.now() + 10000;
 
             try {
-                const [
-                    classificationResult,
-                    sensor
-                ] = await Promise.all([
-                    classifyBreedFromImage(
+                const classificationResult =
+                    await classifyBreedFromImage(
                         imageData
-                    ),
-                    fetchLatestSensorReading()
-                ]);
+                    );
 
                 const finalRecord =
                     createDetectionRecord({
@@ -4730,7 +4814,6 @@
                         objectConfidence: null,
                         classification:
                             classificationResult,
-                        sensor: sensor,
                         imageData: imageData,
                         detectedAt: detectedAt,
                         source: 'upload'
@@ -4826,22 +4909,22 @@
             processing: {
                 className: 'processing',
                 title: 'Processing Detection',
-                message: result.classificationMessage
+                message: 'Identifying the breed from the captured image.'
             },
             identified: {
                 className: 'success',
                 title: 'Quail Detected!',
-                message: result.classificationMessage
+                message: 'Breed identified from the captured image.'
             },
             uncertain: {
                 className: 'uncertain',
                 title: 'Bird Detected',
-                message: result.classificationMessage
+                message: 'The breed could not be confirmed from this image.'
             },
             unavailable: {
                 className: 'uncertain',
                 title: 'Bird Detected',
-                message: result.classificationMessage
+                message: 'No breed was identified from this image.'
             },
             legacy: {
                 className: '',
@@ -4862,18 +4945,6 @@
         const statusView = statusMap[status] ||
             statusMap.not_applicable;
 
-        const classificationLabelMap = {
-            processing: 'Processing',
-            identified: 'Identified',
-            uncertain: 'Uncertain',
-            unavailable: 'Unavailable',
-            legacy: 'Not recorded',
-            not_applicable: 'Not applicable'
-        };
-
-        const classificationLabel =
-            classificationLabelMap[status] || 'Not recorded';
-
         const recordedBreedName =
             resolveRecordedBreedName(result);
 
@@ -4885,28 +4956,6 @@
                     : (isQuail
                         ? 'Breed Not Identified'
                         : 'Not applicable');
-
-        let breedConfidenceText = 'Not applicable';
-
-        if (isQuail) {
-            if (
-                status === 'identified' &&
-                finiteNumber(result.breedConfidence) !== null
-            ) {
-                breedConfidenceText = formatPercent(
-                    result.breedConfidence
-                );
-            } else if (
-                status === 'uncertain' &&
-                finiteNumber(result.breedConfidence) !== null
-            ) {
-                breedConfidenceText =
-                    formatPercent(result.breedConfidence) +
-                    ' (below threshold)';
-            } else {
-                breedConfidenceText = 'Not available';
-            }
-        }
 
         const imageHtml = result.imageData
             ? `<img src="${escapeHtml(result.imageData)}" alt="Captured detection result">`
@@ -4921,87 +4970,53 @@
         }
 
         const reference = resolveBreedReference(result);
+        const guide =
+            isQuail &&
+            reference &&
+            reference.reference_key &&
+            LEARNBOOK_GUIDES[reference.reference_key]
+                ? LEARNBOOK_GUIDES[reference.reference_key]
+                : null;
 
-        let breedInformationHtml = `
-            <div class="result-note">
-                Breed classification is not applicable to this detection.
-            </div>
-        `;
+        let breedGuideHtml = '';
 
-        if (isQuail && reference && typeof reference === 'object') {
-            const breedInfoTitle =
-                recordedBreedName ||
-                unavailableValue(
-                    reference.common_name,
-                    'Breed Not Identified'
-                );
-
-            breedInformationHtml = `
-                <div class="modal-breed-info result-breed-card">
-                    <div class="modal-breed-title">${escapeHtml(breedInfoTitle)}</div>
-
-                    <div class="modal-breed-grid">
-                        <div class="modal-breed-item">
-                            <span class="modal-breed-label">Scientific Name</span>
-                            <span class="modal-breed-value">${escapeHtml(unavailableValue(reference.scientific_name, 'Data Unavailable'))}</span>
-                        </div>
-                        <div class="modal-breed-item">
-                            <span class="modal-breed-label">Egg Production</span>
-                            <span class="modal-breed-value">${escapeHtml(unavailableValue(reference.typical_egg_production, 'Data Unavailable'))}</span>
-                        </div>
-                        <div class="modal-breed-item">
-                            <span class="modal-breed-label">Mature Weight</span>
-                            <span class="modal-breed-value">${escapeHtml(unavailableValue(reference.typical_adult_weight, 'Data Unavailable'))}</span>
-                        </div>
-                        <div class="modal-breed-item">
-                            <span class="modal-breed-label">Maturity Age</span>
-                            <span class="modal-breed-value">${escapeHtml(unavailableValue(reference.typical_maturity_age, 'Data Unavailable'))}</span>
-                        </div>
-                        <div class="modal-breed-item">
-                            <span class="modal-breed-label">Temperature</span>
-                            <span class="modal-breed-value">${escapeHtml(unavailableValue(reference.optimal_temperature, 'Data Unavailable'))}</span>
-                        </div>
-                        <div class="modal-breed-item">
-                            <span class="modal-breed-label">Humidity</span>
-                            <span class="modal-breed-value">${escapeHtml(unavailableValue(reference.optimal_humidity, 'Data Unavailable'))}</span>
-                        </div>
+        if (guide) {
+            const factsHtml = guide.facts
+                .map(([label, value]) => `
+                    <div class="result-fact">
+                        <span class="result-fact-label">${escapeHtml(label)}</span>
+                        <span class="result-fact-value">${escapeHtml(value)}</span>
                     </div>
+                `)
+                .join('');
 
-                    <div class="modal-breed-description">${escapeHtml(unavailableValue(reference.description, reference.reference_note))}</div>
-                    <p class="result-note">
-                        These are general breed reference values. They are not
-                        measurements of the detected bird, and the temperature
-                        and humidity above are breed housing references, not
-                        DHT22 readings.
-                    </p>
-                </div>
-            `;
-        } else if (isQuail) {
-            breedInformationHtml = `
-                <div class="result-note">
-                    Breed reference data was not recorded for this detection.
-                    No default breed information is shown.
-                </div>
+            const careHtml = guide.care
+                .map(section => `
+                    <div class="result-guide-section">
+                        <h4 class="result-guide-subtitle">${escapeHtml(section.title)}</h4>
+                        <ul class="result-guide-list">
+                            ${section.items
+                                .map(item => `<li>${escapeHtml(item)}</li>`)
+                                .join('')}
+                        </ul>
+                    </div>
+                `)
+                .join('');
+
+            breedGuideHtml = `
+                <section class="result-section result-guide">
+                    <h3 class="result-section-title result-section-title-upper">
+                        <svg class="icon" width="18" height="18" aria-hidden="true">
+                            <use xlink:href="#icon-quail"/>
+                        </svg>
+                        ${escapeHtml(guide.title)}
+                    </h3>
+                    <p class="result-description">${escapeHtml(guide.overview)}</p>
+                    <div class="result-facts">${factsHtml}</div>
+                    <div class="result-guide-care">${careHtml}</div>
+                </section>
             `;
         }
-
-        const temperatureAvailable =
-            result.sensorStatus === 'available' &&
-            finiteNumber(result.temperature) !== null;
-        const humidityAvailable =
-            result.sensorStatus === 'available' &&
-            finiteNumber(result.humidity) !== null;
-
-        const temperatureText = temperatureAvailable
-            ? finiteNumber(result.temperature).toFixed(1) + ' °C'
-            : 'Data Unavailable';
-        const humidityText = humidityAvailable
-            ? finiteNumber(result.humidity).toFixed(1) + ' %'
-            : 'Data Unavailable';
-
-        const sensorNote = temperatureAvailable || humidityAvailable
-            ? `Recorded from the DHT22 sensor${result.sensorSource ? ' (' + escapeHtml(result.sensorSource) + ')' : ''} at detection time.`
-            : 'No fresh DHT22 sensor reading was available at detection time. Weather data is not presented as a quail-house reading.';
 
         const objectConfidenceText =
             finiteNumber(result.objectConfidence) !== null
@@ -5039,7 +5054,7 @@
                     <div
                         class="modal-confidence-bar"
                         role="progressbar"
-                        aria-label="Object detection confidence"
+                        aria-label="Detection confidence"
                         aria-valuemin="0"
                         aria-valuemax="100"
                         aria-valuenow="${objectConfidenceWidth.toFixed(0)}"
@@ -5053,68 +5068,9 @@
                         <span class="result-fact-label">Detection Date &amp; Time</span>
                         <span class="result-fact-value">${escapeHtml(formatDateTime(result.detectedAt))}</span>
                     </div>
-                    <div class="result-fact">
-                        <span class="result-fact-label">Object Detected</span>
-                        <span class="result-fact-value">${escapeHtml(unavailableValue(result.objectDetectionResult))}</span>
-                    </div>
-                    <div class="result-fact">
-                        <span class="result-fact-label">Classification Status</span>
-                        <span class="result-fact-value">${escapeHtml(classificationLabel)}</span>
-                    </div>
-                    <div class="result-fact">
-                        <span class="result-fact-label">Model Class</span>
-                        <span class="result-fact-value">${escapeHtml(unavailableValue(result.modelClassName, 'Not recorded'))}</span>
-                    </div>
                 </div>
 
-                <div class="result-confidence-block">
-                    <div class="result-confidence-row">
-                        <span>Object Detection Confidence (COCO-SSD)</span>
-                        <strong>${objectConfidenceText}</strong>
-                    </div>
-                    <div class="result-confidence-row" style="margin-top:0.6rem;">
-                        <span>Breed Classification Confidence (MobileNetV2)</span>
-                        <strong>${escapeHtml(breedConfidenceText)}</strong>
-                    </div>
-                </div>
-
-                <p class="result-note">
-                    COCO-SSD only detects that a bird-like object is present.
-                    It cannot identify a quail breed. Breed identification,
-                    when shown, comes only from the trained MobileNetV2 classifier.
-                </p>
-
-                <div class="result-breed-info-block">
-                    <h3 class="result-section-title result-section-title-upper">
-                        <svg class="icon" width="18" height="18" aria-hidden="true">
-                            <use xlink:href="#icon-quail"/>
-                        </svg>
-                        Breed Info
-                    </h3>
-                    ${breedInformationHtml}
-                </div>
-
-                <section class="result-section">
-                    <h3 class="result-section-title result-section-title-upper">
-                        <svg class="icon" width="18" height="18" aria-hidden="true">
-                            <use xlink:href="#icon-robot"/>
-                        </svg>
-                        Actual DHT22 Readings
-                    </h3>
-
-                    <div class="result-facts">
-                        <div class="result-fact">
-                            <span class="result-fact-label">Temperature at Detection (°C)</span>
-                            <span class="result-fact-value${temperatureAvailable ? '' : ' muted'}">${temperatureText}</span>
-                        </div>
-                        <div class="result-fact">
-                            <span class="result-fact-label">Humidity at Detection (%)</span>
-                            <span class="result-fact-value${humidityAvailable ? '' : ' muted'}">${humidityText}</span>
-                        </div>
-                    </div>
-
-                    <p class="result-note">${sensorNote}</p>
-                </section>
+                ${breedGuideHtml}
             </div>
         `;
 
