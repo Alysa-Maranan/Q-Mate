@@ -252,13 +252,13 @@
                     </div>
                     <div style="flex: 1;">
                         <p style="margin: 0; color: #8d6e63; font-size: 0.9rem; font-weight: 600; text-transform: uppercase;">Food Level</p>
-                        <p id="foodLevelValue" style="margin: 0.5rem 0 0; color: #6d4c41; font-weight: 700; font-size: 1.1rem;">Loading...</p>
+                        <p id="foodLevelValue" style="margin: 0.5rem 0 0; color: #6d4c41; font-weight: 700; font-size: 1.1rem;">70%</p>
                     </div>
                 </div>
                 <div style="background: #efebe9; border-radius: 8px; height: 8px; overflow: hidden;">
-                    <div id="foodLevelBar" style="height: 100%; width: 0%; background: #4caf50; border-radius: 8px; transition: width 0.5s ease, background 0.5s ease;"></div>
+                    <div id="foodLevelBar" style="height: 100%; width: 70%; background: #4caf50; border-radius: 8px; transition: width 0.5s ease, background 0.5s ease;"></div>
                 </div>
-                <p id="foodLevelStatus" style="margin: 0.5rem 0 0; color: #8d6e63; font-size: 0.8rem;"></p>
+                <p id="foodLevelStatus" style="margin: 0.5rem 0 0; color: #8d6e63; font-size: 0.8rem;">Food detected</p>
             </div>
 
             <!-- Temperature & Humidity Card -->
@@ -1586,51 +1586,23 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
+// TEMPORARY: hardcoded food level while the WiFi sensor is being prepared.
+// Restore the /api/food-level/current polling once the sensor is connected.
 function updateFoodLevel() {
-    fetch('/api/food-level/current', { cache: 'no-store' })
-        .then(r => r.json())
-        .then(data => {
-            const level = data.level ?? 0;
-            const status = data.status ?? 'normal';
-            const detected = data.detected !== false;
-            const el = document.getElementById('foodLevelValue');
-            const bar = document.getElementById('foodLevelBar');
-            const statusEl = document.getElementById('foodLevelStatus');
-            if (!el) return;
-            // Show percentage or status text
-            if (status === 'empty' || !detected) {
-                el.textContent = 'No food';
-                bar.style.width = '0%';
-                bar.style.background = '#f44336';
-                el.style.color = '#f44336';
-                statusEl.textContent = 'Food container is empty';
-            } else if (status === 'low') {
-                el.textContent = level + '%';
-                bar.style.width = level + '%';
-                bar.style.background = '#ff9800';
-                el.style.color = '#ff9800';
-                statusEl.textContent = 'Low food level';
-            } else {
-                el.textContent = level + '%';
-                bar.style.width = level + '%';
-                bar.style.background = '#4caf50';
-                el.style.color = '#6d4c41';
-                statusEl.textContent = 'Food detected';
-            }
-            // Trigger notification (once per state change)
-            if (typeof notifyFoodLevel === 'function') {
-                notifyFoodLevel(level, level);
-            }
-        })
-        .catch(() => {
-            const el = document.getElementById('foodLevelValue');
-            if (el) el.textContent = '--%';
-        });
+    const level = 70;
+
+    const el = document.getElementById('foodLevelValue');
+    const bar = document.getElementById('foodLevelBar');
+    const statusEl = document.getElementById('foodLevelStatus');
+    if (!el) return;
+
+    el.textContent = level + '%';
+    el.style.color = '#6d4c41';
+    bar.style.width = level + '%';
+    bar.style.background = '#4caf50';
+    statusEl.textContent = 'Food detected';
 }
-document.addEventListener('DOMContentLoaded', function() {
-    updateFoodLevel();
-    setInterval(updateFoodLevel, 2000);
-});
+document.addEventListener('DOMContentLoaded', updateFoodLevel);
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

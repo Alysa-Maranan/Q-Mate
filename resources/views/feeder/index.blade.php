@@ -468,13 +468,13 @@
         <div class="section-card" id="food-level-card" style="margin-top:1.5rem;padding:1.5rem 2rem;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
                 <div style="font-weight:700;color:#6d4c41;font-size:1rem;">Food Level</div>
-                <span id="food-level-status-pill" class="status-pill" style="background:#d1fae5;color:#065f46;">Loading...</span>
+                <span id="food-level-status-pill" class="status-pill" style="background:#d1fae5;color:#065f46;">Normal</span>
             </div>
             <div style="background:#efebe9;border-radius:99px;height:18px;overflow:hidden;">
-                <div id="food-level-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#a1887f,#6d4c41);border-radius:99px;transition:width 0.8s ease;"></div>
+                <div id="food-level-bar" style="height:100%;width:70%;background:linear-gradient(90deg,#a1887f,#6d4c41);border-radius:99px;transition:width 0.8s ease;"></div>
             </div>
             <div style="display:flex;justify-content:center;margin-top:0.5rem;">
-                <span id="food-level-pct" style="font-size:1.1rem;font-weight:800;color:#6d4c41;">--%</span>
+                <span id="food-level-pct" style="font-size:1.1rem;font-weight:800;color:#6d4c41;">70%</span>
             </div>
             <div id="food-level-updated" style="font-size:0.75rem;color:#a1887f;margin-top:0.25rem;text-align:right;"></div>
         </div>
@@ -1155,81 +1155,27 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         hideDeleteHistoryModal();
     }
 
-    // Food Level Polling — refresh the latest ultrasonic result near real time.
+    // TEMPORARY: hardcoded food level while the WiFi sensor is being prepared.
+    // Restore the /api/food-level/current polling once the sensor is connected.
     (function() {
-        let lastFoodLevelState = null;
+        const level = 70;
 
-        function updateFoodLevel() {
-            fetch('/api/food-level/current', { cache: 'no-store' })
-                .then(r => r.json())
-                .then(function(data) {
-                    const bar    = document.getElementById('food-level-bar');
-                    const pct    = document.getElementById('food-level-pct');
-                    const pill   = document.getElementById('food-level-status-pill');
-                    const upd    = document.getElementById('food-level-updated');
-                    if (!bar) return;
+        const bar = document.getElementById('food-level-bar');
+        const pct = document.getElementById('food-level-pct');
+        const pill = document.getElementById('food-level-status-pill');
 
-                    const level  = data.level ?? 0;
-                    const detected = data.status !== 'empty';
-                    bar.style.width = level + '%';
-                    if (pct) pct.textContent = detected ? level + '%' : 'No food';
+        if (!bar) return;
 
-                    // Color based on status
-                    if (data.status === 'empty') {
-                        bar.style.background = 'linear-gradient(90deg,#ef5350,#c62828)';
-                        if (pill) { pill.style.background='#fee2e2'; pill.style.color='#991b1b'; pill.textContent='Empty'; }
-                    } else if (data.status === 'low') {
-                        bar.style.background = 'linear-gradient(90deg,#ffa726,#e65100)';
-                        if (pill) { pill.style.background='#fff3e0'; pill.style.color='#e65100'; pill.textContent='Low'; }
-                    } else {
-                        bar.style.background = 'linear-gradient(90deg,#a1887f,#6d4c41)';
-                        if (pill) { pill.style.background='#d1fae5'; pill.style.color='#065f46'; pill.textContent='Normal'; }
-                    }
+        bar.style.width = level + '%';
+        bar.style.background = 'linear-gradient(90deg,#a1887f,#6d4c41)';
 
-                    if (upd && data.last_updated) {
-                        upd.textContent = 'Updated: ' + new Date(data.last_updated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                    }
+        if (pct) pct.textContent = level + '%';
 
-                    // Determine notification state based on percentage
-                    let currentState = 'normal';
-                    if (level >= 0 && level <= 10) {
-                        currentState = 'critical';
-                    } else if (level >= 20 && level <= 30) {
-                        currentState = 'low';
-                    } else if (level >= 80 && level <= 100) {
-                        currentState = 'refilled';
-                    }
-
-                    // Only notify once per state change
-                    if (currentState !== lastFoodLevelState) {
-                        lastFoodLevelState = currentState;
-
-                        if (currentState === 'normal') return;
-                        if (typeof notificationSystem === 'undefined') return;
-
-                        let title, message, type;
-                        if (currentState === 'critical') {
-                            title = 'CRITICAL FOOD LEVEL';
-                            message = 'Food is almost empty! Please refill immediately.';
-                            type = 'error';
-                        } else if (currentState === 'low') {
-                            title = 'LOW FOOD LEVEL';
-                            message = 'Food is running low in the feeder. Please refill the food soon.';
-                            type = 'warning';
-                        } else if (currentState === 'refilled') {
-                            title = 'FOOD REFILLED';
-                            message = 'Thank you! The feeder is ready again.';
-                            type = 'success';
-                        }
-
-                        const fullMessage = title + '\n' + message + '\n' + currentState.toUpperCase() + ' — ' + level + '%';
-                        notificationSystem.addNotification(fullMessage, type, '⚠️');
-                    }
-                })
-                .catch(function() {});
+        if (pill) {
+            pill.style.background = '#d1fae5';
+            pill.style.color = '#065f46';
+            pill.textContent = 'Normal';
         }
-        updateFoodLevel();
-        setInterval(updateFoodLevel, 2000);
     })();
 
     // Start checking for notifications - only once
