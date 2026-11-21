@@ -641,7 +641,6 @@
                         <div class="feeding-station-icon">🍽️</div>
                         <div>
                             <div class="feeding-station-name">Main Feeder</div>
-                            <div class="feeding-station-note">Iisang pakainan para sa buong kulungan</div>
                         </div>
                         <span class="feeding-station-badge">ACTIVE</span>
                     </div>
