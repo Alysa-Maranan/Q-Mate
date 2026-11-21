@@ -246,7 +246,6 @@ class FeedingScheduleController extends Controller
 
     $now = now();
     $todayKey = strtolower(substr($now->format('D'), 0, 3));
-    $currentHM = $now->format('H:i');
 
     // ── Self-heal schedule statuses ─────────────────────────────────
 
@@ -342,10 +341,22 @@ class FeedingScheduleController extends Controller
 
     foreach ($schedules as $schedule) {
 
-        // Check scheduled time
-        $schedHM = substr($schedule->time, 0, 5);
+        // Check scheduled time.
+        //
+        // An exact HH:MM match used to miss the trigger whenever the polling
+        // request was delayed (Render cold start / slow response). Accept the
+        // scheduled minute plus a short catch-up window, but never fire
+        // before the scheduled time.
+        $schedHM = substr((string) $schedule->time, 0, 5);
+        if (!preg_match('/^\d{2}:\d{2}$/', $schedHM)) {
+            continue;
+        }
+        $scheduleAt = \Carbon\Carbon::parse($now->toDateString() . ' ' . $schedHM . ':00');
 
-        if ($schedHM !== $currentHM) {
+        if (
+            $now->lt($scheduleAt) ||
+            $now->gt($scheduleAt->copy()->addMinutes(3))
+        ) {
             continue;
         }
 
@@ -358,10 +369,11 @@ class FeedingScheduleController extends Controller
             }
         }
 
-        // Prevent duplicate triggering within 120 seconds
+        // Already fed today for this occurrence? Never feed twice.
         if (
-            $schedule->last_feed_at &&
-            $now->diffInSeconds($schedule->last_feed_at) < 120
+            $schedule->last_feed_at
+            && $schedule->last_feed_at->toDateString() === $now->toDateString()
+            && $schedule->last_feed_at->gte($scheduleAt->copy()->subMinute())
         ) {
             continue;
         }

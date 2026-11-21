@@ -200,6 +200,15 @@ class SettingsController extends Controller
                         && substr((string) $schedule->time, 0, 5) === $oldTime;
                 });
 
+                // If the saved setting and the schedule row drifted apart
+                // (e.g. a previous save failed), still move the next unused
+                // daily schedule into this slot so the chosen time reaches DB.
+                if (!$schedule) {
+                    $schedule = $dailySchedules->first(function ($schedule) use ($updatedScheduleIds) {
+                        return !in_array($schedule->id, $updatedScheduleIds, true);
+                    });
+                }
+
                 if ($schedule) {
                     $schedule->update(['time' => $newTimes[$label] . ':00']);
                     $updatedScheduleIds[] = $schedule->id;
@@ -214,6 +223,10 @@ class SettingsController extends Controller
             }
             FarmSetting::set('scheduled_feeding_enabled', $scheduledFeedingEnabled ? '1' : '0');
         });
+
+        // Create any daily schedule row that is still missing, so the
+        // configured times always have a matching row for auto-check.
+        \App\Http\Controllers\FeedingScheduleController::ensureDailySchedulesExist();
 
         // Clear any cached feeding schedule
         \Illuminate\Support\Facades\Cache::forget('feeding_schedule');

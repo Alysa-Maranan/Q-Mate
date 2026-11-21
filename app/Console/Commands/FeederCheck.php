@@ -44,7 +44,6 @@ class FeederCheck extends Command
 
         $now = Carbon::now();
         $todayKey = strtolower(substr($now->format('D'), 0, 3));
-        $currentHM = $now->format('H:i');
 
         // ── Self-heal schedule statuses ─────────────────────────────────
         // Finished feeds return to idle so recurring schedules fire again;
@@ -68,12 +67,22 @@ class FeederCheck extends Command
         $schedules = FeedingSchedule::where('enabled', true)->whereIn('status', ['idle'])->get();
 
         foreach ($schedules as $s) {
-            if (substr($s->time, 0, 5) !== $currentHM) continue;
+            // Catch-up window: a delayed scheduler tick must not skip the feed.
+            $schedHM = substr((string) $s->time, 0, 5);
+            if (!preg_match('/^\d{2}:\d{2}$/', $schedHM)) continue;
+
+            $scheduleAt = Carbon::parse($now->toDateString() . ' ' . $schedHM . ':00');
+            if ($now->lt($scheduleAt) || $now->gt($scheduleAt->copy()->addMinutes(3))) continue;
 
             $days = $s->days ?? [];
             if (!empty($days) && is_array($days) && !in_array($todayKey, $days)) continue;
 
-            if ($s->last_feed_at && $now->diffInSeconds($s->last_feed_at) < 120) continue;
+            // Already fed today for this occurrence? Never feed twice.
+            if (
+                $s->last_feed_at
+                && $s->last_feed_at->toDateString() === $now->toDateString()
+                && $s->last_feed_at->gte($scheduleAt->copy()->subMinute())
+            ) continue;
 
             $this->triggerSchedule($s);
         }
