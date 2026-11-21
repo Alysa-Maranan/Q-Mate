@@ -129,6 +129,25 @@
         box-shadow: 0 0 0 3px rgba(161, 136, 127, 0.1);
     }
 
+    .feed-time-picker {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .feed-time-picker select {
+        width: auto;
+        flex: 0 0 68px;
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+    }
+    .feed-time-picker .feed-time-period {
+        flex-basis: 78px;
+    }
+    .feed-time-picker .feed-time-colon {
+        font-weight: 800;
+        color: #8d6e63;
+    }
+
     .btn-primary {
         background: linear-gradient(135deg, #6d4c41 0%, #a1887f 100%);
         color: white;
@@ -332,6 +351,14 @@
 
     <!-- Feeder Schedule Tab -->
     <div class="tab-content" id="tab-feeder-schedule">
+        @php
+            $feedTimePickers = [
+                ['key' => 'morning',   'label' => '🌅 Morning Feed',   'default' => '08:00', 'recommended' => '8:00 AM'],
+                ['key' => 'afternoon', 'label' => '☀️ Afternoon Feed', 'default' => '12:00', 'recommended' => '12:00 PM'],
+                ['key' => 'evening',   'label' => '🌙 Evening Feed',   'default' => '17:00', 'recommended' => '5:00 PM'],
+            ];
+        @endphp
+
         <h2 class="settings-section-title">Feeder Schedule Settings</h2>
         
         <div class="settings-card">
@@ -362,32 +389,49 @@
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-                    <!-- Morning Feed Time -->
-                    <div class="form-field">
-                        <label style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span>🌅 Morning Feed</span>
-                        </label>
-                        <input type="text" name="feed_time_morning" value="{{ \App\Support\TimeFormat::display($feedTimes['morning'] ?? '08:00') }}" placeholder="8:00 AM" pattern="(0?[1-9]|1[0-2]):[0-5][0-9] ?([Aa][Mm]|[Pp][Mm])" title="Enter a time such as 8:00 AM" required style="font-size: 1rem;">
-                        <p style="margin: 0.5rem 0 0 0; color: #8d6e63; font-size: 0.8rem;">Recommended: 8:00 AM</p>
-                    </div>
+                    @foreach ($feedTimePickers as $picker)
+                        @php
+                            $display = \App\Support\TimeFormat::display($feedTimes[$picker['key']] ?? $picker['default']);
+                            if ($display === '') {
+                                $display = \App\Support\TimeFormat::display($picker['default']);
+                            }
 
-                    <!-- Afternoon Feed Time -->
-                    <div class="form-field">
-                        <label style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span>☀️ Afternoon Feed</span>
-                        </label>
-                        <input type="text" name="feed_time_afternoon" value="{{ \App\Support\TimeFormat::display($feedTimes['afternoon'] ?? '12:00') }}" placeholder="12:00 PM" pattern="(0?[1-9]|1[0-2]):[0-5][0-9] ?([Aa][Mm]|[Pp][Mm])" title="Enter a time such as 12:00 PM" required style="font-size: 1rem;">
-                        <p style="margin: 0.5rem 0 0 0; color: #8d6e63; font-size: 0.8rem;">Recommended: 12:00 PM</p>
-                    </div>
+                            $displayParts = explode(' ', $display);
+                            $clockParts  = explode(':', $displayParts[0] ?? '1:00');
+                            $selectedHour   = (int) ($clockParts[0] ?? 1);
+                            $selectedMinute = $clockParts[1] ?? '00';
+                            $selectedPeriod = strtoupper($displayParts[1] ?? 'AM');
+                        @endphp
 
-                    <!-- Evening Feed Time -->
-                    <div class="form-field">
-                        <label style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span>🌙 Evening Feed</span>
-                        </label>
-                        <input type="text" name="feed_time_evening" value="{{ \App\Support\TimeFormat::display($feedTimes['evening'] ?? '17:00') }}" placeholder="5:00 PM" pattern="(0?[1-9]|1[0-2]):[0-5][0-9] ?([Aa][Mm]|[Pp][Mm])" title="Enter a time such as 5:00 PM" required style="font-size: 1rem;">
-                        <p style="margin: 0.5rem 0 0 0; color: #8d6e63; font-size: 0.8rem;">Recommended: 5:00 PM</p>
-                    </div>
+                        <div class="form-field">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span>{{ $picker['label'] }}</span>
+                            </label>
+
+                            {{-- The hidden value keeps the existing backend format (e.g. 8:00 AM). --}}
+                            <input type="hidden" id="feed_time_{{ $picker['key'] }}" name="feed_time_{{ $picker['key'] }}" value="{{ $display }}">
+
+                            <div class="feed-time-picker" data-time-field="feed_time_{{ $picker['key'] }}">
+                                <select class="feed-time-hour" aria-label="{{ $picker['label'] }} hour">
+                                    @foreach (range(1, 12) as $hour)
+                                        <option value="{{ $hour }}" {{ $selectedHour === $hour ? 'selected' : '' }}>{{ $hour }}</option>
+                                    @endforeach
+                                </select>
+                                <span class="feed-time-colon">:</span>
+                                <select class="feed-time-minute" aria-label="{{ $picker['label'] }} minute">
+                                    @foreach (range(0, 59) as $minute)
+                                        <option value="{{ sprintf('%02d', $minute) }}" {{ $selectedMinute === sprintf('%02d', $minute) ? 'selected' : '' }}>{{ sprintf('%02d', $minute) }}</option>
+                                    @endforeach
+                                </select>
+                                <select class="feed-time-period" aria-label="{{ $picker['label'] }} AM or PM">
+                                    <option value="AM" {{ $selectedPeriod === 'AM' ? 'selected' : '' }}>AM</option>
+                                    <option value="PM" {{ $selectedPeriod === 'PM' ? 'selected' : '' }}>PM</option>
+                                </select>
+                            </div>
+
+                            <p style="margin: 0.5rem 0 0 0; color: #8d6e63; font-size: 0.8rem;">Recommended: {{ $picker['recommended'] }}</p>
+                        </div>
+                    @endforeach
                 </div>
 
                 <button type="submit" class="btn-primary">Save Feeding Schedule</button>
@@ -772,6 +816,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add feeder schedule form submission listener
     const feederScheduleForm = document.getElementById('feederScheduleForm');
     if (feederScheduleForm) {
+        function syncFeedTimePickers() {
+            document.querySelectorAll('.feed-time-picker').forEach(function (picker) {
+                const hidden = document.getElementById(picker.dataset.timeField);
+                const hourSelect = picker.querySelector('.feed-time-hour');
+                const minuteSelect = picker.querySelector('.feed-time-minute');
+                const periodSelect = picker.querySelector('.feed-time-period');
+
+                if (!hidden || !hourSelect || !minuteSelect || !periodSelect) return;
+
+                hidden.value = hourSelect.value + ':' + minuteSelect.value + ' ' + periodSelect.value;
+            });
+        }
+
+        document.querySelectorAll('.feed-time-picker').forEach(function (picker) {
+            picker.querySelectorAll('select').forEach(function (select) {
+                select.addEventListener('change', syncFeedTimePickers);
+            });
+        });
+
         const scheduledFeedingToggle = document.getElementById('scheduledFeedingToggle');
         if (scheduledFeedingToggle) {
             scheduledFeedingToggle.addEventListener('change', function() {
@@ -784,6 +847,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         feederScheduleForm.addEventListener('submit', function(e) {
+            syncFeedTimePickers();
+
             const morningTime = document.querySelector('input[name="feed_time_morning"]').value;
             const afternoonTime = document.querySelector('input[name="feed_time_afternoon"]').value;
             const eveningTime = document.querySelector('input[name="feed_time_evening"]').value;
