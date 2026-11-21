@@ -1106,8 +1106,19 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         .then(r => r.json())
         .then(data => {
             if (data.status === 'ok' || data.status === 'queued') {
+                const duration = parseInt(data.duration, 10) || 5;
+                const cage = parseInt(data.cage_number, 10) || 1;
+
+                // Same notification style as Manual Feed, but labeled Scheduled.
                 if (typeof notificationSystem !== 'undefined') {
-                    notificationSystem.success('Feeding triggered successfully!', '✅');
+                    notificationSystem.feeder(
+                        '🍲 FEEDING NOW — Scheduled feeding started for Cage ' +
+                        cage +
+                        ' (' +
+                        duration +
+                        ' sec)',
+                        '✅'
+                    );
                 }
                 playNotifSound('save');
                 if (typeof window.showFeedingAnimation === 'function') {
@@ -1117,8 +1128,8 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
                         commandId: data.command_id || null
                     });
                     window.showFeedingAnimation(
-                        data.duration || 5,
-                        data.cage_number || 1
+                        duration,
+                        cage
                     );
                 }
             } else {
@@ -1323,8 +1334,9 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
             modal.style.display = 'flex';
             playNotifSound('save');
         }
-        // Bell entry — DONE FEEDING (once per feeding cycle)
-        if (feedType !== 'scheduled' && typeof notificationSystem !== 'undefined') {
+        // Bell entry — DONE FEEDING (once per feeding cycle).
+        // Manual and scheduled feeds use the same notification.
+        if (typeof notificationSystem !== 'undefined') {
             notificationSystem.feeder('✅ DONE FEEDING — Feeding completed for Cage ' + cage, '✅');
         }
     }
@@ -2029,8 +2041,10 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
                             const startedAt =
                                 data.started_at || null;
 
+                            // Same FEEDING NOW notification for manual and
+                            // scheduled feeds. Scheduled runs triggered by the
+                            // backend scheduler arrive through this poll.
                             if (
-                                data.type !== 'scheduled' &&
                                 typeof notificationSystem !==
                                 'undefined'
                             ) {
@@ -2128,6 +2142,20 @@ function startScheduleCheck() {
 
                         const cage =
                             parseInt(schedule.cage, 10) || 1;
+
+                        // Same notification style as Manual Feed.
+                        if (typeof notificationSystem !== 'undefined') {
+                            notificationSystem.feeder(
+                                '🍲 FEEDING NOW — Scheduled feeding started for Cage ' +
+                                cage +
+                                ' (' +
+                                duration +
+                                ' sec)',
+                                '✅'
+                            );
+                        }
+
+                        playNotifSound('save');
 
                         console.log(
                             '[Feeder] Starting scheduled animation:',
