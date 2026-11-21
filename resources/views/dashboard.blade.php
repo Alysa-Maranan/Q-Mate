@@ -1387,8 +1387,8 @@
         <div style="background:#f1f8e9;padding:1.5rem;border-radius:12px;margin:1.5rem 0;border:2px solid #c5e1a5;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;text-align:left;margin-bottom:1rem;">
                 <div>
-                    <div style="font-size:0.85rem;color:#558b2f;font-weight:600;text-transform:uppercase;">Cage</div>
-                    <div style="font-size:1.3rem;color:#2e7d32;font-weight:700;" id="feedingModalCage">1</div>
+                    <div style="font-size:0.85rem;color:#558b2f;font-weight:600;text-transform:uppercase;">Station</div>
+                    <div style="font-size:1.3rem;color:#2e7d32;font-weight:700;" id="feedingModalCage">Main Feeder</div>
                 </div>
                 <div>
                     <div style="font-size:0.85rem;color:#558b2f;font-weight:600;text-transform:uppercase;">Duration</div>
@@ -1507,11 +1507,10 @@ function showFeedingModal(data) {
     feedingNotificationShown = true;
     
     // Set modal content
-    const cage = data.cage || data.cage_number || 1;
     const duration = data.duration || 10;
     const startedAt = data.started_at || new Date().toISOString();
     
-    document.getElementById('feedingModalCage').textContent = cage;
+    document.getElementById('feedingModalCage').textContent = 'Main Feeder';
     document.getElementById('feedingModalDuration').textContent = duration;
     
     // Parse and display time

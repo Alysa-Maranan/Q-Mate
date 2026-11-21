@@ -601,6 +601,27 @@
 .badge-paused   { background:#e0e0e0; color:#616161; }
 .badge-next     { background:#fef3c7; color:#92400e; }
 .badge-upcoming { background:#efebe9; color:#6d4c41; }
+
+/* Single feeding station (replaces the old Cage 1-10 dropdown) */
+.feeding-station-card {
+    display:flex;align-items:center;gap:0.875rem;
+    padding:0.875rem 1rem;
+    background:linear-gradient(135deg,#fff8f3,#f5ede6);
+    border:2px solid #a1887f;border-radius:12px;
+}
+.feeding-station-icon {
+    width:44px;height:44px;flex:0 0 44px;
+    border-radius:12px;background:#efebe9;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.35rem;
+}
+.feeding-station-name { font-weight:800;color:#6d4c41;font-size:0.95rem; }
+.feeding-station-note { font-size:0.75rem;color:#8d6e63;margin-top:0.15rem; }
+.feeding-station-badge {
+    margin-left:auto;font-size:0.68rem;font-weight:800;
+    padding:0.3rem 0.6rem;border-radius:20px;
+    background:#d1fae5;color:#065f46;white-space:nowrap;
+}
 </style>
 
 
@@ -612,20 +633,18 @@
             
             <form id="manualFeedForm" method="POST" action="{{ route('feeder.feed') }}">
                 @csrf
+                {{-- Keep the internal value for history/scheduler compatibility. --}}
+                <input type="hidden" name="cage_number" value="1">
                 <div class="input-group">
-                    <label class="input-label">Cage Number</label>
-                    <select name="cage_number" class="input-field" required>
-                        <option value="1">Cage 1</option>
-                        <option value="2">Cage 2</option>
-                        <option value="3">Cage 3</option>
-                        <option value="4">Cage 4</option>
-                        <option value="5">Cage 5</option>
-                        <option value="6">Cage 6</option>
-                        <option value="7">Cage 7</option>
-                        <option value="8">Cage 8</option>
-                        <option value="9">Cage 9</option>
-                        <option value="10">Cage 10</option>
-                    </select>
+                    <label class="input-label">Feeding Station</label>
+                    <div class="feeding-station-card">
+                        <div class="feeding-station-icon">🍽️</div>
+                        <div>
+                            <div class="feeding-station-name">Main Feeder</div>
+                            <div class="feeding-station-note">Iisang pakainan para sa buong kulungan</div>
+                        </div>
+                        <span class="feeding-station-badge">ACTIVE</span>
+                    </div>
                 </div>
                 
                 <div class="input-group">
@@ -649,10 +668,8 @@
                     Feeding Features
                 </div>
                 <ul style="color:#6d4c41;font-size:0.875rem;margin:0;padding-left:1.5rem;line-height:1.6;">
-                    <li>Manual feeding shows dispensing animation</li>
+                    <li>Manual &amp; scheduled feeding show the same dispensing animation</li>
                     <li>Real-time progress bar and countdown timer</li>
-                    <li>Avoid overfeeding - recommended 3 times daily</li>
-                    <li>Each feeding session dispenses approximately 12.5g per second</li>
                 </ul>
             </div>
         </div>
@@ -664,7 +681,7 @@
             <div style="margin: 1.5rem 0; font-size:1rem;color:#4e342e;">
                 <div><b>Date & Time:</b> <span id="deleteHistoryTime"></span></div>
                 <div><b>Duration:</b> <span id="deleteHistoryDuration"></span> seconds</div>
-                <div><b>Cage:</b> <span id="deleteHistoryCage"></span></div>
+                <div><b>Station:</b> <span id="deleteHistoryCage"></span></div>
             </div>
             <div class="confirm-modal-buttons">
                 <button type="button" class="confirm-modal-btn cancel" onclick="hideDeleteHistoryModal()">Cancel</button>
@@ -683,7 +700,7 @@
                 <thead>
                     <tr style="border-bottom:2px solid #efebe9;">
                         <th style="width:25%;text-align:left;padding:0.75rem 1rem;color:#8d6e63;font-weight:600;font-size:0.875rem;">Date & Time</th>
-                        <th style="width:10%;text-align:left;padding:0.75rem 1rem;color:#8d6e63;font-weight:600;font-size:0.875rem;">Cage</th>
+                        <th style="width:10%;text-align:left;padding:0.75rem 1rem;color:#8d6e63;font-weight:600;font-size:0.875rem;">Station</th>
                         <th style="width:12%;text-align:left;padding:0.75rem 1rem;color:#8d6e63;font-weight:600;font-size:0.875rem;">Type</th>
                         <th style="width:13%;text-align:left;padding:0.75rem 1rem;color:#8d6e63;font-weight:600;font-size:0.875rem;">Brand</th>
                         <th style="width:12%;text-align:left;padding:0.75rem 1rem;color:#8d6e63;font-weight:600;font-size:0.875rem;">Duration</th>
@@ -696,7 +713,7 @@
                     <tr style="border-bottom:1px solid #efebe9;">
                         <td style="padding:0.75rem 1rem;color:#4e342e;font-weight:600;vertical-align:middle;">{{ \Carbon\Carbon::parse($h->fed_at)->format('M d, Y h:i A') }}</td>
                         <td style="padding:0.75rem 1rem;color:#6d4c41;vertical-align:middle;">
-                            <span style="font-size:0.875rem;font-weight:600;background:#f5f0eb;padding:0.25rem 0.5rem;border-radius:6px;">{{ $h->cage_number ?? 1 }}</span>
+                            <span style="font-size:0.875rem;font-weight:600;background:#f5f0eb;padding:0.25rem 0.5rem;border-radius:6px;">Main Feeder</span>
                         </td>
                         <td style="padding:0.75rem 1rem;vertical-align:middle;">
                             <span class="status-pill" style="background:{{ $h->feed_type==='scheduled'?'#e3f2fd':'#fff3e0' }};color:{{ $h->feed_type==='scheduled'?'#1565c0':'#e65100' }};text-transform:capitalize;">{{ ucfirst($h->feed_type) }}</span>
@@ -968,9 +985,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
 
             if (typeof notificationSystem !== 'undefined') {
                 notificationSystem.feeder(
-                    '🍲 FEEDING NOW — Manual feeding started for Cage ' +
-                    cage +
-                    ' (' +
+                    '🍲 FEEDING NOW — Manual feeding started at Main Feeder (' +
                     duration +
                     ' sec)',
                     '✅'
@@ -985,10 +1000,9 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
             if (typeof window.showFeedingAnimation === 'function') {
 
                 console.log(
-                    '[Manual Feed] Starting feeding animation:',
+                    '[Feeder] Starting feeding animation:',
                     duration,
-                    'seconds, Cage',
-                    cage,
+                    'seconds, Main Feeder',
                     'Status:',
                     data.status
                 );
@@ -1074,7 +1088,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
 
     function showDeleteScheduleModal(btn, time, cage) {
         document.getElementById('deleteScheduleTime').innerText = time;
-        document.getElementById('deleteScheduleCage').innerText = 'Cage ' + cage;
+        document.getElementById('deleteScheduleCage').innerText = 'Main Feeder';
         document.getElementById('deleteScheduleModal').classList.add('show');
         deleteFormToSubmit = btn.closest('form');
     }
@@ -1112,9 +1126,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
                 // Same notification style as Manual Feed, but labeled Scheduled.
                 if (typeof notificationSystem !== 'undefined') {
                     notificationSystem.feeder(
-                        '🍲 FEEDING NOW — Scheduled feeding started for Cage ' +
-                        cage +
-                        ' (' +
+                        '🍲 FEEDING NOW — Scheduled feeding started at Main Feeder (' +
                         duration +
                         ' sec)',
                         '✅'
@@ -1148,7 +1160,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
     function showDeleteHistoryModal(btn, time, duration, cage) {
         document.getElementById('deleteHistoryTime').innerText = time;
         document.getElementById('deleteHistoryDuration').innerText = duration;
-        document.getElementById('deleteHistoryCage').innerText = 'Cage ' + cage;
+        document.getElementById('deleteHistoryCage').innerText = 'Main Feeder';
         document.getElementById('deleteHistoryModal').classList.add('show');
         deleteFormToSubmit = btn.closest('form');
     }
@@ -1275,7 +1287,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         const cageLabel = document.getElementById('feed-cage-label');
 
         overlay.classList.add('show');
-        if (cageLabel) cageLabel.textContent = 'Cage ' + cage;
+        if (cageLabel) cageLabel.textContent = 'Main Feeder';
 
         const total = Math.max(1, duration);
         let elapsed = 0;
@@ -1329,7 +1341,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
 
         const modal = document.getElementById('done-feeding-modal');
         const cageText = document.getElementById('done-cage-text');
-        if (cageText) cageText.textContent = 'Cage ' + cage;
+        if (cageText) cageText.textContent = 'Main Feeder';
         if (modal) {
             modal.style.display = 'flex';
             playNotifSound('save');
@@ -1337,7 +1349,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         // Bell entry — DONE FEEDING (once per feeding cycle).
         // Manual and scheduled feeds use the same notification.
         if (typeof notificationSystem !== 'undefined') {
-            notificationSystem.feeder('✅ DONE FEEDING — Feeding completed for Cage ' + cage, '✅');
+            notificationSystem.feeder('✅ DONE FEEDING — Feeding completed at Main Feeder', '✅');
         }
     }
 
@@ -1497,7 +1509,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
 <div id="done-feeding-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center;">
     <div style="background:white;border-radius:24px;padding:3rem 2.5rem;text-align:center;box-shadow:0 24px 64px rgba(109,76,65,0.4);width:380px;animation:modalBounce 0.5s ease;">
         <div style="font-size:1.6rem;font-weight:800;color:#6d4c41;margin-bottom:0.75rem;">Done Feeding!</div>
-        <div style="font-size:1.1rem;color:#8d6e63;margin-bottom:0.5rem;font-weight:600;" id="done-cage-text">Cage 1</div>
+        <div style="font-size:1.1rem;color:#8d6e63;margin-bottom:0.5rem;font-weight:600;" id="done-cage-text">Main Feeder</div>
         <div style="font-size:0.95rem;color:#a1887f;margin-bottom:2rem;">Feeding completed successfully</div>
         <button onclick="window.closeDoneFeedingModal()" style="background:linear-gradient(135deg,#a1887f,#8d6e63);color:white;border:none;padding:1rem 2.5rem;border-radius:12px;font-weight:700;font-size:1.1rem;cursor:pointer;width:100%;box-shadow:0 4px 12px rgba(161,136,127,0.3);transition:all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(161,136,127,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(161,136,127,0.3)'">OK, Got it!</button>
     </div>
@@ -1557,7 +1569,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         </div>
 
         <div class="feed-title"><span class="status-dot"></span>Dispensing Feed</div>
-        <div class="feed-cage" id="feed-cage-label">Cage �</div>
+        <div class="feed-cage" id="feed-cage-label">Main Feeder</div>
 
         <!-- Progress bar -->
         <div class="progress-bar-wrap">
@@ -1664,7 +1676,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         overlay.classList.add('show');
 
         if (cageLabel) {
-            cageLabel.textContent = 'Cage ' + (cage || '-');
+            cageLabel.textContent = 'Main Feeder';
         }
 
         animTotal = Math.max(
@@ -2057,9 +2069,7 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
                                 notificationSystem.feeder(
                                     '🍲 FEEDING NOW — ' +
                                     feedType +
-                                    ' feeding started for Cage ' +
-                                    cage +
-                                    ' (' +
+                                    ' feeding started at Main Feeder (' +
                                     duration +
                                     ' sec)',
                                     '✅'
@@ -2146,9 +2156,7 @@ function startScheduleCheck() {
                         // Same notification style as Manual Feed.
                         if (typeof notificationSystem !== 'undefined') {
                             notificationSystem.feeder(
-                                '🍲 FEEDING NOW — Scheduled feeding started for Cage ' +
-                                cage +
-                                ' (' +
+                                '🍲 FEEDING NOW — Scheduled feeding started at Main Feeder (' +
                                 duration +
                                 ' sec)',
                                 '✅'
@@ -2290,7 +2298,7 @@ function startScheduleCheck() {
     ) {
 
         console.log(
-            '[Manual Feed] Starting animation:',
+            '[Feeder] Starting animation:',
             duration,
             'seconds, cage',
             cage

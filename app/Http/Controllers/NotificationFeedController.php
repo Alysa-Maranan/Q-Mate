@@ -296,7 +296,7 @@ class NotificationFeedController extends Controller
                         'category' => 'feeder',
                         'icon'     => '🍲',
                         'title'    => 'Feeding Now',
-                        'message'  => 'Scheduled feeding started for Cage ' . ($s->cage_number ?? 1) .
+                        'message'  => 'Scheduled feeding started at Main Feeder' .
                                       ' (' . ($s->amount ?? 5) . ' seconds).',
                         'time'     => date('M j, Y g:i A', $ts),
                         '_ts'      => $ts,
@@ -317,7 +317,7 @@ class NotificationFeedController extends Controller
                         'category' => 'feeder',
                         'icon'     => '🍲',
                         'title'    => 'Feeding Now',
-                        'message'  => 'Manual feeding in progress for Cage ' . ($m->cage_number ?? 1) .
+                        'message'  => 'Manual feeding in progress at Main Feeder' .
                                       ' — servo open (' . ($m->duration ?? 5) . ' sec).',
                         'time'     => date('M j, Y g:i A', $ts),
                         '_ts'      => $ts,
@@ -350,7 +350,7 @@ class NotificationFeedController extends Controller
                     'category' => 'feeder',
                     'icon' => '🍲',
                     'title' => 'Feeding Now',
-                    'message' => 'Scheduled feeding started for Cage ' . ($history->cage_number ?? 1) .
+                    'message' => 'Scheduled feeding started at Main Feeder' .
                         ' (' . ($history->duration ?? 5) . ' seconds).',
                     'time' => date('M j, Y g:i A', $ts),
                     '_ts' => $ts,
@@ -365,9 +365,9 @@ class NotificationFeedController extends Controller
                     'icon' => $type === 'failed' ? '⚠️' : '✅',
                     'title' => $type === 'failed' ? 'Scheduled Feeding Failed' : 'Done Feeding',
                     'message' => $type === 'failed'
-                        ? 'Scheduled feeding command failed for Cage ' . ($history->cage_number ?? 1) . '.'
+                        ? 'Scheduled feeding command failed at Main Feeder.'
                         : 'Scheduled feeding ' . ($isSimulation ? 'simulation ' : '') .
-                            'finished for Cage ' . ($history->cage_number ?? 1) .
+                            'finished at Main Feeder' .
                             ($isSimulation ? '; no hardware completion was reported.' : '.'),
                     'time' => date('M j, Y g:i A', $doneTs),
                     '_ts' => $doneTs,
@@ -390,7 +390,7 @@ class NotificationFeedController extends Controller
                         'category' => 'feeder',
                         'icon' => '✅',
                         'title' => 'Done Feeding',
-                        'message' => 'Manual feeding completed for Cage ' . ($h->cage_number ?? 1) .
+                        'message' => 'Manual feeding completed at Main Feeder' .
                             ' (' . ($h->duration ?? 5) . ' sec).',
                         'time' => date('M j, Y g:i A', $ts),
                         '_ts' => $ts,
