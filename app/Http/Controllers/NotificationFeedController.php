@@ -161,20 +161,34 @@ class NotificationFeedController extends Controller
             \Log::warning('Notification feed [chats]: ' . $e->getMessage());
         }
 
-        // ── Feeder: food level low / empty ─────────────────────────────
+        // ── Feeder: food level thresholds (50/40/30/20/10/0%) ────────
         try {
             $food = FoodLevel::getCurrent();
-            if (in_array($food->status, ['low', 'empty'])) {
-                $items->push([
-                    'key'      => 'feeder_food_' . now()->format('Ymd'),
-                    'category' => 'feeder',
-                    'icon'     => $food->status === 'empty' ? '⚠️' : '📊',
-                    'title'    => $food->status === 'empty' ? 'Feeder Empty' : 'Feeder Food Low',
-                    'message'  => $food->getStatusMessage() . ' (Level: ' . $food->level . '%)',
-                    'time'     => optional($food->last_updated)->format('M j, Y g:i A'),
-                    '_ts'      => optional($food->last_updated)->timestamp ?? now()->timestamp,
-                    'url'      => '/feeder',
-                ]);
+
+            // No notification until the ultrasonic sensor has actually reported.
+            if ($food->last_updated) {
+                $level = (int) $food->level;
+
+                foreach ([50, 40, 30, 20, 10, 0] as $threshold) {
+                    if ($level > $threshold) {
+                        continue;
+                    }
+
+                    $isEmpty = $threshold === 0;
+
+                    $items->push([
+                        'key'      => 'feeder_food_' . $threshold . '_' . now()->format('Ymd'),
+                        'category' => 'feeder',
+                        'icon'     => $isEmpty ? '⚠️' : '📊',
+                        'title'    => $isEmpty ? 'Feeder Empty' : 'Food Level Low',
+                        'message'  => $isEmpty
+                            ? 'Food container is empty. Please refill it now. (Level: 0%)'
+                            : 'Food level is running low. (Level: ' . $threshold . '%)',
+                        'time'     => optional($food->last_updated)->format('M j, Y g:i A'),
+                        '_ts'      => optional($food->last_updated)->timestamp ?? now()->timestamp,
+                        'url'      => '/feeder',
+                    ]);
+                }
             }
         } catch (\Throwable $e) {
             \Log::warning('Notification feed [food level]: ' . $e->getMessage());

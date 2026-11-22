@@ -9,14 +9,14 @@
 // WIFI/API CONFIGURATION
 // ==================================================
 
-const char* WIFI_SSID = "realmeC51";
-const char* WIFI_PASSWORD = "realme51";
+const char* WIFI_SSID = "Converge_2.4GHz_314F";
+const char* WIFI_PASSWORD = "R52K2AcP";
 
 // LIVE Q-MATE RENDER SERVER
 const char* API_BASE_URL = "https://q-mate.onrender.com/api";
 
 const unsigned long COMMAND_INTERVAL = 2000;
-const unsigned long SENSOR_INTERVAL = 10000;
+const unsigned long SENSOR_INTERVAL = 5000;
 
 unsigned long lastCommandCheck = 0;
 unsigned long lastSensorUpload = 0;
@@ -298,7 +298,13 @@ int calculateFeedLevel() {
       5000
     );
 
+  Serial.print("ULTRASONIC duration=");
+  Serial.print(duration);
+  Serial.print(" us");
+
   if (duration == 0) {
+
+    Serial.println(" | no echo -> 0%");
 
     return 0;
   }
@@ -306,12 +312,20 @@ int calculateFeedLevel() {
   float distance =
     duration * 0.0343 / 2;
 
+  Serial.print(" | distance=");
+  Serial.print(distance, 1);
+  Serial.print(" cm");
+
   if (distance <= FEED_MIN_DISTANCE) {
+
+    Serial.println(" -> 100%");
 
     return 100;
   }
 
   if (distance >= FEED_MAX_DISTANCE) {
+
+    Serial.println(" -> 0% (too far)");
 
     return 0;
   }
@@ -321,6 +335,10 @@ int calculateFeedLevel() {
       (FEED_MAX_DISTANCE - distance) /
       (FEED_MAX_DISTANCE - FEED_MIN_DISTANCE)
     ) * 100;
+
+  Serial.print(" -> ");
+  Serial.print(level);
+  Serial.println("%");
 
   return constrain(level, 0, 100);
 }
@@ -340,6 +358,61 @@ void uploadSensors() {
   int level =
     calculateFeedLevel();
 
+  // ==================================================
+  // UPLOAD FOOD LEVEL (ULTRASONIC)
+  // ==================================================
+
+  WiFiClientSecure client;
+
+  client.setInsecure();
+
+  HTTPClient http;
+
+  if (
+    !http.begin(
+      client,
+      apiUrl("/food-level")
+    )
+  ) {
+
+    Serial.println(
+      "Food-level API connection setup failed."
+    );
+
+    return;
+  }
+
+  http.addHeader(
+    "Content-Type",
+    "application/json"
+  );
+
+  String levelPayload =
+    String("{\"level\":") +
+    level +
+    ",\"source\":\"ultrasonic\"}";
+
+  int levelStatus =
+    http.POST(levelPayload);
+
+  http.end();
+
+  Serial.print(
+    "Uploaded food level: "
+  );
+
+  Serial.print(level);
+
+  Serial.print(
+    "% (status="
+  );
+
+  Serial.println(levelStatus);
+
+  // ==================================================
+  // UPLOAD TEMPERATURE / HUMIDITY (DHT22)
+  // ==================================================
+
   if (
     isnan(humidity) ||
     isnan(temperature)
@@ -351,16 +424,6 @@ void uploadSensors() {
 
     return;
   }
-
-  // ==================================================
-  // UPLOAD TEMPERATURE / HUMIDITY
-  // ==================================================
-
-  WiFiClientSecure client;
-
-  client.setInsecure();
-
-  HTTPClient http;
 
   if (
     !http.begin(
@@ -390,39 +453,6 @@ void uploadSensors() {
 
   int sensorStatus =
     http.POST(sensorPayload);
-
-  http.end();
-
-  // ==================================================
-  // UPLOAD FOOD LEVEL
-  // ==================================================
-
-  if (
-    !http.begin(
-      client,
-      apiUrl("/food-level")
-    )
-  ) {
-
-    Serial.println(
-      "Food-level API connection setup failed."
-    );
-
-    return;
-  }
-
-  http.addHeader(
-    "Content-Type",
-    "application/json"
-  );
-
-  String levelPayload =
-    String("{\"level\":") +
-    level +
-    ",\"source\":\"ultrasonic\"}";
-
-  int levelStatus =
-    http.POST(levelPayload);
 
   http.end();
 
