@@ -252,13 +252,13 @@
                     </div>
                     <div style="flex: 1;">
                         <p style="margin: 0; color: #8d6e63; font-size: 0.9rem; font-weight: 600; text-transform: uppercase;">Food Level</p>
-                        <p id="foodLevelValue" style="margin: 0.5rem 0 0; color: #6d4c41; font-weight: 700; font-size: 1.1rem;">70%</p>
+                        <p id="foodLevelValue" style="margin: 0.5rem 0 0; color: #6d4c41; font-weight: 700; font-size: 1.1rem;">--</p>
                     </div>
                 </div>
                 <div style="background: #efebe9; border-radius: 8px; height: 8px; overflow: hidden;">
-                    <div id="foodLevelBar" style="height: 100%; width: 70%; background: #4caf50; border-radius: 8px; transition: width 0.5s ease, background 0.5s ease;"></div>
+                    <div id="foodLevelBar" style="height: 100%; width: 0%; background: #4caf50; border-radius: 8px; transition: width 0.5s ease, background 0.5s ease;"></div>
                 </div>
-                <p id="foodLevelStatus" style="margin: 0.5rem 0 0; color: #8d6e63; font-size: 0.8rem;">Food detected</p>
+                <p id="foodLevelStatus" style="margin: 0.5rem 0 0; color: #8d6e63; font-size: 0.8rem;">Waiting for sensor</p>
             </div>
 
             <!-- Temperature & Humidity Card -->
@@ -1585,23 +1585,43 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-// TEMPORARY: hardcoded food level while the WiFi sensor is being prepared.
-// Restore the /api/food-level/current polling once the sensor is connected.
+// FOOD LEVEL — real value from the WEMOS/ultrasonic sensor via the backend.
 function updateFoodLevel() {
-    const level = 70;
-
     const el = document.getElementById('foodLevelValue');
     const bar = document.getElementById('foodLevelBar');
     const statusEl = document.getElementById('foodLevelStatus');
-    if (!el) return;
+    if (!el || !bar || !statusEl) return;
 
-    el.textContent = level + '%';
-    el.style.color = '#6d4c41';
-    bar.style.width = level + '%';
-    bar.style.background = '#4caf50';
-    statusEl.textContent = 'Food detected';
+    fetch('/api/food-level/current', { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => {
+            const level = Math.max(0, Math.min(100, parseInt(data.level, 10) || 0));
+            const colors = { normal: '#4caf50', low: '#f59e0b', empty: '#ef4444' };
+            const color = colors[data.status] || colors.normal;
+
+            el.textContent = level + '%';
+            el.style.color = color;
+            bar.style.width = level + '%';
+            bar.style.background = color;
+
+            if (!data.last_updated) {
+                statusEl.textContent = 'Waiting for sensor';
+            } else if (data.status === 'empty') {
+                statusEl.textContent = 'Food empty - please refill';
+            } else if (data.status === 'low') {
+                statusEl.textContent = 'Food level low';
+            } else {
+                statusEl.textContent = 'Food detected';
+            }
+        })
+        .catch(() => {
+            statusEl.textContent = 'Sensor offline';
+        });
 }
-document.addEventListener('DOMContentLoaded', updateFoodLevel);
+document.addEventListener('DOMContentLoaded', function () {
+    updateFoodLevel();
+    setInterval(updateFoodLevel, 5000);
+});
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

@@ -468,15 +468,15 @@
         <div class="section-card" id="food-level-card" style="margin-top:1.5rem;padding:1.5rem 2rem;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
                 <div style="font-weight:700;color:#6d4c41;font-size:1rem;">Food Level</div>
-                <span id="food-level-status-pill" class="status-pill" style="background:#d1fae5;color:#065f46;">Normal</span>
+                <span id="food-level-status-pill" class="status-pill" style="background:#efebe9;color:#6d4c41;">Waiting for sensor</span>
             </div>
             <div style="background:#efebe9;border-radius:99px;height:18px;overflow:hidden;">
-                <div id="food-level-bar" style="height:100%;width:70%;background:linear-gradient(90deg,#a1887f,#6d4c41);border-radius:99px;transition:width 0.8s ease;"></div>
+                <div id="food-level-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#a1887f,#6d4c41);border-radius:99px;transition:width 0.8s ease;"></div>
             </div>
             <div style="display:flex;justify-content:center;margin-top:0.5rem;">
-                <span id="food-level-pct" style="font-size:1.1rem;font-weight:800;color:#6d4c41;">70%</span>
+                <span id="food-level-pct" style="font-size:1.1rem;font-weight:800;color:#6d4c41;">--</span>
             </div>
-            <div id="food-level-updated" style="font-size:0.75rem;color:#a1887f;margin-top:0.25rem;text-align:right;"></div>
+            <div id="food-level-updated" style="font-size:0.75rem;color:#a1887f;margin-top:0.25rem;text-align:right;">Waiting for sensor reading</div>
         </div>
 
         <!-- Next Feeding Card -->
@@ -1177,27 +1177,58 @@ document.getElementById('manualFeedForm')?.addEventListener('submit', function(e
         hideDeleteHistoryModal();
     }
 
-    // TEMPORARY: hardcoded food level while the WiFi sensor is being prepared.
-    // Restore the /api/food-level/current polling once the sensor is connected.
+    // FOOD LEVEL — reads the real WEMOS/ultrasonic value from the backend.
+    // Firmware posts to /api/food-level; we only display /api/food-level/current.
     (function() {
-        const level = 70;
-
         const bar = document.getElementById('food-level-bar');
         const pct = document.getElementById('food-level-pct');
         const pill = document.getElementById('food-level-status-pill');
+        const updated = document.getElementById('food-level-updated');
 
         if (!bar) return;
 
-        bar.style.width = level + '%';
-        bar.style.background = 'linear-gradient(90deg,#a1887f,#6d4c41)';
+        const statusStyles = {
+            normal: { bg: '#d1fae5', color: '#065f46', label: 'Normal', fill: 'linear-gradient(90deg,#a1887f,#6d4c41)' },
+            low:    { bg: '#fef3c7', color: '#92400e', label: 'Low',    fill: 'linear-gradient(90deg,#f59e0b,#d97706)' },
+            empty:  { bg: '#fee2e2', color: '#991b1b', label: 'Empty',  fill: 'linear-gradient(90deg,#ef4444,#b91c1c)' },
+        };
 
-        if (pct) pct.textContent = level + '%';
+        function render(data) {
+            const level = Math.max(0, Math.min(100, parseInt(data.level, 10) || 0));
+            const style = statusStyles[data.status] || statusStyles.normal;
+            const hasReading = !!data.last_updated;
 
-        if (pill) {
-            pill.style.background = '#d1fae5';
-            pill.style.color = '#065f46';
-            pill.textContent = 'Normal';
+            bar.style.width = level + '%';
+            bar.style.background = style.fill;
+
+            if (pct) pct.textContent = level + '%';
+            if (pill) {
+                pill.style.background = hasReading ? style.bg : '#efebe9';
+                pill.style.color = hasReading ? style.color : '#6d4c41';
+                pill.textContent = hasReading ? style.label : 'Waiting for sensor';
+            }
+            if (updated) {
+                updated.textContent = hasReading
+                    ? 'Updated ' + new Date(data.last_updated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+                    : 'Waiting for sensor reading';
+            }
         }
+
+        function refreshFoodLevel() {
+            fetch('/api/food-level/current', { cache: 'no-store' })
+                .then(r => r.json())
+                .then(render)
+                .catch(() => {
+                    if (pill) {
+                        pill.style.background = '#f5f0eb';
+                        pill.style.color = '#8d6e63';
+                        pill.textContent = 'Sensor offline';
+                    }
+                });
+        }
+
+        refreshFoodLevel();
+        setInterval(refreshFoodLevel, 5000);
     })();
 
     // Start checking for notifications - only once
